@@ -8,6 +8,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../services/firebase';
 
+const REPORT_RADIUS_METERS = 2;
+
 export default function ReportScreen() {
   const [type, setType] = useState('');
   const [description, setDescription] = useState('');
@@ -27,9 +29,7 @@ export default function ReportScreen() {
       aspect: [4, 3],
       quality: 0.7,
     });
-    if (!result.canceled) {
-      setPhoto(result.assets[0].uri);
-    }
+    if (!result.canceled) setPhoto(result.assets[0].uri);
   };
 
   const pickFromGallery = async () => {
@@ -43,9 +43,7 @@ export default function ReportScreen() {
       aspect: [4, 3],
       quality: 0.7,
     });
-    if (!result.canceled) {
-      setPhoto(result.assets[0].uri);
-    }
+    if (!result.canceled) setPhoto(result.assets[0].uri);
   };
 
   const handleSubmit = async () => {
@@ -53,17 +51,26 @@ export default function ReportScreen() {
       Alert.alert('Error', 'Mohon isi semua field!');
       return;
     }
-
     setLoading(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert('Error', 'Izin lokasi diperlukan!');
+        setLoading(false);
         return;
       }
-
-      const location = await Location.getCurrentPositionAsync({});
-
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+      const accuracy = location.coords.accuracy ?? 999;
+      if (accuracy > REPORT_RADIUS_METERS) {
+        Alert.alert(
+          'Akurasi Lokasi Rendah',
+          `Akurasi GPS kamu ${Math.round(accuracy)} meter. Harus dalam ${REPORT_RADIUS_METERS} meter dari lokasi bencana.`
+        );
+        setLoading(false);
+        return;
+      }
       await addDoc(collection(db, 'reports'), {
         type,
         description,
@@ -72,12 +79,12 @@ export default function ReportScreen() {
           lat: location.coords.latitude,
           lng: location.coords.longitude,
         },
+        accuracy: location.coords.accuracy,
         isVerified: false,
         confirmCount: 0,
         flagCount: 0,
         createdAt: serverTimestamp(),
       });
-
       Alert.alert('Sukses', 'Laporan berhasil dikirim!');
       setType('');
       setDescription('');
@@ -101,9 +108,7 @@ export default function ReportScreen() {
             key={t}
             style={[styles.typeBtn, type === t && styles.typeBtnActive]}
             onPress={() => setType(t)}>
-            <Text style={[styles.typeBtnText, type === t && styles.typeBtnTextActive]}>
-              {t}
-            </Text>
+            <Text style={[styles.typeBtnText, type === t && styles.typeBtnTextActive]}>{t}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -120,9 +125,7 @@ export default function ReportScreen() {
         </TouchableOpacity>
       </View>
 
-      {photo && (
-        <Image source={{ uri: photo }} style={styles.photoPreview} />
-      )}
+      {photo && <Image source={{ uri: photo }} style={styles.photoPreview} />}
 
       <Text style={styles.label}>Deskripsi</Text>
       <TextInput
@@ -134,119 +137,29 @@ export default function ReportScreen() {
         onChangeText={setDescription}
       />
 
-      <TouchableOpacity
-        style={styles.submitBtn}
-        onPress={handleSubmit}
-        disabled={loading}>
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.submitBtnText}>Kirim Laporan</Text>
-        )}
+      <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={loading}>
+        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>Kirim Laporan</Text>}
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-    paddingTop: 60,
-    paddingHorizontal: 16,
-  },
-  header: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#C0392B',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  typeContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 20,
-  },
-  typeBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#C0392B',
-  },
-  typeBtnActive: {
-    backgroundColor: '#C0392B',
-  },
-  typeBtnText: {
-    color: '#C0392B',
-    fontSize: 13,
-  },
-  typeBtnTextActive: {
-    color: '#fff',
-  },
-  photoBtnRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 12,
-  },
-  photoBtn: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 16,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#C0392B',
-    borderStyle: 'dashed',
-    elevation: 2,
-  },
-  photoIcon: {
-    fontSize: 30,
-    marginBottom: 6,
-  },
-  photoText: {
-    color: '#C0392B',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  photoPreview: {
-    width: '100%',
-    height: 200,
-    borderRadius: 10,
-    resizeMode: 'cover',
-    marginBottom: 20,
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 14,
-    textAlignVertical: 'top',
-    marginBottom: 20,
-    elevation: 2,
-  },
-  submitBtn: {
-    backgroundColor: '#C0392B',
-    borderRadius: 10,
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  submitBtnText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  container: { flex: 1, backgroundColor: '#f5f5f5', paddingTop: 60, paddingHorizontal: 16 },
+  header: { fontSize: 28, fontWeight: 'bold', color: '#C0392B', textAlign: 'center' },
+  subtitle: { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 24 },
+  label: { fontSize: 14, fontWeight: 'bold', color: '#333', marginBottom: 8 },
+  typeContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
+  typeBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#C0392B' },
+  typeBtnActive: { backgroundColor: '#C0392B' },
+  typeBtnText: { color: '#C0392B', fontSize: 13 },
+  typeBtnTextActive: { color: '#fff' },
+  photoBtnRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+  photoBtn: { flex: 1, backgroundColor: '#fff', borderRadius: 10, padding: 16, alignItems: 'center', borderWidth: 2, borderColor: '#C0392B', borderStyle: 'dashed', elevation: 2 },
+  photoIcon: { fontSize: 30, marginBottom: 6 },
+  photoText: { color: '#C0392B', fontSize: 13, fontWeight: '600' },
+  photoPreview: { width: '100%', height: 200, borderRadius: 10, resizeMode: 'cover', marginBottom: 20 },
+  input: { backgroundColor: '#fff', borderRadius: 10, padding: 12, fontSize: 14, textAlignVertical: 'top', marginBottom: 20, elevation: 2 },
+  submitBtn: { backgroundColor: '#C0392B', borderRadius: 10, padding: 16, alignItems: 'center', marginBottom: 40 },
+  submitBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });

@@ -31,29 +31,32 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 22 }}>🏠</Text>
-          ),
+          tabBarIcon: () => <Text style={{ fontSize: 22 }}>🏠</Text>,
         }}
       />
       <Tabs.Screen
         name="report"
         options={{
           title: 'Report',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 22 }}>🚨</Text>
-          ),
+          tabBarIcon: () => <Text style={{ fontSize: 22 }}>🚨</Text>,
+        }}
+      />
+      <Tabs.Screen
+        name="reports"
+        options={{
+          title: 'Laporan',
+          tabBarIcon: () => <Text style={{ fontSize: 22 }}>📋</Text>,
         }}
       />
       <Tabs.Screen
         name="education"
         options={{
-          title: 'Education',
-          tabBarIcon: ({ color }) => (
-            <Text style={{ fontSize: 22 }}>📚</Text>
-          ),
+          title: 'Edukasi',
+          tabBarIcon: () => <Text style={{ fontSize: 22 }}>📚</Text>,
         }}
       />
+      <Tabs.Screen name="explore" options={{ href: null }} />
+      <Tabs.Screen name="detail" options={{ href: null }} />
     </Tabs>
   );
 }
