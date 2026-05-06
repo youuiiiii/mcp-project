@@ -61,6 +61,8 @@ export const WARNING_DISTANCE_METERS = 700;
 
 export const VERIFICATION_DISTANCE_METERS = 80;
 
+export const LOCAL_INCIDENT_NOTIFICATION_DISTANCE_METERS = 300;
+
 export const INCIDENT_CATEGORIES: Record<
   IncidentCategory,
   IncidentCategoryMeta
@@ -87,7 +89,8 @@ export const INCIDENT_CATEGORIES: Record<
     icon: "🚧",
     color: "#EA580C",
     lightColor: "#FFEDD5",
-    description: "Kecelakaan, jalan terhalang, pohon tumbang, atau fasilitas rusak.",
+    description:
+      "Kecelakaan, jalan terhalang, pohon tumbang, atau fasilitas rusak.",
   },
   security_public_order: {
     label: "Keamanan & Ketertiban",
@@ -95,7 +98,8 @@ export const INCIDENT_CATEGORIES: Record<
     icon: "🚨",
     color: "#BE123C",
     lightColor: "#FFE4E6",
-    description: "Kriminalitas, kerumunan berisiko, tawuran, atau gangguan publik.",
+    description:
+      "Kriminalitas, kerumunan berisiko, tawuran, atau gangguan publik.",
   },
   medical_rescue: {
     label: "Medis & Penyelamatan",

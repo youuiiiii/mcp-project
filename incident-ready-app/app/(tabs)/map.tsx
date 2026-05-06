@@ -18,12 +18,14 @@ import MapView, {
 } from "react-native-maps";
 import FilterBar, { MapFilterValue } from "../../src/components/FilterBar";
 import IncidentThreadModal from "../../src/components/IncidentThreadModal";
+import LocalIncidentBanner from "../../src/components/LocalIncidentBanner";
 import ReportIncidentModal from "../../src/components/ReportIncidentModal";
 import ResolveIncidentModal from "../../src/components/ResolveIncidentModal";
 import SOSButton from "../../src/components/SOSButton";
 import VerifyIncidentModal from "../../src/components/VerifyIncidentModal";
 import LoadingState from "../../src/components/ui/LoadingState";
 import {
+  LOCAL_INCIDENT_NOTIFICATION_DISTANCE_METERS,
   REPORT_ALLOWED_DISTANCE_METERS,
   VERIFICATION_DISTANCE_METERS,
   WARNING_DISTANCE_METERS,
@@ -47,6 +49,7 @@ import {
   isValidCoordinate,
 } from "../../src/utils/geo";
 import { getIncidentTrustMeta } from "../../src/utils/incidentTrust";
+import { getIncidentUrgencyMeta } from "../../src/utils/incidentUrgency";
 
 type UserMapPosition = Coordinate & {
   accuracy?: number | null;
@@ -58,6 +61,11 @@ type MapCluster = {
   latitude: number;
   longitude: number;
   incidents: IncidentReport[];
+};
+
+type NearbyIncidentNotification = {
+  incident: IncidentReport;
+  distance: number;
 };
 
 const DEFAULT_REGION: Region = {
@@ -205,6 +213,10 @@ export default function MapScreen() {
   const verificationPromptedIncidentIdRef = useRef<string | null>(null);
   const lastStableUserLocationRef = useRef<UserMapPosition | null>(null);
 
+  const knownIncidentIdsRef = useRef<Set<string>>(new Set());
+  const notifiedIncidentIdsRef = useRef<Set<string>>(new Set());
+  const initialIncidentSnapshotLoadedRef = useRef(false);
+
   const [reports, setReports] = useState<IncidentReport[]>([]);
   const [userLocation, setUserLocation] = useState<UserMapPosition | null>(
     null
@@ -234,6 +246,9 @@ export default function MapScreen() {
   const [sosLoading, setSosLoading] = useState(false);
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const [nearbyIncidentNotification, setNearbyIncidentNotification] =
+    useState<NearbyIncidentNotification | null>(null);
 
   const actorKey = user?.email ?? user?.uid ?? null;
 
@@ -483,7 +498,9 @@ export default function MapScreen() {
       return false;
     }
 
-    return incident.reporterEmail === actorKey || incident.reportedBy === actorKey;
+    return (
+      incident.reporterEmail === actorKey || incident.reportedBy === actorKey
+    );
   };
 
   const hasUserVerifiedIncident = (incident: IncidentReport) => {
@@ -495,6 +512,37 @@ export default function MapScreen() {
       incident.verifiedBy?.includes(actorKey) ||
       incident.disputedBy?.includes(actorKey)
     );
+  };
+
+  const shouldNotifyNearbyIncident = (
+    incident: IncidentReport,
+    distance: number
+  ) => {
+    if (!actorKey) {
+      return false;
+    }
+
+    if (incident.status !== "active") {
+      return false;
+    }
+
+    if (!isValidCoordinate(incident.latitude, incident.longitude)) {
+      return false;
+    }
+
+    if (distance > LOCAL_INCIDENT_NOTIFICATION_DISTANCE_METERS) {
+      return false;
+    }
+
+    if (isOwnIncident(incident)) {
+      return false;
+    }
+
+    if (notifiedIncidentIdsRef.current.has(incident.id)) {
+      return false;
+    }
+
+    return true;
   };
 
   useEffect(() => {
@@ -550,6 +598,63 @@ export default function MapScreen() {
       ]
     );
   }, [userLocation, activeReports, actorKey]);
+
+  useEffect(() => {
+    if (!userLocation || reports.length === 0) {
+      return;
+    }
+
+    const currentIds = new Set(reports.map((report) => report.id));
+
+    if (!initialIncidentSnapshotLoadedRef.current) {
+      knownIncidentIdsRef.current = currentIds;
+      initialIncidentSnapshotLoadedRef.current = true;
+      return;
+    }
+
+    const newReports = reports.filter((report) => {
+      return !knownIncidentIdsRef.current.has(report.id);
+    });
+
+    knownIncidentIdsRef.current = currentIds;
+
+    if (newReports.length === 0) {
+      return;
+    }
+
+    const nearbyCandidates = newReports
+      .map((incident) => {
+        const distance = getDistanceInMeters(userLocation, {
+          latitude: incident.latitude,
+          longitude: incident.longitude,
+        });
+
+        return {
+          incident,
+          distance,
+        };
+      })
+      .filter((item) => {
+        return shouldNotifyNearbyIncident(item.incident, item.distance);
+      })
+      .sort((a, b) => {
+        return a.distance - b.distance;
+      });
+
+    const nearestNewIncident = nearbyCandidates[0];
+
+    if (!nearestNewIncident) {
+      return;
+    }
+
+    notifiedIncidentIdsRef.current.add(nearestNewIncident.incident.id);
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
+      () => {}
+    );
+
+    setNearbyIncidentNotification(nearestNewIncident);
+  }, [reports, userLocation, actorKey]);
 
   useEffect(() => {
     if (
@@ -690,6 +795,15 @@ export default function MapScreen() {
     setIsThreadModalVisible(true);
   };
 
+  const handleOpenLocalIncidentNotification = (incident: IncidentReport) => {
+    setNearbyIncidentNotification(null);
+    handleOpenIncidentThread(incident);
+  };
+
+  const handleCloseLocalIncidentNotification = () => {
+    setNearbyIncidentNotification(null);
+  };
+
   const handleCloseReportModal = () => {
     setIsReportModalVisible(false);
     setDraftCoordinate(null);
@@ -795,6 +909,7 @@ export default function MapScreen() {
   const renderIncidentMarker = (incident: IncidentReport) => {
     const meta = getIncidentMeta(incident.subcategory ?? incident.type);
     const trust = getIncidentTrustMeta(incident);
+    const urgency = getIncidentUrgencyMeta(incident, userLocation);
 
     return (
       <Marker
@@ -811,8 +926,8 @@ export default function MapScreen() {
             style={[
               localStyles.markerTrustRing,
               {
-                borderColor: trust.color,
-                backgroundColor: trust.lightColor,
+                borderColor: urgency.color,
+                backgroundColor: urgency.lightColor,
               },
             ]}
           >
@@ -832,13 +947,26 @@ export default function MapScreen() {
                 {trust.shortIcon}
               </Text>
             </View>
+
+            <View
+              style={[
+                localStyles.markerUrgencyBadge,
+                {
+                  backgroundColor: urgency.color,
+                },
+              ]}
+            >
+              <Text style={localStyles.markerUrgencyBadgeText}>
+                {urgency.shortLabel}
+              </Text>
+            </View>
           </View>
 
           <View
             style={[
               styles.markerPointer,
               {
-                backgroundColor: trust.color,
+                backgroundColor: urgency.color,
               },
             ]}
           />
@@ -956,8 +1084,9 @@ export default function MapScreen() {
           </View>
 
           <Text style={styles.headerSubtitle}>
-            Badge marker menunjukkan tingkat kepercayaan laporan. Long press
-            untuk report maksimal 20 meter dari posisi realtime Anda.
+            Ring marker menunjukkan urgency otomatis. Badge kanan menunjukkan
+            trust level. Long press untuk report maksimal 20 meter dari posisi
+            realtime Anda.
           </Text>
         </View>
 
@@ -966,6 +1095,14 @@ export default function MapScreen() {
             <Text style={styles.errorText}>{errorMessage}</Text>
           </View>
         ) : null}
+
+        <LocalIncidentBanner
+          visible={!!nearbyIncidentNotification}
+          incident={nearbyIncidentNotification?.incident ?? null}
+          distance={nearbyIncidentNotification?.distance ?? null}
+          onOpen={handleOpenLocalIncidentNotification}
+          onClose={handleCloseLocalIncidentNotification}
+        />
 
         <View style={styles.filterWrapper}>
           <FilterBar
@@ -990,7 +1127,8 @@ export default function MapScreen() {
           </Text>
 
           <Text style={styles.infoDescription}>
-            🟡 ? Pending • 🟢 ✓ Verified • 🔴 ! Disputed • 🟣 ↻ Perlu Update
+            Ring marker = urgency • Badge kanan = trust • LOW/MED/HIGH/CRT =
+            skor otomatis
           </Text>
 
           {nearestIncident.incident && nearestIncident.distance !== null ? (
@@ -1132,6 +1270,21 @@ const localStyles = StyleSheet.create({
   },
   markerTrustBadgeText: {
     fontSize: 12,
+    fontWeight: "900",
+    color: "#FFFFFF",
+  },
+  markerUrgencyBadge: {
+    position: "absolute",
+    bottom: -8,
+    left: -12,
+    borderRadius: 999,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+  },
+  markerUrgencyBadgeText: {
+    fontSize: 8,
     fontWeight: "900",
     color: "#FFFFFF",
   },

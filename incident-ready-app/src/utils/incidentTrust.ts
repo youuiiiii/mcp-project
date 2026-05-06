@@ -1,4 +1,5 @@
 import { IncidentReport } from "../types/incident";
+import { getIncidentNeedsUpdate } from "./incidentExpiry";
 
 export type IncidentTrustLevel =
   | "pending"
@@ -20,21 +21,6 @@ export type IncidentTrustMeta = {
 
 const VERIFIED_THRESHOLD = 2;
 const DISPUTED_THRESHOLD = 2;
-const NEEDS_UPDATE_AFTER_HOURS = 3;
-
-const getHoursSince = (date?: Date): number | null => {
-  if (!date) {
-    return null;
-  }
-
-  const time = date.getTime();
-
-  if (Number.isNaN(time)) {
-    return null;
-  }
-
-  return (Date.now() - time) / (1000 * 60 * 60);
-};
 
 export const INCIDENT_TRUST_META: Record<IncidentTrustLevel, IncidentTrustMeta> =
   {
@@ -76,7 +62,7 @@ export const INCIDENT_TRUST_META: Record<IncidentTrustLevel, IncidentTrustMeta> 
       label: "Perlu Update",
       shortLabel: "Update",
       description:
-        "Laporan aktif sudah cukup lama tanpa aktivitas terbaru. User sekitar disarankan memberi update kondisi.",
+        "Laporan aktif sudah melewati batas waktu update. User sekitar disarankan mengirim kondisi terbaru.",
       icon: "🔄",
       shortIcon: "↻",
       color: "#9333EA",
@@ -112,23 +98,15 @@ export const getIncidentTrustLevel = (
     return "disputed";
   }
 
+  if (getIncidentNeedsUpdate(incident)) {
+    return "needs_update";
+  }
+
   if (
     verificationCount >= VERIFIED_THRESHOLD &&
     verificationCount > disputeCount
   ) {
     return "verified";
-  }
-
-  const lastActivity =
-    incident.latestActivityAt ?? incident.updatedAt ?? incident.createdAt;
-
-  const hoursSinceLastActivity = getHoursSince(lastActivity);
-
-  if (
-    hoursSinceLastActivity !== null &&
-    hoursSinceLastActivity >= NEEDS_UPDATE_AFTER_HOURS
-  ) {
-    return "needs_update";
   }
 
   return "pending";

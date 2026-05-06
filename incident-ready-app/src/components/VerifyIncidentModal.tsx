@@ -1,6 +1,6 @@
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -24,6 +24,7 @@ import { uploadImageAsync } from "../services/cloudinaryService";
 import { createIncidentVerification } from "../services/incidentService";
 import {
   Coordinate,
+  IncidentConditionStatus,
   IncidentReport,
   VerificationType,
 } from "../types/incident";
@@ -52,7 +53,7 @@ const VERIFICATION_OPTIONS: {
   {
     value: "condition_update",
     label: "Update Kondisi",
-    description: "Kejadian ada, tetapi kondisinya sudah berubah.",
+    description: "Kejadian ada, tetapi kondisinya perlu diperbarui.",
     color: "#F59E0B",
   },
   {
@@ -60,6 +61,44 @@ const VERIFICATION_OPTIONS: {
     label: "Tidak Sesuai",
     description: "Saya tidak menemukan kejadian sesuai laporan.",
     color: "#DC2626",
+  },
+];
+
+const CONDITION_OPTIONS: {
+  value: IncidentConditionStatus;
+  label: string;
+  description: string;
+  color: string;
+}[] = [
+  {
+    value: "still_happening",
+    label: "Masih Terjadi",
+    description: "Kejadian masih berlangsung di lokasi.",
+    color: "#F59E0B",
+  },
+  {
+    value: "getting_worse",
+    label: "Semakin Parah",
+    description: "Kondisi terlihat semakin memburuk.",
+    color: "#DC2626",
+  },
+  {
+    value: "partially_resolved",
+    label: "Mulai Terkendali",
+    description: "Kondisi mulai membaik, tetapi belum selesai.",
+    color: "#2563EB",
+  },
+  {
+    value: "resolved_but_not_closed",
+    label: "Tampak Selesai",
+    description: "Kejadian tampak selesai, tetapi butuh konfirmasi lanjutan.",
+    color: "#16A34A",
+  },
+  {
+    value: "not_found",
+    label: "Tidak Ditemukan",
+    description: "Kejadian tidak ditemukan di sekitar lokasi.",
+    color: "#64748B",
   },
 ];
 
@@ -74,16 +113,47 @@ export default function VerifyIncidentModal({
 
   const [verificationType, setVerificationType] =
     useState<VerificationType>("valid");
+  const [conditionStatus, setConditionStatus] =
+    useState<IncidentConditionStatus>("still_happening");
   const [note, setNote] = useState("");
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const meta = incident ? getIncidentMeta(incident.type) : null;
+  const meta = incident ? getIncidentMeta(incident.subcategory ?? incident.type) : null;
 
   const actorKey = user?.email ?? user?.uid ?? null;
 
+  const conditionOptions = useMemo(() => {
+    if (verificationType === "invalid") {
+      return CONDITION_OPTIONS.filter((item) => item.value === "not_found");
+    }
+
+    if (verificationType === "valid") {
+      return CONDITION_OPTIONS.filter((item) =>
+        ["still_happening", "getting_worse"].includes(item.value)
+      );
+    }
+
+    return CONDITION_OPTIONS;
+  }, [verificationType]);
+
+  useEffect(() => {
+    if (verificationType === "invalid") {
+      setConditionStatus("not_found");
+      return;
+    }
+
+    if (verificationType === "valid") {
+      setConditionStatus("still_happening");
+      return;
+    }
+
+    setConditionStatus("still_happening");
+  }, [verificationType]);
+
   const resetForm = () => {
     setVerificationType("valid");
+    setConditionStatus("still_happening");
     setNote("");
     setImageUri(null);
     setSubmitting(false);
@@ -183,7 +253,7 @@ export default function VerifyIncidentModal({
 
   const validateForm = () => {
     if (!user || !actorKey) {
-      Alert.alert("Belum Login", "Silakan login untuk memverifikasi kejadian.");
+      Alert.alert("Belum Login", "Silakan login untuk mengirim update.");
       return false;
     }
 
@@ -200,25 +270,6 @@ export default function VerifyIncidentModal({
       return false;
     }
 
-    if (incident.reporterEmail === actorKey || incident.reportedBy === actorKey) {
-      Alert.alert(
-        "Tidak Bisa Verifikasi",
-        "Anda tidak dapat memverifikasi laporan yang Anda buat sendiri."
-      );
-      return false;
-    }
-
-    if (
-      incident.verifiedBy?.includes(actorKey) ||
-      incident.disputedBy?.includes(actorKey)
-    ) {
-      Alert.alert(
-        "Sudah Diverifikasi",
-        "Anda sudah pernah memberi verifikasi untuk incident ini."
-      );
-      return false;
-    }
-
     const distance = getDistanceInMeters(userLocation, {
       latitude: incident.latitude,
       longitude: incident.longitude,
@@ -227,9 +278,32 @@ export default function VerifyIncidentModal({
     if (distance > VERIFICATION_DISTANCE_METERS) {
       Alert.alert(
         "Terlalu Jauh dari Incident",
-        `Anda hanya bisa memverifikasi incident jika berada maksimal ${VERIFICATION_DISTANCE_METERS} meter dari lokasi kejadian.\n\nJarak Anda saat ini sekitar ${formatDistance(
+        `Anda hanya bisa mengirim verifikasi/update jika berada maksimal ${VERIFICATION_DISTANCE_METERS} meter dari lokasi kejadian.\n\nJarak Anda saat ini sekitar ${formatDistance(
           distance
         )}.`
+      );
+      return false;
+    }
+
+    const isOwnIncident =
+      incident.reporterEmail === actorKey || incident.reportedBy === actorKey;
+
+    const hasVerified =
+      incident.verifiedBy?.includes(actorKey) ||
+      incident.disputedBy?.includes(actorKey);
+
+    if (verificationType !== "condition_update" && isOwnIncident) {
+      Alert.alert(
+        "Tidak Bisa Verifikasi",
+        "Anda tidak dapat memverifikasi laporan yang Anda buat sendiri. Gunakan Update Kondisi jika ingin memperbarui kondisi."
+      );
+      return false;
+    }
+
+    if (verificationType !== "condition_update" && hasVerified) {
+      Alert.alert(
+        "Sudah Diverifikasi",
+        "Anda sudah pernah memberi verifikasi valid/tidak sesuai. Gunakan Update Kondisi untuk memberi informasi terbaru."
       );
       return false;
     }
@@ -237,7 +311,7 @@ export default function VerifyIncidentModal({
     if (!imageUri) {
       Alert.alert(
         "Bukti Foto Wajib",
-        "Verifikasi incident wajib menyertakan foto terbaru dari lokasi."
+        "Verifikasi atau update kondisi wajib menyertakan foto terbaru."
       );
       return false;
     }
@@ -274,6 +348,7 @@ export default function VerifyIncidentModal({
       await createIncidentVerification({
         reportId: incident.id,
         verificationType,
+        conditionStatus,
         note,
         imageUri: uploadedImageUrl,
         latitude: userLocation.latitude,
@@ -288,8 +363,8 @@ export default function VerifyIncidentModal({
       );
 
       Alert.alert(
-        "Verifikasi Terkirim",
-        "Bukti verifikasi berhasil dikirim ke thread incident.",
+        "Update Terkirim",
+        "Bukti foto dan catatan berhasil dikirim ke timeline incident.",
         [
           {
             text: "OK",
@@ -303,10 +378,10 @@ export default function VerifyIncidentModal({
       );
     } catch (error) {
       Alert.alert(
-        "Gagal Mengirim Verifikasi",
+        "Gagal Mengirim Update",
         error instanceof Error
           ? error.message
-          : "Terjadi kesalahan saat menyimpan verifikasi."
+          : "Terjadi kesalahan saat menyimpan update."
       );
     } finally {
       setSubmitting(false);
@@ -330,7 +405,7 @@ export default function VerifyIncidentModal({
 
             <View style={styles.header}>
               <View style={styles.headerText}>
-                <Text style={styles.title}>Verifikasi Incident</Text>
+                <Text style={styles.title}>Verifikasi / Update Kondisi</Text>
                 <Text style={styles.subtitle}>
                   Kirim bukti foto terbaru dan catatan kondisi di lokasi.
                 </Text>
@@ -376,7 +451,7 @@ export default function VerifyIncidentModal({
               ) : null}
 
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Jenis Verifikasi</Text>
+                <Text style={styles.sectionTitle}>Jenis Kontribusi</Text>
 
                 <View style={styles.optionList}>
                   {VERIFICATION_OPTIONS.map((item) => {
@@ -417,7 +492,46 @@ export default function VerifyIncidentModal({
               </View>
 
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Foto Bukti Verifikasi</Text>
+                <Text style={styles.sectionTitle}>Kondisi Terbaru</Text>
+
+                <View style={styles.conditionGrid}>
+                  {conditionOptions.map((item) => {
+                    const active = conditionStatus === item.value;
+
+                    return (
+                      <Pressable
+                        key={item.value}
+                        onPress={() => setConditionStatus(item.value)}
+                        style={({ pressed }) => [
+                          styles.conditionCard,
+                          active && {
+                            borderColor: item.color,
+                            backgroundColor: "#FFFFFF",
+                          },
+                          pressed && styles.pressed,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.conditionTitle,
+                            active && {
+                              color: item.color,
+                            },
+                          ]}
+                        >
+                          {item.label}
+                        </Text>
+                        <Text style={styles.conditionDescription}>
+                          {item.description}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Foto Bukti Terbaru</Text>
 
                 {imageUri ? (
                   <View style={styles.imageWrapper}>
@@ -474,7 +588,7 @@ export default function VerifyIncidentModal({
                 <TextInput
                   value={note}
                   onChangeText={setNote}
-                  placeholder="Contoh: Kejadian benar terjadi, jalan masih tertutup sebagian."
+                  placeholder="Contoh: Kejadian masih terjadi, satu jalur sudah bisa dilewati."
                   placeholderTextColor="#94A3B8"
                   style={[styles.input, styles.textArea]}
                   multiline
@@ -509,7 +623,7 @@ export default function VerifyIncidentModal({
                 {submitting ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.submitText}>Kirim Verifikasi</Text>
+                  <Text style={styles.submitText}>Kirim ke Timeline</Text>
                 )}
               </Pressable>
             </View>
@@ -664,6 +778,28 @@ const styles = StyleSheet.create({
   },
   optionDescription: {
     marginTop: 3,
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#64748B",
+    lineHeight: 17,
+  },
+  conditionGrid: {
+    gap: 10,
+  },
+  conditionCard: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 18,
+    padding: 14,
+  },
+  conditionTitle: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: "#0F172A",
+  },
+  conditionDescription: {
+    marginTop: 4,
     fontSize: 12,
     fontWeight: "600",
     color: "#64748B",

@@ -45,6 +45,13 @@ export type VerificationStatus = "pending" | "verified" | "disputed";
 
 export type VerificationType = "valid" | "invalid" | "condition_update";
 
+export type IncidentConditionStatus =
+  | "still_happening"
+  | "getting_worse"
+  | "partially_resolved"
+  | "resolved_but_not_closed"
+  | "not_found";
+
 export type Coordinate = {
   latitude: number;
   longitude: number;
@@ -91,6 +98,7 @@ export type IncidentVerification = {
   id: string;
   reportId: string;
   verificationType: VerificationType;
+  conditionStatus: IncidentConditionStatus;
   note: string;
   imageUri: string;
   latitude: number;
@@ -131,6 +139,7 @@ export type CreateIncidentPayload = {
 export type CreateIncidentVerificationPayload = {
   reportId: string;
   verificationType: VerificationType;
+  conditionStatus: IncidentConditionStatus;
   note: string;
   imageUri: string;
   latitude: number;

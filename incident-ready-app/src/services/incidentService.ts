@@ -27,6 +27,7 @@ import {
   CreateIncidentVerificationPayload,
   CreateSOSLogPayload,
   IncidentCategory,
+  IncidentConditionStatus,
   IncidentReply,
   IncidentReport,
   IncidentSeverity,
@@ -124,6 +125,20 @@ const normalizeVerificationType = (value: unknown): VerificationType => {
   return "condition_update";
 };
 
+const normalizeConditionStatus = (value: unknown): IncidentConditionStatus => {
+  if (
+    value === "still_happening" ||
+    value === "getting_worse" ||
+    value === "partially_resolved" ||
+    value === "resolved_but_not_closed" ||
+    value === "not_found"
+  ) {
+    return value;
+  }
+
+  return "still_happening";
+};
+
 const normalizeStringArray = (value: unknown): string[] => {
   if (!Array.isArray(value)) {
     return [];
@@ -211,6 +226,7 @@ const mapVerificationDocument = (
     id: snapshot.id,
     reportId,
     verificationType: normalizeVerificationType(data.verificationType),
+    conditionStatus: normalizeConditionStatus(data.conditionStatus),
     note: typeof data.note === "string" ? data.note : "",
     imageUri: typeof data.imageUri === "string" ? data.imageUri : "",
     latitude: typeof data.latitude === "number" ? data.latitude : 0,
@@ -472,6 +488,7 @@ export const createIncidentVerification = async (
 
     transaction.set(verificationRef, {
       verificationType: payload.verificationType,
+      conditionStatus: payload.conditionStatus,
       note: payload.note.trim(),
       imageUri: payload.imageUri,
       latitude: payload.latitude,
@@ -497,10 +514,6 @@ export const createIncidentVerification = async (
 
     if (payload.verificationType === "invalid") {
       updateData.disputedBy = arrayUnion(payload.actorKey);
-    }
-
-    if (payload.verificationType === "condition_update") {
-      updateData.verifiedBy = arrayUnion(payload.actorKey);
     }
 
     transaction.update(reportRef, updateData);
