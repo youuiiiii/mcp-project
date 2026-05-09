@@ -4,15 +4,13 @@ import { getAuth, getReactNativePersistence, initializeAuth } from "firebase/aut
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyABnlcP99Byil9UKV_AaMdeyiismApmuBg",
-  authDomain: "sigap-181fe.firebaseapp.com",
-  projectId: "sigap-181fe",
-  storageBucket: "sigap-181fe.firebasestorage.app",
-  messagingSenderId: "165978337318",
-  appId: "1:165978337318:web:2efbc481baa5dc819bf6e7",
-  measurementId: "G-9MECPR95V3",
+  apiKey: "AIzaSyCprOdxoq23MgBNHCLEMpyjD7feXxaKpz8",
+  authDomain: "mcp-project-4864d.firebaseapp.com",
+  projectId: "mcp-project-4864d",
+  storageBucket: "mcp-project-4864d.firebasestorage.app",
+  messagingSenderId: "898382057997",
+  appId: "1:898382057997:web:18f2d93c06ad6d5a687b44"
 };
-
 export const app =
   getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
