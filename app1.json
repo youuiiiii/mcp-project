@@ -1,0 +1,74 @@
+{
+  "expo": {
+    "name": "Incident Ready App",
+    "slug": "incident-ready-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "incidentreadyapp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.incidentready.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Aplikasi membutuhkan akses lokasi untuk menampilkan posisi Anda, mendeteksi incident terdekat, dan melakukan geo-tagging laporan.",
+        "NSCameraUsageDescription": "Aplikasi membutuhkan akses kamera untuk mengambil bukti foto saat membuat laporan incident.",
+        "NSPhotoLibraryUsageDescription": "Aplikasi membutuhkan akses galeri jika Anda ingin memilih bukti foto dari perangkat."
+      }
+    },
+    "android": {
+      "package": "com.incidentready.app",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "VIBRATE"
+      ],
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff",
+          "dark": {
+            "backgroundColor": "#000000"
+          }
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Aplikasi membutuhkan akses lokasi untuk menampilkan posisi Anda, mendeteksi incident terdekat, dan melakukan geo-tagging laporan."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Aplikasi membutuhkan akses kamera untuk mengambil bukti foto saat membuat laporan incident.",
+          "photosPermission": "Aplikasi membutuhkan akses galeri jika Anda ingin memilih bukti foto dari perangkat."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

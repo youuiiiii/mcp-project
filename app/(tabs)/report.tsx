@@ -1,12 +1,17 @@
+import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
-  StyleSheet, Alert, ScrollView, ActivityIndicator, Image
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text, TextInput, TouchableOpacity,
+  View
 } from 'react-native';
-import * as Location from 'expo-location';
-import * as ImagePicker from 'expo-image-picker';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import { db } from '../../src/services/firebase';
 
 const REPORT_RADIUS_METERS = 2;
 

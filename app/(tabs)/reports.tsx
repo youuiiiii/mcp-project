@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react';
-import {
-  View, Text, FlatList, TouchableOpacity,
-  StyleSheet, ActivityIndicator, Alert
-} from 'react-native';
 import * as Location from 'expo-location';
-import { collection, getDocs, doc, updateDoc, increment, deleteDoc, orderBy, query } from 'firebase/firestore';
-import { auth, db } from '../services/firebase';
+import { collection, deleteDoc, doc, getDocs, increment, orderBy, query, updateDoc } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator, Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { auth, db } from '../../src/services/firebase';
 
 const ADMIN_EMAIL = 'admin@sigap.com';
 const VERIFY_RADIUS_METERS = 10;
