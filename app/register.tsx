@@ -15,12 +15,13 @@ import {
 import { useAuth } from "../src/contexts/AuthContext";
 
 const HOME_ROUTE = "/(tabs)" as Href;
-const REGISTER_ROUTE = "/register" as Href;
+const LOGIN_ROUTE = "/login" as Href;
 
-export default function LoginScreen() {
+export default function RegisterScreen() {
   const router = useRouter();
-  const { user, loading, login } = useAuth();
+  const { user, loading, register } = useAuth();
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -30,29 +31,40 @@ export default function LoginScreen() {
     return <Redirect href={HOME_ROUTE} />;
   }
 
-  const handleLogin = async () => {
+  const handleRegister = async () => {
     try {
+      const cleanName = name.trim();
       const cleanEmail = email.trim().toLowerCase();
 
-      if (!cleanEmail) {
-        Alert.alert("Email wajib diisi", "Masukkan email akun Anda.");
+      if (!cleanName) {
+        Alert.alert("Nama wajib diisi", "Masukkan nama Anda.");
         return;
       }
 
-      if (!password) {
-        Alert.alert("Password wajib diisi", "Masukkan password akun Anda.");
+      if (cleanName.length < 3) {
+        Alert.alert("Nama terlalu pendek", "Nama minimal 3 karakter.");
+        return;
+      }
+
+      if (!cleanEmail) {
+        Alert.alert("Email wajib diisi", "Masukkan email Anda.");
+        return;
+      }
+
+      if (password.length < 6) {
+        Alert.alert("Password terlalu pendek", "Password minimal 6 karakter.");
         return;
       }
 
       setSubmitting(true);
 
-      await login(cleanEmail, password);
+      await register(cleanName, cleanEmail, password);
 
       router.replace(HOME_ROUTE);
     } catch (error) {
       Alert.alert(
-        "Login Gagal",
-        error instanceof Error ? error.message : "Email atau password salah."
+        "Register Gagal",
+        error instanceof Error ? error.message : "Gagal membuat akun."
       );
     } finally {
       setSubmitting(false);
@@ -77,17 +89,28 @@ export default function LoginScreen() {
 
         <View style={styles.card}>
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>INCIDENT READY APP</Text>
+            <Text style={styles.badgeText}>CREATE ACCOUNT</Text>
           </View>
 
-          <Text style={styles.title}>Masuk Akun</Text>
+          <Text style={styles.title}>Daftar Akun</Text>
 
           <Text style={styles.subtitle}>
-            Login untuk melaporkan kejadian, memantau crisis map, dan memakai
-            fitur SOS.
+            Buat akun untuk ikut berkontribusi dalam pelaporan kejadian sekitar.
           </Text>
 
           <View style={styles.form}>
+            <View>
+              <Text style={styles.label}>Nama</Text>
+              <TextInput
+                value={name}
+                onChangeText={setName}
+                placeholder="Nama lengkap"
+                placeholderTextColor="#94A3B8"
+                style={styles.input}
+                editable={!submitting}
+              />
+            </View>
+
             <View>
               <Text style={styles.label}>Email</Text>
               <TextInput
@@ -107,7 +130,7 @@ export default function LoginScreen() {
               <TextInput
                 value={password}
                 onChangeText={setPassword}
-                placeholder="Masukkan password"
+                placeholder="Minimal 6 karakter"
                 placeholderTextColor="#94A3B8"
                 secureTextEntry
                 style={styles.input}
@@ -117,7 +140,7 @@ export default function LoginScreen() {
 
             <Pressable
               disabled={submitting}
-              onPress={handleLogin}
+              onPress={handleRegister}
               style={({ pressed }) => [
                 styles.button,
                 pressed && styles.buttonPressed,
@@ -127,17 +150,17 @@ export default function LoginScreen() {
               {submitting ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.buttonText}>Masuk</Text>
+                <Text style={styles.buttonText}>Daftar</Text>
               )}
             </Pressable>
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Belum punya akun?</Text>
+            <Text style={styles.footerText}>Sudah punya akun?</Text>
 
-            <Link href={REGISTER_ROUTE} asChild>
+            <Link href={LOGIN_ROUTE} asChild>
               <Pressable disabled={submitting}>
-                <Text style={styles.footerLink}> Daftar sekarang</Text>
+                <Text style={styles.footerLink}> Login</Text>
               </Pressable>
             </Link>
           </View>
@@ -191,7 +214,7 @@ const styles = StyleSheet.create({
   },
   badge: {
     alignSelf: "flex-start",
-    backgroundColor: "#FEE2E2",
+    backgroundColor: "#DBEAFE",
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 999,
@@ -200,7 +223,7 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 12,
     fontWeight: "900",
-    color: "#B91C1C",
+    color: "#2563EB",
   },
   title: {
     fontSize: 30,

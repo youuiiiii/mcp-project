@@ -14,7 +14,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { auth } from "../constants/firebaseConfig";
+import { auth } from "../services/firebase";
 
 type AuthContextValue = {
   user: User | null;

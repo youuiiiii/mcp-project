@@ -20,7 +20,7 @@ import {
   isIncidentCategory,
   isIncidentType,
 } from "../constants/incident";
-import { db } from "../constants/firebaseConfig";
+import { db } from "../services/firebase";
 import {
   CreateIncidentPayload,
   CreateIncidentReplyPayload,

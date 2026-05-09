@@ -1,6 +1,9 @@
+import { Href, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+
 import LoadingState from "../../src/components/ui/LoadingState";
+import { useAuth } from "../../src/contexts/AuthContext";
 import {
   subscribeToIncidents,
   subscribeToSOSLogs,
@@ -8,13 +11,12 @@ import {
 import { profileStyles as styles } from "../../src/styles/profileStyles";
 import { IncidentReport, SOSLog } from "../../src/types/incident";
 
-const USER_PROFILE = {
-  name: "Demo User",
-  email: "demo.user@incident-ready.app",
-  role: "Community Reporter",
-};
+const LOGIN_ROUTE = "/login" as Href;
 
 export default function ProfileScreen() {
+  const router = useRouter();
+  const { user, logout } = useAuth();
+
   const [reports, setReports] = useState<IncidentReport[]>([]);
   const [sosLogs, setSosLogs] = useState<SOSLog[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
@@ -54,6 +56,23 @@ export default function ProfileScreen() {
 
   const loading = loadingReports || loadingSOS;
 
+  const userName = useMemo(() => {
+    return user?.displayName || "SIGAP User";
+  }, [user]);
+
+  const userEmail = useMemo(() => {
+    return user?.email || "-";
+  }, [user]);
+
+  const userInitial = useMemo(() => {
+    return userName
+      .split(" ")
+      .map((item) => item.charAt(0))
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+  }, [userName]);
+
   const activeReports = useMemo(() => {
     return reports.filter((report) => report.status === "active");
   }, [reports]);
@@ -62,16 +81,26 @@ export default function ProfileScreen() {
     return reports.filter((report) => report.status === "resolved");
   }, [reports]);
 
-  const highSeverityReports = useMemo(() => {
-    return reports.filter((report) => report.severity === "high");
-  }, [reports]);
-
   const handleLogout = () => {
-    Alert.alert(
-      "Logout",
-      "Fitur login/logout asli belum diaktifkan. Ini masih mode demo tanpa Firebase Auth.",
-      [{ text: "OK" }]
-    );
+    Alert.alert("Logout", "Apakah kamu yakin ingin keluar?", [
+      {
+        text: "Batal",
+        style: "cancel",
+      },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await logout();
+            router.replace(LOGIN_ROUTE);
+          } catch (error) {
+            console.error("Logout error:", error);
+            Alert.alert("Logout Gagal", "Terjadi kesalahan saat logout.");
+          }
+        },
+      },
+    ]);
   };
 
   if (loading) {
@@ -97,7 +126,7 @@ export default function ProfileScreen() {
 
         <Text style={styles.subtitle}>
           Informasi pengguna, ringkasan kontribusi laporan, dan status aplikasi
-          Incident Ready App.
+          SIGAP.
         </Text>
       </View>
 
@@ -110,21 +139,14 @@ export default function ProfileScreen() {
 
       <View style={styles.profileCard}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {USER_PROFILE.name
-              .split(" ")
-              .map((item) => item.charAt(0))
-              .join("")
-              .slice(0, 2)
-              .toUpperCase()}
-          </Text>
+          <Text style={styles.avatarText}>{userInitial}</Text>
         </View>
 
-        <Text style={styles.userName}>{USER_PROFILE.name}</Text>
-        <Text style={styles.userEmail}>{USER_PROFILE.email}</Text>
+        <Text style={styles.userName}>{userName}</Text>
+        <Text style={styles.userEmail}>{userEmail}</Text>
 
         <View style={styles.userRole}>
-          <Text style={styles.userRoleText}>{USER_PROFILE.role}</Text>
+          <Text style={styles.userRoleText}>Community Reporter</Text>
         </View>
       </View>
 
@@ -169,7 +191,7 @@ export default function ProfileScreen() {
 
             <View style={styles.appInfo}>
               <Text style={styles.appLabel}>Application Name</Text>
-              <Text style={styles.appValue}>Incident Ready App</Text>
+              <Text style={styles.appValue}>SIGAP</Text>
             </View>
           </View>
 
@@ -180,7 +202,9 @@ export default function ProfileScreen() {
 
             <View style={styles.appInfo}>
               <Text style={styles.appLabel}>Core Feature</Text>
-              <Text style={styles.appValue}>Crisis Map & Incident Reporting</Text>
+              <Text style={styles.appValue}>
+                Disaster Monitoring & Incident Reporting
+              </Text>
             </View>
           </View>
 
@@ -213,7 +237,7 @@ export default function ProfileScreen() {
 
             <View style={styles.appInfo}>
               <Text style={styles.appLabel}>Version</Text>
-              <Text style={styles.appValue}>1.0.0 Demo</Text>
+              <Text style={styles.appValue}>1.0.0</Text>
             </View>
           </View>
         </View>
