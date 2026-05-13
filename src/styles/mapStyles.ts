@@ -1,9 +1,18 @@
 import { StyleSheet } from "react-native";
 
+import { colors } from "../theme/colors";
+import { radius, shadow, spacing } from "../theme/layout";
+import { typography } from "../theme/typography";
+
+const MAP_TOP_OFFSET = 52;
+const MAP_HORIZONTAL_PADDING = spacing.lg;
+const MAP_BOTTOM_OFFSET = 28;
+const SOS_BOTTOM_OFFSET = 210;
+
 export const mapStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
 
   map: {
@@ -12,117 +21,120 @@ export const mapStyles = StyleSheet.create({
 
   topOverlay: {
     position: "absolute",
-    top: 52,
-    left: 16,
-    right: 16,
-    gap: 10,
+    top: MAP_TOP_OFFSET,
+    left: MAP_HORIZONTAL_PADDING,
+    right: MAP_HORIZONTAL_PADDING,
+    gap: spacing.sm,
   },
 
   headerCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius["2xl"],
+    padding: spacing.lg,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#0F172A",
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    borderColor: colors.border,
+    ...shadow.card,
   },
 
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: spacing.md,
   },
 
   headerTitle: {
     fontSize: 18,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
   },
 
   headerSubtitle: {
-    marginTop: 5,
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#64748B",
-    lineHeight: 18,
+    marginTop: spacing.xs,
+    ...typography.caption,
+    color: colors.textMuted,
   },
 
   liveBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#DCFCE7",
-    paddingHorizontal: 10,
+    backgroundColor: colors.successSoft,
+    paddingHorizontal: spacing.md,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: radius.full,
   },
 
   liveDot: {
     width: 7,
     height: 7,
-    borderRadius: 999,
-    backgroundColor: "#16A34A",
+    borderRadius: radius.full,
+    backgroundColor: colors.success,
   },
 
   liveText: {
     fontSize: 10,
     fontWeight: "900",
-    color: "#16A34A",
+    color: colors.success,
   },
 
   filterWrapper: {
-    marginHorizontal: -16,
+    marginHorizontal: -MAP_HORIZONTAL_PADDING,
+  },
+
+  errorBanner: {
+    backgroundColor: colors.dangerSoft,
+    borderRadius: radius.xl,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+  },
+
+  errorText: {
+    ...typography.caption,
+    color: colors.primaryDark,
+  },
+
+  sosWrapper: {
+    position: "absolute",
+    right: spacing.lg,
+    bottom: SOS_BOTTOM_OFFSET,
+    zIndex: 20,
   },
 
   bottomOverlay: {
     position: "absolute",
-    left: 16,
-    right: 16,
-    bottom: 28,
+    left: MAP_HORIZONTAL_PADDING,
+    right: MAP_HORIZONTAL_PADDING,
+    bottom: MAP_BOTTOM_OFFSET,
   },
 
   infoCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius["2xl"],
+    padding: spacing.lg,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#0F172A",
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    borderColor: colors.border,
+    ...shadow.card,
   },
 
   infoTitle: {
     fontSize: 15,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
   },
 
   infoDescription: {
     marginTop: 6,
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#64748B",
-    lineHeight: 18,
+    ...typography.caption,
+    color: colors.textMuted,
   },
 
   warningCard: {
-    marginTop: 10,
-    backgroundColor: "#FEF2F2",
-    borderRadius: 20,
-    padding: 14,
+    marginTop: spacing.sm,
+    backgroundColor: colors.dangerSoft,
+    borderRadius: radius.xl,
+    padding: spacing.md,
     borderWidth: 1,
     borderColor: "#FECACA",
   },
@@ -134,124 +146,8 @@ export const mapStyles = StyleSheet.create({
   },
 
   warningText: {
-    marginTop: 5,
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#B91C1C",
-    lineHeight: 18,
-  },
-
-  errorBanner: {
-    backgroundColor: "#FEF2F2",
-    borderRadius: 18,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#FECACA",
-  },
-
-  errorText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#B91C1C",
-    lineHeight: 18,
-  },
-
-  markerContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  markerBubble: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 3,
-    borderColor: "#FFFFFF",
-    shadowColor: "#0F172A",
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-
-  markerIcon: {
-    fontSize: 21,
-  },
-
-  markerPointer: {
-    width: 10,
-    height: 10,
-    marginTop: -4,
-    transform: [{ rotate: "45deg" }],
-    borderRightWidth: 2,
-    borderBottomWidth: 2,
-    borderColor: "#FFFFFF",
-  },
-
-  clusterMarker: {
-    minWidth: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#0F766E",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 3,
-    borderColor: "#FFFFFF",
-    paddingHorizontal: 8,
-    shadowColor: "#0F172A",
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-
-  clusterText: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: "#FFFFFF",
-  },
-
-  userMarker: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: "#2563EB",
-    borderWidth: 4,
-    borderColor: "#DBEAFE",
-  },
-
-  draftMarker: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  draftBubble: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#0F172A",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 3,
-    borderColor: "#FFFFFF",
-  },
-
-  draftIcon: {
-    fontSize: 22,
-  },
-
-  sosWrapper: {
-    position: "absolute",
-    right: 18,
-    bottom: 210,
-    zIndex: 20,
+    marginTop: spacing.xs,
+    ...typography.caption,
+    color: colors.primaryDark,
   },
 });
