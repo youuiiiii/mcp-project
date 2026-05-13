@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -7,13 +8,80 @@ import { getIncidentMeta } from "../../src/constants/incident";
 import { subscribeToIncidents } from "../../src/services/incidentService";
 import { IncidentReport } from "../../src/types/incident";
 
+type AppIconName = keyof typeof Ionicons.glyphMap;
+
 type DistributionItem = {
   label: string;
   count: number;
   percentage: number;
-  icon?: string;
+  icon?: AppIconName;
   color?: string;
 };
+
+function getIncidentIcon(report: IncidentReport): AppIconName {
+  const type = report.subcategory ?? report.type;
+
+  switch (type) {
+    case "flood":
+      return "water";
+
+    case "earthquake":
+      return "pulse";
+
+    case "landslide":
+    case "collapsed_building":
+      return "trail-sign";
+
+    case "volcanic_eruption":
+      return "flame";
+
+    case "strong_wind":
+      return "cloudy";
+
+    case "tsunami":
+      return "radio";
+
+    case "fire":
+    case "building_fire":
+    case "vehicle_fire":
+    case "land_fire":
+    case "electrical_fire":
+      return "flame";
+
+    case "traffic_accident":
+      return "car-sport";
+
+    case "fallen_tree":
+      return "leaf";
+
+    case "road_block":
+    case "damaged_road":
+      return "construct";
+
+    case "fallen_power_line":
+      return "flash";
+
+    case "crime":
+    case "theft":
+      return "shield";
+
+    case "brawl":
+    case "risky_crowd":
+    case "mob_violence":
+    case "public_disturbance":
+      return "people";
+
+    case "medical":
+    case "fainted_person":
+    case "work_accident":
+    case "drowning":
+    case "evacuation_needed":
+      return "medkit";
+
+    default:
+      return "alert-circle";
+  }
+}
 
 export default function AnalyticsScreen() {
   const [reports, setReports] = useState<IncidentReport[]>([]);
@@ -88,18 +156,21 @@ export default function AnalyticsScreen() {
         count: low,
         percentage: Math.round((low / total) * 100),
         color: "#16A34A",
+        icon: "checkmark-circle",
       },
       {
         label: "Medium",
         count: medium,
         percentage: Math.round((medium / total) * 100),
         color: "#F59E0B",
+        icon: "warning",
       },
       {
         label: "High",
         count: high,
         percentage: Math.round((high / total) * 100),
         color: "#DC2626",
+        icon: "alert-circle",
       },
     ];
   }, [reports]);
@@ -109,7 +180,7 @@ export default function AnalyticsScreen() {
       string,
       {
         count: number;
-        icon: string;
+        icon: AppIconName;
         color: string;
       }
     >();
@@ -120,7 +191,7 @@ export default function AnalyticsScreen() {
 
       counter.set(meta.label, {
         count: (existing?.count ?? 0) + 1,
-        icon: meta.icon,
+        icon: getIncidentIcon(report),
         color: meta.color,
       });
     });
@@ -179,6 +250,7 @@ export default function AnalyticsScreen() {
     >
       <View style={styles.hero}>
         <View style={styles.badge}>
+          <Ionicons name="stats-chart" size={14} color="#1D4ED8" />
           <Text style={styles.badgeText}>REALTIME ANALYTICS</Text>
         </View>
 
@@ -206,51 +278,60 @@ export default function AnalyticsScreen() {
       ) : (
         <>
           <View style={styles.summaryGrid}>
-            <View style={styles.summaryCard}>
-              <Text style={styles.summaryIcon}>📍</Text>
-              <Text style={styles.summaryValue}>{reports.length}</Text>
-              <Text style={styles.summaryLabel}>Total Reports</Text>
-            </View>
+            <SummaryCard
+              icon="location"
+              value={reports.length}
+              label="Total Reports"
+              color="#2563EB"
+              backgroundColor="#DBEAFE"
+            />
 
-            <View style={styles.summaryCard}>
-              <Text style={styles.summaryIcon}>🚨</Text>
-              <Text style={styles.summaryValue}>{activeReports.length}</Text>
-              <Text style={styles.summaryLabel}>Active</Text>
-            </View>
+            <SummaryCard
+              icon="radio"
+              value={activeReports.length}
+              label="Active"
+              color="#DC2626"
+              backgroundColor="#FEE2E2"
+            />
 
-            <View style={styles.summaryCard}>
-              <Text style={styles.summaryIcon}>✅</Text>
-              <Text style={styles.summaryValue}>{resolvedReports.length}</Text>
-              <Text style={styles.summaryLabel}>Resolved</Text>
-            </View>
+            <SummaryCard
+              icon="checkmark-circle"
+              value={resolvedReports.length}
+              label="Resolved"
+              color="#16A34A"
+              backgroundColor="#DCFCE7"
+            />
 
-            <View style={styles.summaryCard}>
-              <Text style={styles.summaryIcon}>🔥</Text>
-              <Text style={styles.summaryValue}>
-                {highSeverityReports.length}
-              </Text>
-              <Text style={styles.summaryLabel}>High Severity</Text>
-            </View>
+            <SummaryCard
+              icon="alert-circle"
+              value={highSeverityReports.length}
+              label="High Severity"
+              color="#D97706"
+              backgroundColor="#FEF3C7"
+            />
           </View>
 
           <View style={styles.metricRow}>
-            <View style={styles.metricCard}>
-              <Text style={styles.metricLabel}>Verified</Text>
-              <Text style={styles.metricValue}>{verifiedReports.length}</Text>
-              <Text style={styles.metricText}>community verified</Text>
-            </View>
+            <MetricCard
+              label="Verified"
+              value={verifiedReports.length}
+              text="community verified"
+              icon="shield-checkmark"
+            />
 
-            <View style={styles.metricCard}>
-              <Text style={styles.metricLabel}>Disputed</Text>
-              <Text style={styles.metricValue}>{disputedReports.length}</Text>
-              <Text style={styles.metricText}>needs review</Text>
-            </View>
+            <MetricCard
+              label="Disputed"
+              value={disputedReports.length}
+              text="needs review"
+              icon="help-circle"
+            />
 
-            <View style={styles.metricCard}>
-              <Text style={styles.metricLabel}>Avg Resolve</Text>
-              <Text style={styles.metricValue}>{averageResolutionHours}</Text>
-              <Text style={styles.metricText}>resolution time</Text>
-            </View>
+            <MetricCard
+              label="Avg Resolve"
+              value={averageResolutionHours}
+              text="resolution time"
+              icon="time"
+            />
           </View>
 
           <View style={styles.section}>
@@ -288,16 +369,20 @@ export default function AnalyticsScreen() {
           </View>
 
           <View style={styles.activityCard}>
-            <View>
+            <View style={styles.activityIcon}>
+              <Ionicons name="chatbubbles" size={24} color="#1D4ED8" />
+            </View>
+
+            <View style={styles.activityContent}>
               <Text style={styles.activityLabel}>Community Activity</Text>
               <Text style={styles.activityTitle}>
                 {totalEvidence} evidence · {totalReplies} replies
               </Text>
-            </View>
 
-            <Text style={styles.activityText}>
-              Bukti foto dan diskusi membantu meningkatkan validitas laporan.
-            </Text>
+              <Text style={styles.activityText}>
+                Bukti foto dan diskusi membantu meningkatkan validitas laporan.
+              </Text>
+            </View>
           </View>
 
           <View style={styles.section}>
@@ -309,6 +394,7 @@ export default function AnalyticsScreen() {
             <View style={styles.latestList}>
               {latestReports.map((report) => {
                 const meta = getIncidentMeta(report.subcategory ?? report.type);
+                const icon = getIncidentIcon(report);
 
                 return (
                   <View key={report.id} style={styles.latestCard}>
@@ -320,7 +406,7 @@ export default function AnalyticsScreen() {
                         },
                       ]}
                     >
-                      <Text style={styles.latestIconText}>{meta.icon}</Text>
+                      <Ionicons name={icon} size={22} color={meta.color} />
                     </View>
 
                     <View style={styles.latestInfo}>
@@ -363,13 +449,73 @@ export default function AnalyticsScreen() {
   );
 }
 
+function SummaryCard({
+  icon,
+  value,
+  label,
+  color,
+  backgroundColor,
+}: {
+  icon: AppIconName;
+  value: number;
+  label: string;
+  color: string;
+  backgroundColor: string;
+}) {
+  return (
+    <View style={styles.summaryCard}>
+      <View
+        style={[
+          styles.summaryIconWrapper,
+          {
+            backgroundColor,
+          },
+        ]}
+      >
+        <Ionicons name={icon} size={23} color={color} />
+      </View>
+
+      <Text style={styles.summaryValue}>{value}</Text>
+      <Text style={styles.summaryLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+  text,
+  icon,
+}: {
+  label: string;
+  value: number | string;
+  text: string;
+  icon: AppIconName;
+}) {
+  return (
+    <View style={styles.metricCard}>
+      <View style={styles.metricHeader}>
+        <Ionicons name={icon} size={22} color="#FFFFFF" />
+        <Text style={styles.metricLabel}>{label}</Text>
+      </View>
+
+      <Text style={styles.metricValue}>{value}</Text>
+      <Text style={styles.metricText}>{text}</Text>
+    </View>
+  );
+}
+
 function DistributionRow({ item }: { item: DistributionItem }) {
   return (
     <View style={styles.distributionRow}>
       <View style={styles.distributionTop}>
         <View style={styles.distributionLabelWrap}>
           {item.icon ? (
-            <Text style={styles.distributionIcon}>{item.icon}</Text>
+            <Ionicons
+              name={item.icon}
+              size={18}
+              color={item.color ?? "#0F172A"}
+            />
           ) : null}
 
           <Text style={styles.distributionLabel}>{item.label}</Text>
@@ -415,6 +561,9 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 999,
     marginBottom: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
   },
   badgeText: {
     fontSize: 11,
@@ -477,8 +626,12 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 2,
   },
-  summaryIcon: {
-    fontSize: 26,
+  summaryIconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 12,
   },
   summaryValue: {
@@ -501,11 +654,16 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 16,
   },
+  metricHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
   metricLabel: {
     fontSize: 12,
     fontWeight: "900",
     color: "#94A3B8",
-    marginBottom: 4,
   },
   metricValue: {
     fontSize: 25,
@@ -563,9 +721,6 @@ const styles = StyleSheet.create({
     gap: 8,
     flex: 1,
   },
-  distributionIcon: {
-    fontSize: 18,
-  },
   distributionLabel: {
     flex: 1,
     fontSize: 14,
@@ -594,6 +749,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#BFDBFE",
     marginBottom: 22,
+    flexDirection: "row",
+    gap: 12,
+  },
+  activityIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    backgroundColor: "#DBEAFE",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  activityContent: {
+    flex: 1,
   },
   activityLabel: {
     fontSize: 12,
@@ -632,9 +800,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-  },
-  latestIconText: {
-    fontSize: 22,
   },
   latestInfo: {
     flex: 1,

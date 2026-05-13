@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Href, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -6,7 +7,6 @@ import { subscribeToIncidents } from "../../services/incidentService";
 import { homeStyles as styles } from "../../styles/homeStyles";
 import { IncidentReport } from "../../types/incident";
 import IncidentCard from "../IncidentCard";
-import EmptyState from "../ui/EmptyState";
 import LoadingState from "../ui/LoadingState";
 
 const MAP_ROUTE = "/(tabs)/map" as Href;
@@ -63,10 +63,13 @@ export default function HomeLatestReportsSection() {
     <View style={localStyles.wrapper}>
       <View style={localStyles.statusCard}>
         <View style={localStyles.statusHeader}>
-          <View>
+          <View style={localStyles.statusTitleGroup}>
             <Text style={localStyles.statusLabel}>Area Status</Text>
+
             <Text style={localStyles.statusTitle}>
-              {activeReports.length > 0 ? "Active Monitoring" : "No Active Incident"}
+              {activeReports.length > 0
+                ? "Active Monitoring"
+                : "No Active Incident"}
             </Text>
           </View>
 
@@ -89,6 +92,7 @@ export default function HomeLatestReportsSection() {
             pressed && localStyles.buttonPressed,
           ]}
         >
+          <Ionicons name="map" size={18} color="#0F172A" />
           <Text style={localStyles.mapButtonText}>Open Crisis Map</Text>
         </Pressable>
       </View>
@@ -102,22 +106,45 @@ export default function HomeLatestReportsSection() {
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <View>
+          <View style={localStyles.sectionTitleGroup}>
             <Text style={styles.sectionTitle}>Latest Community Reports</Text>
             <Text style={styles.sectionSubtitle}>3 laporan terbaru</Text>
           </View>
 
-          <Pressable onPress={handleOpenMap}>
+          <Pressable
+            onPress={handleOpenMap}
+            style={({ pressed }) => [
+              localStyles.viewMapButton,
+              pressed && localStyles.viewMapButtonPressed,
+            ]}
+          >
             <Text style={localStyles.viewMapText}>View Map</Text>
+            <Ionicons name="chevron-forward" size={15} color="#DC2626" />
           </Pressable>
         </View>
 
         {reports.length === 0 ? (
-          <EmptyState
-            icon="🗺️"
-            title="Belum ada laporan"
-            message="Laporan warga akan muncul di sini setelah dikirim."
-          />
+          <View style={localStyles.emptyCard}>
+            <View style={localStyles.emptyIcon}>
+              <Ionicons name="map-outline" size={28} color="#64748B" />
+            </View>
+
+            <Text style={localStyles.emptyTitle}>Belum ada laporan</Text>
+
+            <Text style={localStyles.emptyText}>
+              Laporan warga akan muncul di sini setelah dikirim.
+            </Text>
+
+            <Pressable
+              onPress={handleOpenMap}
+              style={({ pressed }) => [
+                localStyles.emptyButton,
+                pressed && localStyles.buttonPressed,
+              ]}
+            >
+              <Text style={localStyles.emptyButtonText}>Open Map</Text>
+            </Pressable>
+          </View>
         ) : (
           <View style={styles.latestList}>
             {latestReports.map((incident) => (
@@ -158,6 +185,9 @@ const localStyles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 14,
     marginBottom: 12,
+  },
+  statusTitleGroup: {
+    flex: 1,
   },
   statusLabel: {
     fontSize: 12,
@@ -202,6 +232,9 @@ const localStyles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 13,
     alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
   },
   mapButtonText: {
     fontSize: 14,
@@ -212,9 +245,62 @@ const localStyles = StyleSheet.create({
     opacity: 0.88,
     transform: [{ scale: 0.99 }],
   },
+  sectionTitleGroup: {
+    flex: 1,
+  },
+  viewMapButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+  },
+  viewMapButtonPressed: {
+    opacity: 0.75,
+  },
   viewMapText: {
     fontSize: 13,
     fontWeight: "900",
     color: "#DC2626",
+  },
+  emptyCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 26,
+    padding: 22,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    alignItems: "center",
+  },
+  emptyIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 22,
+    backgroundColor: "#F1F5F9",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#0F172A",
+  },
+  emptyText: {
+    marginTop: 6,
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#64748B",
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  emptyButton: {
+    backgroundColor: "#0F172A",
+    borderRadius: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 11,
+  },
+  emptyButtonText: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: "#FFFFFF",
   },
 });

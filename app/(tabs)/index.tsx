@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Href, useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -10,12 +11,55 @@ const REPORT_ROUTE = "/(tabs)/report" as Href;
 const ANALYTICS_ROUTE = "/(tabs)/analytics" as Href;
 const PROFILE_ROUTE = "/(tabs)/profile" as Href;
 
+type QuickAction = {
+  title: string;
+  description: string;
+  route: Href;
+  icon: keyof typeof Ionicons.glyphMap;
+  primary?: boolean;
+};
+
+const QUICK_ACTIONS: QuickAction[] = [
+  {
+    title: "Report Incident",
+    description: "Buat laporan kejadian baru",
+    route: REPORT_ROUTE,
+    icon: "add-circle",
+    primary: true,
+  },
+  {
+    title: "Open Map",
+    description: "Pantau lokasi incident",
+    route: MAP_ROUTE,
+    icon: "map",
+  },
+  {
+    title: "Analytics",
+    description: "Lihat ringkasan data",
+    route: ANALYTICS_ROUTE,
+    icon: "stats-chart",
+  },
+  {
+    title: "Profile",
+    description: "Akun dan kontribusi",
+    route: PROFILE_ROUTE,
+    icon: "person",
+  },
+];
+
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
 
   const displayName =
     user?.displayName || user?.email?.split("@")[0] || "Community Reporter";
+
+  const initials = displayName
+    .split(" ")
+    .map((item) => item.charAt(0))
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <ScrollView
@@ -25,9 +69,11 @@ export default function HomeScreen() {
     >
       <View style={styles.hero}>
         <View style={styles.heroTop}>
-          <View>
+          <View style={styles.userInfo}>
             <Text style={styles.greeting}>Welcome back,</Text>
-            <Text style={styles.userName}>{displayName}</Text>
+            <Text style={styles.userName} numberOfLines={1}>
+              {displayName}
+            </Text>
           </View>
 
           <Pressable
@@ -37,14 +83,7 @@ export default function HomeScreen() {
               pressed && styles.pressed,
             ]}
           >
-            <Text style={styles.avatarText}>
-              {displayName
-                .split(" ")
-                .map((item) => item.charAt(0))
-                .join("")
-                .slice(0, 2)
-                .toUpperCase()}
-            </Text>
+            <Text style={styles.avatarText}>{initials}</Text>
           </Pressable>
         </View>
 
@@ -56,7 +95,9 @@ export default function HomeScreen() {
         </Text>
 
         <View style={styles.heroStatusCard}>
-          <View style={styles.statusDot} />
+          <View style={styles.statusIcon}>
+            <Ionicons name="radio" size={22} color="#22C55E" />
+          </View>
 
           <View style={styles.statusContent}>
             <Text style={styles.statusTitle}>Monitoring active</Text>
@@ -75,47 +116,50 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.quickGrid}>
-          <Pressable
-            onPress={() => router.push(REPORT_ROUTE)}
-            style={({ pressed }) => [
-              styles.quickCard,
-              styles.quickCardPrimary,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Text style={styles.quickIcon}>🚨</Text>
-            <Text style={styles.quickTitlePrimary}>Report Incident</Text>
-            <Text style={styles.quickTextPrimary}>
-              Buat laporan kejadian baru
-            </Text>
-          </Pressable>
+          {QUICK_ACTIONS.map((item) => (
+            <Pressable
+              key={item.title}
+              onPress={() => router.push(item.route)}
+              style={({ pressed }) => [
+                styles.quickCard,
+                item.primary && styles.quickCardPrimary,
+                pressed && styles.pressed,
+              ]}
+            >
+              <View
+                style={[
+                  styles.quickIconWrapper,
+                  item.primary && styles.quickIconWrapperPrimary,
+                ]}
+              >
+                <Ionicons
+                  name={item.icon}
+                  size={26}
+                  color={item.primary ? "#FFFFFF" : "#DC2626"}
+                />
+              </View>
 
-          <Pressable
-            onPress={() => router.push(MAP_ROUTE)}
-            style={({ pressed }) => [styles.quickCard, pressed && styles.pressed]}
-          >
-            <Text style={styles.quickIcon}>🗺️</Text>
-            <Text style={styles.quickTitle}>Open Map</Text>
-            <Text style={styles.quickText}>Pantau lokasi incident</Text>
-          </Pressable>
+              <View>
+                <Text
+                  style={[
+                    styles.quickTitle,
+                    item.primary && styles.quickTitlePrimary,
+                  ]}
+                >
+                  {item.title}
+                </Text>
 
-          <Pressable
-            onPress={() => router.push(ANALYTICS_ROUTE)}
-            style={({ pressed }) => [styles.quickCard, pressed && styles.pressed]}
-          >
-            <Text style={styles.quickIcon}>📊</Text>
-            <Text style={styles.quickTitle}>Analytics</Text>
-            <Text style={styles.quickText}>Lihat ringkasan data</Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => router.push(PROFILE_ROUTE)}
-            style={({ pressed }) => [styles.quickCard, pressed && styles.pressed]}
-          >
-            <Text style={styles.quickIcon}>👤</Text>
-            <Text style={styles.quickTitle}>Profile</Text>
-            <Text style={styles.quickText}>Akun dan kontribusi</Text>
-          </Pressable>
+                <Text
+                  style={[
+                    styles.quickText,
+                    item.primary && styles.quickTextPrimary,
+                  ]}
+                >
+                  {item.description}
+                </Text>
+              </View>
+            </Pressable>
+          ))}
         </View>
       </View>
 
@@ -156,6 +200,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 22,
     gap: 14,
+  },
+  userInfo: {
+    flex: 1,
   },
   greeting: {
     fontSize: 13,
@@ -203,12 +250,13 @@ const styles = StyleSheet.create({
     gap: 12,
     alignItems: "flex-start",
   },
-  statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#22C55E",
-    marginTop: 5,
+  statusIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 16,
+    backgroundColor: "#064E3B",
+    alignItems: "center",
+    justifyContent: "center",
   },
   statusContent: {
     flex: 1,
@@ -254,7 +302,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    minHeight: 142,
+    minHeight: 150,
     justifyContent: "space-between",
     shadowColor: "#0F172A",
     shadowOffset: {
@@ -269,8 +317,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#DC2626",
     borderColor: "#DC2626",
   },
-  quickIcon: {
-    fontSize: 28,
+  quickIconWrapper: {
+    width: 48,
+    height: 48,
+    borderRadius: 18,
+    backgroundColor: "#FEE2E2",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  quickIconWrapperPrimary: {
+    backgroundColor: "#B91C1C",
   },
   quickTitle: {
     marginTop: 12,
@@ -279,9 +335,6 @@ const styles = StyleSheet.create({
     color: "#0F172A",
   },
   quickTitlePrimary: {
-    marginTop: 12,
-    fontSize: 15,
-    fontWeight: "900",
     color: "#FFFFFF",
   },
   quickText: {
@@ -292,11 +345,8 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   quickTextPrimary: {
-    marginTop: 5,
-    fontSize: 12,
-    fontWeight: "700",
     color: "#FEE2E2",
-    lineHeight: 18,
+    fontWeight: "700",
   },
   pressed: {
     opacity: 0.86,

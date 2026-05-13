@@ -1,6 +1,14 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Href, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import LoadingState from "../../src/components/ui/LoadingState";
 import { useAuth } from "../../src/contexts/AuthContext";
@@ -11,6 +19,14 @@ import {
 import { IncidentReport, SOSLog } from "../../src/types/incident";
 
 const LOGIN_ROUTE = "/login" as Href;
+
+type StatItem = {
+  label: string;
+  value: number;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+  backgroundColor: string;
+};
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -56,7 +72,9 @@ export default function ProfileScreen() {
   const loading = loadingReports || loadingSOS;
 
   const displayName = useMemo(() => {
-    return user?.displayName || user?.email?.split("@")[0] || "Community Reporter";
+    return (
+      user?.displayName || user?.email?.split("@")[0] || "Community Reporter"
+    );
   }, [user]);
 
   const userEmail = user?.email || "-";
@@ -81,6 +99,37 @@ export default function ProfileScreen() {
   const highReports = useMemo(() => {
     return reports.filter((report) => report.severity === "high");
   }, [reports]);
+
+  const stats: StatItem[] = [
+    {
+      label: "Total Reports",
+      value: reports.length,
+      icon: "location",
+      color: "#2563EB",
+      backgroundColor: "#DBEAFE",
+    },
+    {
+      label: "Active",
+      value: activeReports.length,
+      icon: "radio",
+      color: "#DC2626",
+      backgroundColor: "#FEE2E2",
+    },
+    {
+      label: "Resolved",
+      value: resolvedReports.length,
+      icon: "checkmark-circle",
+      color: "#16A34A",
+      backgroundColor: "#DCFCE7",
+    },
+    {
+      label: "SOS Logs",
+      value: sosLogs.length,
+      icon: "alert-circle",
+      color: "#D97706",
+      backgroundColor: "#FEF3C7",
+    },
+  ];
 
   const handleLogout = () => {
     Alert.alert("Logout", "Keluar dari akun ini?", [
@@ -127,6 +176,7 @@ export default function ProfileScreen() {
         <Text style={styles.email}>{userEmail}</Text>
 
         <View style={styles.roleBadge}>
+          <Ionicons name="shield-checkmark" size={15} color="#FFFFFF" />
           <Text style={styles.roleText}>Community Reporter</Text>
         </View>
       </View>
@@ -141,45 +191,42 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Contribution Summary</Text>
-          <Text style={styles.sectionSubtitle}>Aktivitas komunitas realtime</Text>
+          <Text style={styles.sectionSubtitle}>
+            Aktivitas komunitas realtime
+          </Text>
         </View>
 
         <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>📍</Text>
-            <Text style={styles.statValue}>{reports.length}</Text>
-            <Text style={styles.statLabel}>Total Reports</Text>
-          </View>
+          {stats.map((item) => (
+            <View key={item.label} style={styles.statCard}>
+              <View
+                style={[
+                  styles.statIconWrapper,
+                  {
+                    backgroundColor: item.backgroundColor,
+                  },
+                ]}
+              >
+                <Ionicons name={item.icon} size={23} color={item.color} />
+              </View>
 
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>🚨</Text>
-            <Text style={styles.statValue}>{activeReports.length}</Text>
-            <Text style={styles.statLabel}>Active</Text>
-          </View>
-
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>✅</Text>
-            <Text style={styles.statValue}>{resolvedReports.length}</Text>
-            <Text style={styles.statLabel}>Resolved</Text>
-          </View>
-
-          <View style={styles.statCard}>
-            <Text style={styles.statIcon}>🆘</Text>
-            <Text style={styles.statValue}>{sosLogs.length}</Text>
-            <Text style={styles.statLabel}>SOS Logs</Text>
-          </View>
+              <Text style={styles.statValue}>{item.value}</Text>
+              <Text style={styles.statLabel}>{item.label}</Text>
+            </View>
+          ))}
         </View>
       </View>
 
       <View style={styles.alertCard}>
         <View style={styles.alertIcon}>
-          <Text style={styles.alertIconText}>⚠️</Text>
+          <Ionicons name="warning" size={22} color="#B91C1C" />
         </View>
 
         <View style={styles.alertContent}>
           <Text style={styles.alertTitle}>High Severity Reports</Text>
           <Text style={styles.alertText}>
-            Ada {highReports.length} laporan high severity yang tercatat di sistem.
+            Ada {highReports.length} laporan high severity yang tercatat di
+            sistem.
           </Text>
         </View>
       </View>
@@ -191,60 +238,44 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <View style={styles.infoIcon}>
-              <Text style={styles.infoIconText}>📱</Text>
-            </View>
+          <InfoRow
+            icon="phone-portrait"
+            label="Application"
+            value="Community Safety Monitoring"
+          />
 
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Application</Text>
-              <Text style={styles.infoValue}>Community Safety Monitoring</Text>
-            </View>
-          </View>
+          <Divider />
 
-          <View style={styles.divider} />
+          <InfoRow
+            icon="flash"
+            label="Realtime Database"
+            value="Firebase Firestore"
+          />
 
-          <View style={styles.infoRow}>
-            <View style={styles.infoIcon}>
-              <Text style={styles.infoIconText}>⚡</Text>
-            </View>
+          <Divider />
 
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Realtime Database</Text>
-              <Text style={styles.infoValue}>Firebase Firestore</Text>
-            </View>
-          </View>
+          <InfoRow
+            icon="map"
+            label="Core Feature"
+            value="Map-based Incident Reporting"
+          />
 
-          <View style={styles.divider} />
+          <Divider />
 
-          <View style={styles.infoRow}>
-            <View style={styles.infoIcon}>
-              <Text style={styles.infoIconText}>🧭</Text>
-            </View>
-
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Core Feature</Text>
-              <Text style={styles.infoValue}>Map-based Incident Reporting</Text>
-            </View>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.infoRow}>
-            <View style={styles.infoIcon}>
-              <Text style={styles.infoIconText}>🏷️</Text>
-            </View>
-
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Version</Text>
-              <Text style={styles.infoValue}>1.0.0 Development</Text>
-            </View>
-          </View>
+          <InfoRow
+            icon="pricetag"
+            label="Version"
+            value="1.0.0 Development"
+          />
         </View>
       </View>
 
       <View style={styles.reminderCard}>
-        <Text style={styles.reminderTitle}>Emergency Reminder</Text>
+        <View style={styles.reminderHeader}>
+          <Ionicons name="information-circle" size={22} color="#1D4ED8" />
+          <Text style={styles.reminderTitle}>Emergency Reminder</Text>
+        </View>
+
         <Text style={styles.reminderText}>
           Aplikasi ini membantu pelaporan dan pemantauan kejadian sekitar, tetapi
           tidak menggantikan layanan darurat resmi. Jika kondisi berbahaya,
@@ -259,10 +290,38 @@ export default function ProfileScreen() {
           pressed && styles.logoutButtonPressed,
         ]}
       >
+        <Ionicons name="log-out-outline" size={20} color="#FFFFFF" />
         <Text style={styles.logoutText}>Logout</Text>
       </Pressable>
     </ScrollView>
   );
+}
+
+function InfoRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value: string;
+}) {
+  return (
+    <View style={styles.infoRow}>
+      <View style={styles.infoIcon}>
+        <Ionicons name={icon} size={22} color="#0F172A" />
+      </View>
+
+      <View style={styles.infoContent}>
+        <Text style={styles.infoLabel}>{label}</Text>
+        <Text style={styles.infoValue}>{value}</Text>
+      </View>
+    </View>
+  );
+}
+
+function Divider() {
+  return <View style={styles.divider} />;
 }
 
 const styles = StyleSheet.create({
@@ -322,6 +381,9 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
   },
   roleText: {
     fontSize: 12,
@@ -387,8 +449,12 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 2,
   },
-  statIcon: {
-    fontSize: 26,
+  statIconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 12,
   },
   statValue: {
@@ -419,9 +485,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#FEE2E2",
     alignItems: "center",
     justifyContent: "center",
-  },
-  alertIconText: {
-    fontSize: 22,
   },
   alertContent: {
     flex: 1,
@@ -458,9 +521,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  infoIconText: {
-    fontSize: 22,
-  },
   infoContent: {
     flex: 1,
   },
@@ -488,11 +548,16 @@ const styles = StyleSheet.create({
     borderColor: "#BFDBFE",
     marginBottom: 20,
   },
+  reminderHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
   reminderTitle: {
     fontSize: 15,
     fontWeight: "900",
     color: "#1E3A8A",
-    marginBottom: 6,
   },
   reminderText: {
     fontSize: 13,
@@ -505,6 +570,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingVertical: 16,
     alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
     shadowColor: "#991B1B",
     shadowOffset: {
       width: 0,
