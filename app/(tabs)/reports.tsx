@@ -1,175 +1,341 @@
-import * as Location from 'expo-location';
-import { collection, deleteDoc, doc, getDocs, increment, orderBy, query, updateDoc } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from "react";
 import {
-  ActivityIndicator, Alert,
-  FlatList,
+  Pressable,
+  RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
-  View
-} from 'react-native';
-import { auth, db } from '../../src/services/firebase';
+  TextInput,
+  View,
+} from "react-native";
 
-const ADMIN_EMAIL = 'admin@sigap.com';
-const VERIFY_RADIUS_METERS = 10;
+import { useEffect } from "react";
+import IncidentCard from "../../src/components/IncidentCard";
+import IncidentThreadModal from "../../src/components/IncidentThreadModal";
+import ResolveIncidentModal from "../../src/components/ResolveIncidentModal";
+import VerifyIncidentModal from "../../src/components/VerifyIncidentModal";
+import EmptyState from "../../src/components/ui/EmptyState";
+import LoadingState from "../../src/components/ui/LoadingState";
+import { getIncidentMeta } from "../../src/constants/incident";
+import { subscribeToIncidents } from "../../src/services/incidentService";
+import { IncidentReport } from "../../src/types/incident";
 
-function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371000;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+type ReportFilter = "all" | "active" | "resolved" | "high";
+
+const FILTERS: {
+  value: ReportFilter;
+  label: string;
+}[] = [
+  {
+    value: "all",
+    label: "All",
+  },
+  {
+    value: "active",
+    label: "Active",
+  },
+  {
+    value: "resolved",
+    label: "Resolved",
+  },
+  {
+    value: "high",
+    label: "High",
+  },
+];
 
 export default function ReportsScreen() {
-  const [reports, setReports] = useState<any[]>([]);
+  const [reports, setReports] = useState<IncidentReport[]>([]);
   const [loading, setLoading] = useState(true);
-  const isAdmin = auth.currentUser?.email === ADMIN_EMAIL;
+  const [refreshing, setRefreshing] = useState(false);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState<ReportFilter>("all");
+
+  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(
+    null
+  );
+  const [selectedVerifyIncident, setSelectedVerifyIncident] =
+    useState<IncidentReport | null>(null);
+  const [selectedResolveIncident, setSelectedResolveIncident] =
+    useState<IncidentReport | null>(null);
+
+  const [isThreadModalVisible, setIsThreadModalVisible] = useState(false);
+  const [isVerifyModalVisible, setIsVerifyModalVisible] = useState(false);
+  const [isResolveModalVisible, setIsResolveModalVisible] = useState(false);
+
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchReports();
+    setLoading(true);
+
+    const unsubscribe = subscribeToIncidents(
+      (items) => {
+        setReports(items);
+        setErrorMessage(null);
+        setLoading(false);
+        setRefreshing(false);
+      },
+      (error) => {
+        console.error("Reports screen error:", error);
+        setErrorMessage(error.message || "Gagal memuat laporan.");
+        setLoading(false);
+        setRefreshing(false);
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
-  const fetchReports = async () => {
-    try {
-      const q = query(collection(db, 'reports'), orderBy('createdAt', 'desc'));
-      const snapshot = await getDocs(q);
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setReports(data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
+  const selectedIncident = useMemo(() => {
+    if (!selectedIncidentId) {
+      return null;
     }
-  };
 
-  const handleConfirm = async (report: any) => {
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Error', 'Izin lokasi diperlukan!');
-        return;
+    return reports.find((item) => item.id === selectedIncidentId) ?? null;
+  }, [reports, selectedIncidentId]);
+
+  const filteredReports = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    return reports.filter((report) => {
+      if (selectedFilter === "active" && report.status !== "active") {
+        return false;
       }
 
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-
-      const distance = getDistance(
-        location.coords.latitude,
-        location.coords.longitude,
-        report.location.lat,
-        report.location.lng
-      );
-
-      if (distance > VERIFY_RADIUS_METERS) {
-        Alert.alert(
-          'Terlalu Jauh',
-          `Kamu harus berada dalam ${VERIFY_RADIUS_METERS} meter dari lokasi bencana untuk bisa konfirmasi. Jarak kamu sekarang: ${Math.round(distance)} meter.`
-        );
-        return;
+      if (selectedFilter === "resolved" && report.status !== "resolved") {
+        return false;
       }
 
-      await updateDoc(doc(db, 'reports', report.id), {
-        confirmCount: increment(1),
-        isVerified: report.confirmCount + 1 >= 3,
-      });
-
-      Alert.alert('Sukses', 'Laporan berhasil dikonfirmasi!');
-      fetchReports();
-    } catch (error) {
-      Alert.alert('Error', 'Gagal mengkonfirmasi laporan!');
-    }
-  };
-
-  const handleFlag = async (report: any) => {
-    try {
-      const newFlagCount = report.flagCount + 1;
-      if (newFlagCount >= 3) {
-        await deleteDoc(doc(db, 'reports', report.id));
-        Alert.alert('Info', 'Laporan dihapus karena terlalu banyak dilaporkan sebagai palsu!');
-      } else {
-        await updateDoc(doc(db, 'reports', report.id), {
-          flagCount: increment(1),
-        });
-        Alert.alert('Sukses', 'Laporan berhasil diflag!');
+      if (selectedFilter === "high" && report.severity !== "high") {
+        return false;
       }
-      fetchReports();
-    } catch (error) {
-      Alert.alert('Error', 'Gagal memflag laporan!');
-    }
+
+      if (!normalizedQuery) {
+        return true;
+      }
+
+      const meta = getIncidentMeta(report.subcategory ?? report.type);
+
+      const searchableText = [
+        report.title,
+        report.description,
+        report.status,
+        report.severity,
+        report.verificationStatus,
+        meta.label,
+        report.reportedBy,
+        report.reporterEmail,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return searchableText.includes(normalizedQuery);
+    });
+  }, [reports, searchQuery, selectedFilter]);
+
+  const activeCount = useMemo(() => {
+    return reports.filter((item) => item.status === "active").length;
+  }, [reports]);
+
+  const resolvedCount = useMemo(() => {
+    return reports.filter((item) => item.status === "resolved").length;
+  }, [reports]);
+
+  const highCount = useMemo(() => {
+    return reports.filter((item) => item.severity === "high").length;
+  }, [reports]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 700);
   };
 
-  const handleDelete = async (reportId: string) => {
-    Alert.alert('Konfirmasi', 'Hapus laporan ini?', [
-      { text: 'Batal', style: 'cancel' },
-      {
-        text: 'Hapus', style: 'destructive',
-        onPress: async () => {
-          await deleteDoc(doc(db, 'reports', reportId));
-          fetchReports();
-        }
-      }
-    ]);
+  const handleOpenIncident = (incident: IncidentReport) => {
+    setSelectedIncidentId(incident.id);
+    setIsThreadModalVisible(true);
   };
+
+  const handleCloseThreadModal = () => {
+    setIsThreadModalVisible(false);
+    setSelectedIncidentId(null);
+  };
+
+  const handleOpenVerifyModal = (incident: IncidentReport) => {
+    setSelectedVerifyIncident(incident);
+    setIsVerifyModalVisible(true);
+  };
+
+  const handleCloseVerifyModal = () => {
+    setIsVerifyModalVisible(false);
+    setSelectedVerifyIncident(null);
+  };
+
+  const handleOpenResolveModal = (incident: IncidentReport) => {
+    setSelectedResolveIncident(incident);
+    setIsResolveModalVisible(true);
+  };
+
+  const handleCloseResolveModal = () => {
+    setIsResolveModalVisible(false);
+    setSelectedResolveIncident(null);
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <LoadingState message="Memuat laporan..." />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>📋 Laporan Bencana</Text>
-      <Text style={styles.subtitle}>
-        {isAdmin ? '👮 Mode Admin' : 'Konfirmasi laporan di sekitar kamu'}
-      </Text>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
+      >
+        <View style={styles.header}>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>COMMUNITY INCIDENTS</Text>
+          </View>
 
-      {loading ? (
-        <ActivityIndicator size="large" color="#C0392B" style={{ marginTop: 40 }} />
-      ) : (
-        <FlatList
-          data={reports}
-          keyExtractor={(item) => item.id}
-          refreshing={loading}
-          onRefresh={fetchReports}
-          renderItem={({ item }) => (
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardType}>{item.type}</Text>
-                <Text style={[styles.badge, item.isVerified ? styles.verified : styles.unverified]}>
-                  {item.isVerified ? '✅ Terverifikasi' : '⏳ Belum Diverifikasi'}
+          <Text style={styles.title}>Reports</Text>
+
+          <Text style={styles.subtitle}>
+            Pantau semua laporan warga, buka thread, kirim verifikasi, dan
+            tandai incident selesai jika kondisi sudah aman.
+          </Text>
+        </View>
+
+        <View style={styles.summaryGrid}>
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryValue}>{reports.length}</Text>
+            <Text style={styles.summaryLabel}>Total</Text>
+          </View>
+
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryValue}>{activeCount}</Text>
+            <Text style={styles.summaryLabel}>Active</Text>
+          </View>
+
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryValue}>{resolvedCount}</Text>
+            <Text style={styles.summaryLabel}>Resolved</Text>
+          </View>
+
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryValue}>{highCount}</Text>
+            <Text style={styles.summaryLabel}>High</Text>
+          </View>
+        </View>
+
+        {errorMessage ? (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorTitle}>Gagal memuat data</Text>
+            <Text style={styles.errorMessage}>{errorMessage}</Text>
+          </View>
+        ) : null}
+
+        <View style={styles.searchCard}>
+          <TextInput
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search reports..."
+            placeholderTextColor="#94A3B8"
+            style={styles.searchInput}
+          />
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterRow}
+        >
+          {FILTERS.map((filter) => {
+            const active = selectedFilter === filter.value;
+
+            return (
+              <Pressable
+                key={filter.value}
+                onPress={() => setSelectedFilter(filter.value)}
+                style={({ pressed }) => [
+                  styles.filterChip,
+                  active && styles.filterChipActive,
+                  pressed && styles.filterChipPressed,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.filterChipText,
+                    active && styles.filterChipTextActive,
+                  ]}
+                >
+                  {filter.label}
                 </Text>
-              </View>
-              <Text style={styles.cardDesc}>{item.description}</Text>
-              <Text style={styles.cardMeta}>
-                👍 {item.confirmCount} konfirmasi · 🚩 {item.flagCount} flag
-              </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
 
-              <View style={styles.btnRow}>
-                <TouchableOpacity
-                  style={styles.confirmBtn}
-                  onPress={() => handleConfirm(item)}>
-                  <Text style={styles.btnText}>👍 Konfirmasi</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.flagBtn}
-                  onPress={() => handleFlag(item)}>
-                  <Text style={styles.btnText}>🚩 Flag</Text>
-                </TouchableOpacity>
-                {isAdmin && (
-                  <TouchableOpacity
-                    style={styles.deleteBtn}
-                    onPress={() => handleDelete(item.id)}>
-                    <Text style={styles.btnText}>🗑️ Hapus</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
-          )}
-        />
-      )}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Incident List</Text>
+          <Text style={styles.sectionSubtitle}>
+            {filteredReports.length} laporan ditampilkan
+          </Text>
+        </View>
+
+        {filteredReports.length === 0 ? (
+          <EmptyState
+            icon="📋"
+            title="Tidak ada laporan"
+            message="Belum ada laporan yang cocok dengan filter atau pencarian."
+          />
+        ) : (
+          <View style={styles.list}>
+            {filteredReports.map((incident) => (
+              <IncidentCard
+                key={incident.id}
+                incident={incident}
+                onPress={handleOpenIncident}
+              />
+            ))}
+          </View>
+        )}
+      </ScrollView>
+
+      <IncidentThreadModal
+        visible={isThreadModalVisible}
+        incident={selectedIncident}
+        onClose={handleCloseThreadModal}
+        onOpenVerify={handleOpenVerifyModal}
+        onOpenResolve={handleOpenResolveModal}
+      />
+
+      <VerifyIncidentModal
+        visible={isVerifyModalVisible}
+        incident={selectedVerifyIncident}
+        userLocation={null}
+        onClose={handleCloseVerifyModal}
+        onSuccess={handleCloseVerifyModal}
+      />
+
+      <ResolveIncidentModal
+        visible={isResolveModalVisible}
+        incident={selectedResolveIncident}
+        onClose={handleCloseResolveModal}
+        onSuccess={handleCloseResolveModal}
+      />
     </View>
   );
 }
@@ -177,95 +343,145 @@ export default function ReportsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    paddingTop: 60,
-    paddingHorizontal: 16,
+    backgroundColor: "#F8FAFC",
+  },
+  scroll: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: 18,
+    paddingTop: 58,
+    paddingBottom: 36,
   },
   header: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#C0392B',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 13,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    elevation: 3,
-    borderLeftWidth: 4,
-    borderLeftColor: '#C0392B',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  cardType: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#333',
+    marginBottom: 22,
   },
   badge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#DBEAFE",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    marginBottom: 14,
+  },
+  badgeText: {
     fontSize: 11,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-    overflow: 'hidden',
+    fontWeight: "900",
+    color: "#1D4ED8",
+    letterSpacing: 0.4,
   },
-  verified: {
-    backgroundColor: '#d4edda',
-    color: '#155724',
+  title: {
+    fontSize: 32,
+    fontWeight: "900",
+    color: "#0F172A",
   },
-  unverified: {
-    backgroundColor: '#fff3cd',
-    color: '#856404',
+  subtitle: {
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#64748B",
+    lineHeight: 22,
   },
-  cardDesc: {
+  summaryGrid: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 18,
+  },
+  summaryCard: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  summaryValue: {
+    fontSize: 22,
+    fontWeight: "900",
+    color: "#0F172A",
+  },
+  summaryLabel: {
+    marginTop: 4,
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#64748B",
+  },
+  errorBox: {
+    backgroundColor: "#FEF2F2",
+    borderRadius: 18,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    marginBottom: 16,
+  },
+  errorTitle: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#991B1B",
+    marginBottom: 4,
+  },
+  errorMessage: {
     fontSize: 13,
-    color: '#555',
-    marginBottom: 8,
+    fontWeight: "600",
+    color: "#B91C1C",
+    lineHeight: 20,
   },
-  cardMeta: {
-    fontSize: 12,
-    color: '#888',
+  searchCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    paddingHorizontal: 14,
     marginBottom: 12,
   },
-  btnRow: {
-    flexDirection: 'row',
-    gap: 8,
+  searchInput: {
+    paddingVertical: 13,
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#0F172A",
   },
-  confirmBtn: {
-    flex: 1,
-    backgroundColor: '#27AE60',
-    borderRadius: 8,
-    padding: 10,
-    alignItems: 'center',
+  filterRow: {
+    gap: 10,
+    paddingBottom: 18,
   },
-  flagBtn: {
-    flex: 1,
-    backgroundColor: '#E67E22',
-    borderRadius: 8,
-    padding: 10,
-    alignItems: 'center',
+  filterChip: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
   },
-  deleteBtn: {
-    flex: 1,
-    backgroundColor: '#C0392B',
-    borderRadius: 8,
-    padding: 10,
-    alignItems: 'center',
+  filterChipActive: {
+    backgroundColor: "#0F172A",
+    borderColor: "#0F172A",
   },
-  btnText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
+  filterChipPressed: {
+    opacity: 0.82,
+  },
+  filterChipText: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: "#64748B",
+  },
+  filterChipTextActive: {
+    color: "#FFFFFF",
+  },
+  sectionHeader: {
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#0F172A",
+  },
+  sectionSubtitle: {
+    marginTop: 4,
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#64748B",
+  },
+  list: {
+    gap: 12,
   },
 });

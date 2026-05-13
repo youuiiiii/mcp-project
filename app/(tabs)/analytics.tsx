@@ -1,245 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import {
-  INCIDENT_CATEGORY_OPTIONS,
-  INCIDENT_TYPE_OPTIONS,
-  getIncidentCategoryMeta,
-  getIncidentMeta,
-} from "../../src/constants/incident";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+
+import EmptyState from "../../src/components/ui/EmptyState";
+import LoadingState from "../../src/components/ui/LoadingState";
+import { getIncidentMeta } from "../../src/constants/incident";
 import { subscribeToIncidents } from "../../src/services/incidentService";
-import {
-  IncidentCategory,
-  IncidentReport,
-  IncidentSeverity,
-  IncidentSubcategory,
-} from "../../src/types/incident";
-import {
-  getIncidentTrustLevel,
-  IncidentTrustLevel,
-} from "../../src/utils/incidentTrust";
-import {
-  getIncidentUrgencyMeta,
-  IncidentUrgencyLevel,
-} from "../../src/utils/incidentUrgency";
+import { IncidentReport } from "../../src/types/incident";
 
-type CategoryStat = {
-  value: IncidentCategory;
+type DistributionItem = {
   label: string;
-  icon: string;
-  color: string;
-  total: number;
-  active: number;
-  resolved: number;
-};
-
-type SubcategoryStat = {
-  value: IncidentSubcategory;
-  category: IncidentCategory;
-  label: string;
-  icon: string;
-  color: string;
-  total: number;
-  active: number;
-  resolved: number;
-};
-
-type SeverityStat = {
-  value: IncidentSeverity;
-  label: string;
-  color: string;
-  total: number;
-};
-
-type TrustStat = {
-  value: IncidentTrustLevel;
-  label: string;
-  color: string;
-  total: number;
-};
-
-type UrgencyStat = {
-  value: IncidentUrgencyLevel;
-  label: string;
-  color: string;
-  total: number;
-};
-
-const TRUST_META: Record<
-  IncidentTrustLevel,
-  {
-    label: string;
-    color: string;
-  }
-> = {
-  pending: {
-    label: "Pending",
-    color: "#F59E0B",
-  },
-  verified: {
-    label: "Verified",
-    color: "#16A34A",
-  },
-  disputed: {
-    label: "Disputed",
-    color: "#DC2626",
-  },
-  needs_update: {
-    label: "Perlu Update",
-    color: "#9333EA",
-  },
-  resolved: {
-    label: "Resolved",
-    color: "#64748B",
-  },
-};
-
-const URGENCY_META: Record<
-  IncidentUrgencyLevel,
-  {
-    label: string;
-    color: string;
-  }
-> = {
-  low: {
-    label: "Low",
-    color: "#16A34A",
-  },
-  medium: {
-    label: "Medium",
-    color: "#F59E0B",
-  },
-  high: {
-    label: "High",
-    color: "#EA580C",
-  },
-  critical: {
-    label: "Critical",
-    color: "#DC2626",
-  },
-};
-
-const SEVERITY_META: Record<
-  IncidentSeverity,
-  {
-    label: string;
-    color: string;
-  }
-> = {
-  low: {
-    label: "Low",
-    color: "#16A34A",
-  },
-  medium: {
-    label: "Medium",
-    color: "#F59E0B",
-  },
-  high: {
-    label: "High",
-    color: "#DC2626",
-  },
-};
-
-const formatDurationHours = (hours: number | null) => {
-  if (hours === null || Number.isNaN(hours)) {
-    return "-";
-  }
-
-  if (hours < 1) {
-    return `${Math.round(hours * 60)} menit`;
-  }
-
-  if (hours < 24) {
-    return `${hours.toFixed(1)} jam`;
-  }
-
-  return `${(hours / 24).toFixed(1)} hari`;
-};
-
-const getAverageResolutionHours = (reports: IncidentReport[]) => {
-  const resolvedReports = reports.filter((report) => {
-    return report.status === "resolved" && report.createdAt && report.resolvedAt;
-  });
-
-  if (resolvedReports.length === 0) {
-    return null;
-  }
-
-  const totalHours = resolvedReports.reduce((sum, report) => {
-    if (!report.createdAt || !report.resolvedAt) {
-      return sum;
-    }
-
-    const diffMs = report.resolvedAt.getTime() - report.createdAt.getTime();
-
-    return sum + diffMs / (1000 * 60 * 60);
-  }, 0);
-
-  return totalHours / resolvedReports.length;
-};
-
-const getAverageUrgencyScore = (reports: IncidentReport[]) => {
-  if (reports.length === 0) {
-    return 0;
-  }
-
-  const activeReports = reports.filter((report) => {
-    return report.status === "active";
-  });
-
-  if (activeReports.length === 0) {
-    return 0;
-  }
-
-  const totalScore = activeReports.reduce((sum, report) => {
-    return sum + getIncidentUrgencyMeta(report).score;
-  }, 0);
-
-  return Math.round(totalScore / activeReports.length);
-};
-
-const BarRow = ({
-  label,
-  value,
-  max,
-  color,
-  subtitle,
-}: {
-  label: string;
-  value: number;
-  max: number;
-  color: string;
-  subtitle?: string;
-}) => {
-  const width = max > 0 ? Math.max((value / max) * 100, value > 0 ? 8 : 0) : 0;
-
-  return (
-    <View style={styles.barRow}>
-      <View style={styles.barHeader}>
-        <Text style={styles.barLabel}>{label}</Text>
-        <Text style={styles.barValue}>{value}</Text>
-      </View>
-
-      {subtitle ? <Text style={styles.barSubtitle}>{subtitle}</Text> : null}
-
-      <View style={styles.barTrack}>
-        <View
-          style={[
-            styles.barFill,
-            {
-              width: `${width}%`,
-              backgroundColor: color,
-            },
-          ]}
-        />
-      </View>
-    </View>
-  );
+  count: number;
+  percentage: number;
+  icon?: string;
+  color?: string;
 };
 
 export default function AnalyticsScreen() {
@@ -253,10 +26,12 @@ export default function AnalyticsScreen() {
     const unsubscribe = subscribeToIncidents(
       (items) => {
         setReports(items);
+        setErrorMessage(null);
         setLoading(false);
       },
       (error) => {
-        setErrorMessage(error.message || "Gagal memuat data analytics.");
+        console.error("Analytics error:", error);
+        setErrorMessage(error.message || "Gagal memuat analytics.");
         setLoading(false);
       }
     );
@@ -266,8 +41,6 @@ export default function AnalyticsScreen() {
     };
   }, []);
 
-  const totalReports = reports.length;
-
   const activeReports = useMemo(() => {
     return reports.filter((report) => report.status === "active");
   }, [reports]);
@@ -276,358 +49,349 @@ export default function AnalyticsScreen() {
     return reports.filter((report) => report.status === "resolved");
   }, [reports]);
 
-  const categoryStats = useMemo<CategoryStat[]>(() => {
-    return INCIDENT_CATEGORY_OPTIONS.map((item) => {
-      const categoryReports = reports.filter((report) => {
-        return report.category === item.value;
-      });
-
-      return {
-        value: item.value,
-        label: item.label,
-        icon: item.icon,
-        color: item.color,
-        total: categoryReports.length,
-        active: categoryReports.filter((report) => report.status === "active")
-          .length,
-        resolved: categoryReports.filter(
-          (report) => report.status === "resolved"
-        ).length,
-      };
-    }).sort((a, b) => b.total - a.total);
+  const highSeverityReports = useMemo(() => {
+    return reports.filter((report) => report.severity === "high");
   }, [reports]);
 
-  const subcategoryStats = useMemo<SubcategoryStat[]>(() => {
-    return INCIDENT_TYPE_OPTIONS.map((item) => {
-      const subcategoryReports = reports.filter((report) => {
-        return report.subcategory === item.value || report.type === item.value;
-      });
-
-      return {
-        value: item.value,
-        category: item.category,
-        label: item.label,
-        icon: item.icon,
-        color: item.color,
-        total: subcategoryReports.length,
-        active: subcategoryReports.filter((report) => {
-          return report.status === "active";
-        }).length,
-        resolved: subcategoryReports.filter((report) => {
-          return report.status === "resolved";
-        }).length,
-      };
-    })
-      .filter((item) => item.total > 0)
-      .sort((a, b) => b.total - a.total);
+  const verifiedReports = useMemo(() => {
+    return reports.filter((report) => report.verificationStatus === "verified");
   }, [reports]);
 
-  const severityStats = useMemo<SeverityStat[]>(() => {
-    return (["low", "medium", "high"] as IncidentSeverity[]).map((severity) => {
-      return {
-        value: severity,
-        label: SEVERITY_META[severity].label,
-        color: SEVERITY_META[severity].color,
-        total: reports.filter((report) => report.severity === severity).length,
-      };
-    });
+  const disputedReports = useMemo(() => {
+    return reports.filter((report) => report.verificationStatus === "disputed");
   }, [reports]);
 
-  const trustStats = useMemo<TrustStat[]>(() => {
-    return (
-      [
-        "pending",
-        "verified",
-        "disputed",
-        "needs_update",
-        "resolved",
-      ] as IncidentTrustLevel[]
-    ).map((level) => {
-      return {
-        value: level,
-        label: TRUST_META[level].label,
-        color: TRUST_META[level].color,
-        total: reports.filter((report) => {
-          return getIncidentTrustLevel(report) === level;
-        }).length,
-      };
-    });
+  const totalEvidence = useMemo(() => {
+    return reports.reduce((total, report) => {
+      return total + (report.evidenceCount ?? 0);
+    }, 0);
   }, [reports]);
 
-  const urgencyStats = useMemo<UrgencyStat[]>(() => {
-    return (["low", "medium", "high", "critical"] as IncidentUrgencyLevel[]).map(
-      (level) => {
-        return {
-          value: level,
-          label: URGENCY_META[level].label,
-          color: URGENCY_META[level].color,
-          total: reports.filter((report) => {
-            return getIncidentUrgencyMeta(report).level === level;
-          }).length,
-        };
+  const totalReplies = useMemo(() => {
+    return reports.reduce((total, report) => {
+      return total + (report.replyCount ?? 0);
+    }, 0);
+  }, [reports]);
+
+  const severityDistribution = useMemo<DistributionItem[]>(() => {
+    const total = reports.length || 1;
+
+    const low = reports.filter((report) => report.severity === "low").length;
+    const medium = reports.filter(
+      (report) => report.severity === "medium"
+    ).length;
+    const high = reports.filter((report) => report.severity === "high").length;
+
+    return [
+      {
+        label: "Low",
+        count: low,
+        percentage: Math.round((low / total) * 100),
+        color: "#16A34A",
+      },
+      {
+        label: "Medium",
+        count: medium,
+        percentage: Math.round((medium / total) * 100),
+        color: "#F59E0B",
+      },
+      {
+        label: "High",
+        count: high,
+        percentage: Math.round((high / total) * 100),
+        color: "#DC2626",
+      },
+    ];
+  }, [reports]);
+
+  const categoryDistribution = useMemo<DistributionItem[]>(() => {
+    const counter = new Map<
+      string,
+      {
+        count: number;
+        icon: string;
+        color: string;
       }
-    );
+    >();
+
+    reports.forEach((report) => {
+      const meta = getIncidentMeta(report.subcategory ?? report.type);
+      const existing = counter.get(meta.label);
+
+      counter.set(meta.label, {
+        count: (existing?.count ?? 0) + 1,
+        icon: meta.icon,
+        color: meta.color,
+      });
+    });
+
+    const total = reports.length || 1;
+
+    return Array.from(counter.entries())
+      .map(([label, value]) => ({
+        label,
+        count: value.count,
+        percentage: Math.round((value.count / total) * 100),
+        icon: value.icon,
+        color: value.color,
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [reports]);
+
+  const latestReports = useMemo(() => {
+    return reports.slice(0, 4);
   }, [reports]);
 
   const averageResolutionHours = useMemo(() => {
-    return getAverageResolutionHours(reports);
-  }, [reports]);
+    const resolvedWithTime = resolvedReports.filter((report) => {
+      return report.createdAt && report.resolvedAt;
+    });
 
-  const averageUrgencyScore = useMemo(() => {
-    return getAverageUrgencyScore(reports);
-  }, [reports]);
+    if (resolvedWithTime.length === 0) {
+      return "-";
+    }
 
-  const maxCategory = Math.max(...categoryStats.map((item) => item.total), 0);
+    const totalHours = resolvedWithTime.reduce((total, report) => {
+      const createdAt = report.createdAt?.getTime() ?? 0;
+      const resolvedAt = report.resolvedAt?.getTime() ?? 0;
+      const diffHours = Math.max(resolvedAt - createdAt, 0) / 1000 / 60 / 60;
 
-  const maxSubcategory = Math.max(
-    ...subcategoryStats.map((item) => item.total),
-    0
-  );
+      return total + diffHours;
+    }, 0);
 
-  const maxSeverity = Math.max(...severityStats.map((item) => item.total), 0);
-
-  const maxTrust = Math.max(...trustStats.map((item) => item.total), 0);
-
-  const maxUrgency = Math.max(...urgencyStats.map((item) => item.total), 0);
-
-  const topSubcategory = subcategoryStats[0] ?? null;
-  const topCategory = categoryStats[0] ?? null;
-
-  const topUrgencyLevel = urgencyStats
-    .slice()
-    .sort((a, b) => b.total - a.total)[0];
-
-  const criticalReports = urgencyStats.find((item) => item.value === "critical");
+    return `${Math.round(totalHours / resolvedWithTime.length)}h`;
+  }, [resolvedReports]);
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#0F766E" />
-        <Text style={styles.loadingText}>Memuat analytics...</Text>
+      <View style={styles.container}>
+        <LoadingState message="Memuat analytics..." />
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.pageTitle}>Incident Analytics</Text>
-      <Text style={styles.pageSubtitle}>
-        Ringkasan laporan berdasarkan kategori, subkategori, severity, trust
-        level, dan urgency score otomatis.
-      </Text>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.hero}>
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>REALTIME ANALYTICS</Text>
+        </View>
+
+        <Text style={styles.title}>Incident Insights</Text>
+
+        <Text style={styles.subtitle}>
+          Pantau distribusi laporan, severity, status verifikasi, dan aktivitas
+          komunitas secara realtime.
+        </Text>
+      </View>
 
       {errorMessage ? (
         <View style={styles.errorBox}>
-          <Text style={styles.errorText}>{errorMessage}</Text>
+          <Text style={styles.errorTitle}>Gagal memuat data</Text>
+          <Text style={styles.errorMessage}>{errorMessage}</Text>
         </View>
       ) : null}
 
-      <View style={styles.summaryGrid}>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryValue}>{totalReports}</Text>
-          <Text style={styles.summaryLabel}>Total Laporan</Text>
-        </View>
+      {reports.length === 0 ? (
+        <EmptyState
+          icon="📊"
+          title="Belum ada data analytics"
+          message="Analytics akan muncul setelah ada laporan masuk."
+        />
+      ) : (
+        <>
+          <View style={styles.summaryGrid}>
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryIcon}>📍</Text>
+              <Text style={styles.summaryValue}>{reports.length}</Text>
+              <Text style={styles.summaryLabel}>Total Reports</Text>
+            </View>
 
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryValue}>{activeReports.length}</Text>
-          <Text style={styles.summaryLabel}>Aktif</Text>
-        </View>
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryIcon}>🚨</Text>
+              <Text style={styles.summaryValue}>{activeReports.length}</Text>
+              <Text style={styles.summaryLabel}>Active</Text>
+            </View>
 
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryValue}>{resolvedReports.length}</Text>
-          <Text style={styles.summaryLabel}>Selesai</Text>
-        </View>
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryIcon}>✅</Text>
+              <Text style={styles.summaryValue}>{resolvedReports.length}</Text>
+              <Text style={styles.summaryLabel}>Resolved</Text>
+            </View>
 
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryValue}>{averageUrgencyScore}</Text>
-          <Text style={styles.summaryLabel}>Avg Urgency</Text>
-        </View>
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryIcon}>🔥</Text>
+              <Text style={styles.summaryValue}>
+                {highSeverityReports.length}
+              </Text>
+              <Text style={styles.summaryLabel}>High Severity</Text>
+            </View>
+          </View>
 
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryValue}>
-            {criticalReports?.total ?? 0}
-          </Text>
-          <Text style={styles.summaryLabel}>Critical</Text>
-        </View>
+          <View style={styles.metricRow}>
+            <View style={styles.metricCard}>
+              <Text style={styles.metricLabel}>Verified</Text>
+              <Text style={styles.metricValue}>{verifiedReports.length}</Text>
+              <Text style={styles.metricText}>community verified</Text>
+            </View>
 
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryValue}>
-            {formatDurationHours(averageResolutionHours)}
-          </Text>
-          <Text style={styles.summaryLabel}>Rata-rata Resolve</Text>
-        </View>
-      </View>
+            <View style={styles.metricCard}>
+              <Text style={styles.metricLabel}>Disputed</Text>
+              <Text style={styles.metricValue}>{disputedReports.length}</Text>
+              <Text style={styles.metricText}>needs review</Text>
+            </View>
 
-      <View style={styles.highlightCard}>
-        <Text style={styles.sectionTitle}>Insight Utama</Text>
+            <View style={styles.metricCard}>
+              <Text style={styles.metricLabel}>Avg Resolve</Text>
+              <Text style={styles.metricValue}>{averageResolutionHours}</Text>
+              <Text style={styles.metricText}>resolution time</Text>
+            </View>
+          </View>
 
-        <Text style={styles.insightText}>
-          Kategori terbanyak:{" "}
-          <Text style={styles.insightStrong}>
-            {topCategory
-              ? `${topCategory.icon} ${topCategory.label} (${topCategory.total})`
-              : "-"}
-          </Text>
-        </Text>
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Severity Distribution</Text>
+              <Text style={styles.sectionSubtitle}>
+                Komposisi tingkat urgensi laporan
+              </Text>
+            </View>
 
-        <Text style={styles.insightText}>
-          Subkategori terbanyak:{" "}
-          <Text style={styles.insightStrong}>
-            {topSubcategory
-              ? `${topSubcategory.icon} ${topSubcategory.label} (${topSubcategory.total})`
-              : "-"}
-          </Text>
-        </Text>
+            <View style={styles.card}>
+              {severityDistribution.map((item) => (
+                <DistributionRow key={item.label} item={item} />
+              ))}
+            </View>
+          </View>
 
-        <Text style={styles.insightText}>
-          Urgency terbanyak:{" "}
-          <Text style={styles.insightStrong}>
-            {topUrgencyLevel
-              ? `${topUrgencyLevel.label} (${topUrgencyLevel.total})`
-              : "-"}
-          </Text>
-        </Text>
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Top Incident Types</Text>
+              <Text style={styles.sectionSubtitle}>
+                Jenis laporan paling sering muncul
+              </Text>
+            </View>
 
-        <Text style={styles.insightText}>
-          Tingkat penyelesaian:{" "}
-          <Text style={styles.insightStrong}>
-            {totalReports > 0
-              ? `${Math.round((resolvedReports.length / totalReports) * 100)}%`
-              : "0%"}
-          </Text>
-        </Text>
-      </View>
+            <View style={styles.card}>
+              {categoryDistribution.length === 0 ? (
+                <Text style={styles.emptyText}>Belum ada kategori.</Text>
+              ) : (
+                categoryDistribution.map((item) => (
+                  <DistributionRow key={item.label} item={item} />
+                ))
+              )}
+            </View>
+          </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Kategori Kejadian</Text>
+          <View style={styles.activityCard}>
+            <View>
+              <Text style={styles.activityLabel}>Community Activity</Text>
+              <Text style={styles.activityTitle}>
+                {totalEvidence} evidence · {totalReplies} replies
+              </Text>
+            </View>
 
-        <View style={styles.card}>
-          {categoryStats.map((item) => (
-            <BarRow
-              key={item.value}
-              label={`${item.icon} ${item.label}`}
-              value={item.total}
-              max={maxCategory}
-              color={item.color}
-              subtitle={`Aktif: ${item.active} • Selesai: ${item.resolved}`}
-            />
-          ))}
-        </View>
-      </View>
+            <Text style={styles.activityText}>
+              Bukti foto dan diskusi membantu meningkatkan validitas laporan.
+            </Text>
+          </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Subkategori Teratas</Text>
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Latest Activity</Text>
+              <Text style={styles.sectionSubtitle}>Laporan terbaru</Text>
+            </View>
 
-        <View style={styles.card}>
-          {subcategoryStats.length === 0 ? (
-            <Text style={styles.emptyText}>Belum ada data subkategori.</Text>
-          ) : (
-            subcategoryStats.slice(0, 10).map((item) => (
-              <BarRow
-                key={item.value}
-                label={`${item.icon} ${item.label}`}
-                value={item.total}
-                max={maxSubcategory}
-                color={item.color}
-                subtitle={`${getIncidentCategoryMeta(item.category).label} • Aktif: ${
-                  item.active
-                } • Selesai: ${item.resolved}`}
-              />
-            ))
-          )}
-        </View>
-      </View>
+            <View style={styles.latestList}>
+              {latestReports.map((report) => {
+                const meta = getIncidentMeta(report.subcategory ?? report.type);
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Severity</Text>
+                return (
+                  <View key={report.id} style={styles.latestCard}>
+                    <View
+                      style={[
+                        styles.latestIcon,
+                        {
+                          backgroundColor: `${meta.color}18`,
+                        },
+                      ]}
+                    >
+                      <Text style={styles.latestIconText}>{meta.icon}</Text>
+                    </View>
 
-        <View style={styles.card}>
-          {severityStats.map((item) => (
-            <BarRow
-              key={item.value}
-              label={item.label}
-              value={item.total}
-              max={maxSeverity}
-              color={item.color}
-            />
-          ))}
-        </View>
-      </View>
+                    <View style={styles.latestInfo}>
+                      <Text style={styles.latestTitle} numberOfLines={1}>
+                        {report.title}
+                      </Text>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Trust Level</Text>
+                      <Text style={styles.latestSubtitle} numberOfLines={1}>
+                        {meta.label} · {report.status} · {report.severity}
+                      </Text>
+                    </View>
 
-        <View style={styles.card}>
-          {trustStats.map((item) => (
-            <BarRow
-              key={item.value}
-              label={item.label}
-              value={item.total}
-              max={maxTrust}
-              color={item.color}
-            />
-          ))}
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Urgency Level</Text>
-
-        <View style={styles.card}>
-          {urgencyStats.map((item) => (
-            <BarRow
-              key={item.value}
-              label={item.label}
-              value={item.total}
-              max={maxUrgency}
-              color={item.color}
-            />
-          ))}
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Laporan Terbaru</Text>
-
-        <View style={styles.card}>
-          {reports.slice(0, 5).map((report) => {
-            const meta = getIncidentMeta(report.subcategory ?? report.type);
-            const trustLevel = getIncidentTrustLevel(report);
-            const urgency = getIncidentUrgencyMeta(report);
-
-            return (
-              <View key={report.id} style={styles.recentItem}>
-                <View
-                  style={[
-                    styles.recentIconBox,
-                    {
-                      backgroundColor: meta.lightColor,
-                    },
-                  ]}
-                >
-                  <Text style={styles.recentIcon}>{meta.icon}</Text>
-                </View>
-
-                <View style={styles.recentContent}>
-                  <Text style={styles.recentTitle}>{report.title}</Text>
-                  <Text style={styles.recentMeta}>
-                    {meta.label} • {report.status} • {report.severity}
-                  </Text>
-                  <Text style={styles.recentMeta}>
-                    Trust: {TRUST_META[trustLevel].label} • Urgency:{" "}
-                    {urgency.shortLabel} {urgency.score}
-                  </Text>
-                </View>
-              </View>
-            );
-          })}
-
-          {reports.length === 0 ? (
-            <Text style={styles.emptyText}>Belum ada laporan.</Text>
-          ) : null}
-        </View>
-      </View>
+                    <View
+                      style={[
+                        styles.statusPill,
+                        report.status === "active"
+                          ? styles.statusActive
+                          : styles.statusResolved,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.statusPillText,
+                          report.status === "active"
+                            ? styles.statusActiveText
+                            : styles.statusResolvedText,
+                        ]}
+                      >
+                        {report.status}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        </>
+      )}
     </ScrollView>
+  );
+}
+
+function DistributionRow({ item }: { item: DistributionItem }) {
+  return (
+    <View style={styles.distributionRow}>
+      <View style={styles.distributionTop}>
+        <View style={styles.distributionLabelWrap}>
+          {item.icon ? (
+            <Text style={styles.distributionIcon}>{item.icon}</Text>
+          ) : null}
+
+          <Text style={styles.distributionLabel}>{item.label}</Text>
+        </View>
+
+        <Text style={styles.distributionCount}>
+          {item.count} · {item.percentage}%
+        </Text>
+      </View>
+
+      <View style={styles.progressTrack}>
+        <View
+          style={[
+            styles.progressFill,
+            {
+              width: `${Math.max(item.percentage, 4)}%`,
+              backgroundColor: item.color ?? "#0F172A",
+            },
+          ]}
+        />
+      </View>
+    </View>
   );
 }
 
@@ -637,172 +401,275 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8FAFC",
   },
   content: {
-    padding: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 18,
+    paddingTop: 58,
+    paddingBottom: 36,
   },
-  centerContainer: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
+  hero: {
+    marginBottom: 22,
   },
-  loadingText: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#64748B",
+  badge: {
+    alignSelf: "flex-start",
+    backgroundColor: "#DBEAFE",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    marginBottom: 14,
   },
-  pageTitle: {
-    fontSize: 28,
+  badgeText: {
+    fontSize: 11,
+    fontWeight: "900",
+    color: "#1D4ED8",
+    letterSpacing: 0.4,
+  },
+  title: {
+    fontSize: 32,
     fontWeight: "900",
     color: "#0F172A",
   },
-  pageSubtitle: {
-    marginTop: 6,
+  subtitle: {
+    marginTop: 8,
     fontSize: 14,
     fontWeight: "600",
     color: "#64748B",
-    lineHeight: 21,
+    lineHeight: 22,
   },
   errorBox: {
-    marginTop: 16,
-    backgroundColor: "#FEE2E2",
-    borderWidth: 1,
-    borderColor: "#FCA5A5",
-    borderRadius: 18,
+    backgroundColor: "#FEF2F2",
+    borderRadius: 20,
     padding: 14,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    marginBottom: 20,
   },
-  errorText: {
+  errorTitle: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#991B1B",
+    marginBottom: 4,
+  },
+  errorMessage: {
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "600",
     color: "#B91C1C",
+    lineHeight: 20,
   },
   summaryGrid: {
-    marginTop: 20,
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 12,
+    marginBottom: 18,
   },
   summaryCard: {
     width: "48%",
     backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    padding: 16,
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    borderRadius: 22,
-    padding: 16,
+    minHeight: 132,
+    shadowColor: "#0F172A",
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 2,
+  },
+  summaryIcon: {
+    fontSize: 26,
+    marginBottom: 12,
   },
   summaryValue: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "900",
     color: "#0F172A",
   },
   summaryLabel: {
-    marginTop: 6,
+    marginTop: 4,
     fontSize: 12,
     fontWeight: "800",
     color: "#64748B",
   },
-  highlightCard: {
-    marginTop: 18,
-    backgroundColor: "#ECFDF5",
-    borderWidth: 1,
-    borderColor: "#A7F3D0",
+  metricRow: {
+    gap: 12,
+    marginBottom: 22,
+  },
+  metricCard: {
+    backgroundColor: "#0F172A",
     borderRadius: 24,
     padding: 16,
+  },
+  metricLabel: {
+    fontSize: 12,
+    fontWeight: "900",
+    color: "#94A3B8",
+    marginBottom: 4,
+  },
+  metricValue: {
+    fontSize: 25,
+    fontWeight: "900",
+    color: "#FFFFFF",
+  },
+  metricText: {
+    marginTop: 5,
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#CBD5E1",
   },
   section: {
-    marginTop: 22,
+    marginBottom: 22,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: "#0F172A",
+  sectionHeader: {
     marginBottom: 12,
   },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 24,
-    padding: 16,
-    gap: 14,
-  },
-  insightText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#475569",
-    lineHeight: 21,
-  },
-  insightStrong: {
-    color: "#047857",
-    fontWeight: "900",
-  },
-  barRow: {
-    gap: 6,
-  },
-  barHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  barLabel: {
-    flex: 1,
-    fontSize: 13,
+  sectionTitle: {
+    fontSize: 19,
     fontWeight: "900",
     color: "#0F172A",
   },
-  barValue: {
+  sectionSubtitle: {
+    marginTop: 4,
     fontSize: 13,
-    fontWeight: "900",
-    color: "#0F172A",
-  },
-  barSubtitle: {
-    fontSize: 11,
     fontWeight: "700",
     color: "#64748B",
   },
-  barTrack: {
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 26,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  emptyText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#64748B",
+  },
+  distributionRow: {
+    marginBottom: 16,
+  },
+  distributionTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 8,
+  },
+  distributionLabelWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+  },
+  distributionIcon: {
+    fontSize: 18,
+  },
+  distributionLabel: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#0F172A",
+  },
+  distributionCount: {
+    fontSize: 12,
+    fontWeight: "900",
+    color: "#64748B",
+  },
+  progressTrack: {
     height: 9,
-    backgroundColor: "#E2E8F0",
     borderRadius: 999,
+    backgroundColor: "#E2E8F0",
     overflow: "hidden",
   },
-  barFill: {
+  progressFill: {
     height: "100%",
     borderRadius: 999,
   },
-  recentItem: {
-    flexDirection: "row",
-    gap: 12,
-    alignItems: "center",
+  activityCard: {
+    backgroundColor: "#EFF6FF",
+    borderRadius: 24,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+    marginBottom: 22,
   },
-  recentIconBox: {
+  activityLabel: {
+    fontSize: 12,
+    fontWeight: "900",
+    color: "#1D4ED8",
+    marginBottom: 5,
+  },
+  activityTitle: {
+    fontSize: 20,
+    fontWeight: "900",
+    color: "#1E3A8A",
+  },
+  activityText: {
+    marginTop: 8,
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#2563EB",
+    lineHeight: 20,
+  },
+  latestList: {
+    gap: 10,
+  },
+  latestCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 22,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  latestIcon: {
     width: 44,
     height: 44,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
-  recentIcon: {
+  latestIconText: {
     fontSize: 22,
   },
-  recentContent: {
+  latestInfo: {
     flex: 1,
   },
-  recentTitle: {
+  latestTitle: {
     fontSize: 14,
     fontWeight: "900",
     color: "#0F172A",
   },
-  recentMeta: {
+  latestSubtitle: {
     marginTop: 4,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "700",
     color: "#64748B",
   },
-  emptyText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#64748B",
+  statusPill: {
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+  },
+  statusActive: {
+    backgroundColor: "#FEE2E2",
+  },
+  statusResolved: {
+    backgroundColor: "#DCFCE7",
+  },
+  statusPillText: {
+    fontSize: 10,
+    fontWeight: "900",
+    textTransform: "uppercase",
+  },
+  statusActiveText: {
+    color: "#B91C1C",
+  },
+  statusResolvedText: {
+    color: "#166534",
   },
 });
