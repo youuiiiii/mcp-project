@@ -1,9 +1,16 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import { getIncidentDisplayMeta, getIncidentMeta } from "../constants/incident";
+import { Ionicons } from "@expo/vector-icons";
+import { StyleSheet, Text, View } from "react-native";
+
+import { getIncidentDisplayMeta } from "../constants/incident";
+import { colors } from "../theme/colors";
+import { radius, shadow, spacing } from "../theme/layout";
+import { typography } from "../theme/typography";
 import { IncidentReport } from "../types/incident";
 import { formatDistance } from "../utils/geo";
-import { getIncidentTrustMeta } from "../utils/incidentTrust";
-import { getIncidentUrgencyMeta } from "../utils/incidentUrgency";
+import AppButton from "./ui/AppButton";
+import AppCard from "./ui/AppCard";
+import IconBadge from "./ui/IconBadge";
+import StatusBadge from "./ui/StatusBadge";
 
 type LocalIncidentBannerProps = {
   incident: IncidentReport | null;
@@ -28,34 +35,43 @@ export default function LocalIncidentBanner({
     category: incident.category,
     subcategory: incident.subcategory ?? incident.type,
   });
-  const trust = getIncidentTrustMeta(incident);
-  const urgency = getIncidentUrgencyMeta(incident);
+
+  const distanceText =
+    distance !== null ? `${formatDistance(distance)} dari posisi Anda` : null;
 
   return (
     <View style={styles.wrapper}>
-      <View
+      <AppCard
         style={[
           styles.card,
           {
-            borderColor: urgency.color,
-            backgroundColor: urgency.lightColor,
+            borderColor: meta.color,
+            backgroundColor: meta.lightColor,
           },
         ]}
       >
         <View style={styles.header}>
-          <View
-            style={[
-              styles.iconBox,
-              {
-                backgroundColor: meta.color,
-              },
-            ]}
+          <IconBadge
+            variant="neutral"
+            size="lg"
+            rounded={false}
+            style={{
+              backgroundColor: meta.color,
+            }}
           >
-            <Text style={styles.icon}>{meta.icon}</Text>
-          </View>
+            <Ionicons name={meta.iconName} size={24} color={colors.textInverse} />
+          </IconBadge>
 
           <View style={styles.content}>
-            <Text style={styles.title}>Incident baru di sekitar Anda</Text>
+            <View style={styles.titleRow}>
+              <Text style={styles.title}>Laporan baru di sekitar Anda</Text>
+
+              <StatusBadge
+                label={incident.severity}
+                variant={getSeverityVariant(incident.severity)}
+                size="sm"
+              />
+            </View>
 
             <Text style={styles.incidentTitle} numberOfLines={1}>
               {incident.title}
@@ -63,183 +79,124 @@ export default function LocalIncidentBanner({
 
             <Text style={styles.description} numberOfLines={2}>
               {meta.label}
-              {distance !== null ? ` • ${formatDistance(distance)} dari Anda` : ""}
+              {distanceText ? ` • ${distanceText}` : ""}
             </Text>
-
-            <View style={styles.badgeRow}>
-              <View
-                style={[
-                  styles.badge,
-                  {
-                    backgroundColor: trust.color,
-                  },
-                ]}
-              >
-                <Text style={styles.badgeText}>{trust.shortLabel}</Text>
-              </View>
-
-              <View
-                style={[
-                  styles.badge,
-                  {
-                    backgroundColor: urgency.color,
-                  },
-                ]}
-              >
-                <Text style={styles.badgeText}>
-                  {urgency.shortLabel} {urgency.score}
-                </Text>
-              </View>
-            </View>
           </View>
 
-          <Pressable onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeText}>×</Text>
-          </Pressable>
+          <AppButton
+            title="×"
+            variant="ghost"
+            size="sm"
+            onPress={onClose}
+            style={styles.closeButton}
+            textStyle={styles.closeText}
+          />
         </View>
 
         <View style={styles.actionRow}>
-          <Pressable
+          <AppButton
+            title="Buka Thread"
+            variant="primary"
+            size="md"
             onPress={() => onOpen(incident)}
-            style={({ pressed }) => [
-              styles.openButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Text style={styles.openButtonText}>Buka Thread</Text>
-          </Pressable>
+            leftIcon={
+              <Ionicons
+                name="chatbubble-ellipses"
+                size={17}
+                color={colors.textInverse}
+              />
+            }
+            style={styles.openButton}
+          />
 
-          <Pressable
+          <AppButton
+            title="Nanti"
+            variant="secondary"
+            size="md"
             onPress={onClose}
-            style={({ pressed }) => [
-              styles.dismissButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Text style={styles.dismissButtonText}>Nanti</Text>
-          </Pressable>
+            style={styles.dismissButton}
+          />
         </View>
-      </View>
+      </AppCard>
     </View>
   );
 }
 
+function getSeverityVariant(
+  severity: IncidentReport["severity"]
+): "success" | "warning" | "danger" {
+  if (severity === "high") {
+    return "danger";
+  }
+
+  if (severity === "medium") {
+    return "warning";
+  }
+
+  return "success";
+}
+
 const styles = StyleSheet.create({
   wrapper: {
-    marginTop: 10,
+    marginTop: spacing.sm,
   },
   card: {
     borderWidth: 1.5,
-    borderRadius: 22,
-    padding: 14,
-    shadowColor: "#0F172A",
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.14,
-    shadowRadius: 14,
-    elevation: 6,
+    borderRadius: radius["2xl"],
+    ...shadow.card,
   },
   header: {
     flexDirection: "row",
-    gap: 12,
+    gap: spacing.md,
     alignItems: "flex-start",
-  },
-  iconBox: {
-    width: 46,
-    height: 46,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  icon: {
-    fontSize: 22,
   },
   content: {
     flex: 1,
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
   title: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: "#0F172A",
+    flex: 1,
+    ...typography.label,
+    color: colors.text,
   },
   incidentTitle: {
-    marginTop: 4,
+    marginTop: spacing.xs,
     fontSize: 15,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
   },
   description: {
-    marginTop: 4,
-    fontSize: 12,
-    fontWeight: "700",
+    marginTop: spacing.xs,
+    ...typography.caption,
     color: "#475569",
-    lineHeight: 17,
-  },
-  badgeRow: {
-    flexDirection: "row",
-    gap: 6,
-    marginTop: 8,
-    flexWrap: "wrap",
-  },
-  badge: {
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: "900",
-    color: "#FFFFFF",
   },
   closeButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(15, 23, 42, 0.1)",
-    alignItems: "center",
-    justifyContent: "center",
+    width: 30,
+    height: 30,
+    minHeight: 30,
+    paddingHorizontal: 0,
+    backgroundColor: "rgba(15, 23, 42, 0.08)",
   },
   closeText: {
     fontSize: 20,
-    fontWeight: "900",
-    color: "#0F172A",
     lineHeight: 22,
+    color: colors.text,
   },
   actionRow: {
     flexDirection: "row",
-    gap: 10,
-    marginTop: 12,
+    gap: spacing.sm,
+    marginTop: spacing.md,
   },
   openButton: {
-    flex: 1.4,
-    backgroundColor: "#0F766E",
-    borderRadius: 14,
-    paddingVertical: 11,
-    alignItems: "center",
-  },
-  openButtonText: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: "#FFFFFF",
+    flex: 1.45,
   },
   dismissButton: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    paddingVertical: 11,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
-  },
-  dismissButtonText: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: "#334155",
-  },
-  pressed: {
-    opacity: 0.82,
-    transform: [{ scale: 0.99 }],
+    backgroundColor: colors.surface,
   },
 });

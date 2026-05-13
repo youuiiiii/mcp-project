@@ -1,9 +1,20 @@
-import { Pressable, StyleSheet, Text, ViewStyle } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  Pressable,
+  StyleProp,
+  StyleSheet,
+  Text,
+  View,
+  ViewStyle,
+} from "react-native";
+
+import { colors } from "../theme/colors";
+import { radius, shadow } from "../theme/layout";
 
 type SOSButtonProps = {
   onPress: () => void;
   disabled?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 };
 
 export default function SOSButton({
@@ -15,13 +26,19 @@ export default function SOSButton({
     <Pressable
       disabled={disabled}
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Activate emergency SOS"
       style={({ pressed }) => [
         styles.button,
-        pressed && styles.buttonPressed,
+        pressed && !disabled && styles.buttonPressed,
         disabled && styles.buttonDisabled,
         style,
       ]}
     >
+      <View style={styles.iconRing}>
+        <Ionicons name="alert" size={22} color={colors.textInverse} />
+      </View>
+
       <Text style={styles.title}>SOS</Text>
       <Text style={styles.subtitle}>Emergency</Text>
     </Pressable>
@@ -30,22 +47,16 @@ export default function SOSButton({
 
 const styles = StyleSheet.create({
   button: {
-    width: 86,
-    height: 86,
-    borderRadius: 43,
-    backgroundColor: "#DC2626",
+    width: 88,
+    height: 88,
+    borderRadius: radius.full,
+    backgroundColor: colors.danger,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#991B1B",
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.28,
-    shadowRadius: 12,
-    elevation: 8,
     borderWidth: 4,
-    borderColor: "#FEE2E2",
+    borderColor: colors.dangerSoft,
+    ...shadow.floating,
+    shadowColor: colors.primaryDark,
   },
   buttonPressed: {
     transform: [{ scale: 0.94 }],
@@ -54,16 +65,25 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.55,
   },
+  iconRing: {
+    width: 30,
+    height: 30,
+    borderRadius: radius.full,
+    backgroundColor: colors.primaryDark,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 3,
+  },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "900",
-    color: "#FFFFFF",
+    color: colors.textInverse,
     letterSpacing: 0.5,
   },
   subtitle: {
     marginTop: 1,
     fontSize: 10,
-    fontWeight: "700",
-    color: "#FEE2E2",
+    fontWeight: "800",
+    color: colors.dangerSoft,
   },
 });
