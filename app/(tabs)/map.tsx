@@ -1,20 +1,8 @@
 import * as Haptics from "expo-haptics";
-import * as Location from "expo-location";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Alert,
-  Platform,
-  StyleSheet,
-  Text,
-  Vibration,
-  View,
-} from "react-native";
-import MapView, {
-  Circle,
-  Marker,
-  PROVIDER_GOOGLE,
-  Region,
-} from "react-native-maps";
+import { Alert, Platform, Text, Vibration, View } from "react-native";
+import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
+
 import FilterBar, { MapFilterValue } from "../../src/components/FilterBar";
 import IncidentThreadModal from "../../src/components/IncidentThreadModal";
 import LocalIncidentBanner from "../../src/components/LocalIncidentBanner";
@@ -30,104 +18,25 @@ import {
   WARNING_DISTANCE_METERS,
   getFilterLabel,
   getIncidentDisplayMeta,
-  isIncidentCategory,
 } from "../../src/constants/incident";
 import { useAuth } from "../../src/contexts/AuthContext";
-import {
-  createSOSLog,
-  subscribeToIncidents,
-} from "../../src/services/incidentService";
+import ClusterMarker from "../../src/features/map/components/ClusterMarker";
+import DraftReportMarker from "../../src/features/map/components/DraftReportMarker";
+import IncidentMapMarker from "../../src/features/map/components/IncidentMapMarker";
+import UserLocationMarker from "../../src/features/map/components/UserLocationMarker";
+import { useMapIncidents } from "../../src/features/map/hooks/useMapIncidents";
+import { useStableUserLocation } from "../../src/features/map/hooks/useStableUserLocation";
+import type { NearbyIncidentNotification } from "../../src/features/map/types";
+import { getEmergencyGuidance } from "../../src/features/map/utils/emergencyGuidance";
+import { createSOSLog } from "../../src/services/incidentService";
 import { mapStyles as styles } from "../../src/styles/mapStyles";
-import { Coordinate, IncidentReport } from "../../src/types/incident";
+import type { Coordinate, IncidentReport } from "../../src/types/incident";
 import {
   formatDistance,
   getDistanceInMeters,
   getNearestIncident,
   isValidCoordinate,
 } from "../../src/utils/geo";
-import { getIncidentTrustMeta } from "../../src/utils/incidentTrust";
-import { getIncidentUrgencyMeta } from "../../src/utils/incidentUrgency";
-
-type UserMapPosition = Coordinate & {
-  accuracy?: number | null;
-  heading?: number | null;
-};
-
-type MapCluster = {
-  id: string;
-  latitude: number;
-  longitude: number;
-  incidents: IncidentReport[];
-};
-
-type NearbyIncidentNotification = {
-  incident: IncidentReport;
-  distance: number;
-};
-
-const DEFAULT_REGION: Region = {
-  latitude: -6.2,
-  longitude: 106.816666,
-  latitudeDelta: 0.05,
-  longitudeDelta: 0.05,
-};
-
-const CLUSTER_DISTANCE_METERS = 120;
-
-const USER_LOCATION_MIN_MOVE_METERS = 2;
-const USER_LOCATION_MAX_ACCURACY_METERS = 60;
-const USER_LOCATION_MAX_JUMP_METERS = 80;
-
-const createClusters = (incidents: IncidentReport[]): MapCluster[] => {
-  const clusters: MapCluster[] = [];
-
-  incidents.forEach((incident) => {
-    if (!isValidCoordinate(incident.latitude, incident.longitude)) {
-      return;
-    }
-
-    const incidentCoordinate: Coordinate = {
-      latitude: incident.latitude,
-      longitude: incident.longitude,
-    };
-
-    const existingCluster = clusters.find((cluster) => {
-      const distance = getDistanceInMeters(incidentCoordinate, {
-        latitude: cluster.latitude,
-        longitude: cluster.longitude,
-      });
-
-      return distance <= CLUSTER_DISTANCE_METERS;
-    });
-
-    if (existingCluster) {
-      existingCluster.incidents.push(incident);
-
-      const total = existingCluster.incidents.length;
-
-      existingCluster.latitude =
-        existingCluster.incidents.reduce((sum, item) => {
-          return sum + item.latitude;
-        }, 0) / total;
-
-      existingCluster.longitude =
-        existingCluster.incidents.reduce((sum, item) => {
-          return sum + item.longitude;
-        }, 0) / total;
-
-      return;
-    }
-
-    clusters.push({
-      id: incident.id,
-      latitude: incident.latitude,
-      longitude: incident.longitude,
-      incidents: [incident],
-    });
-  });
-
-  return clusters;
-};
 
 const getReportDisplayMeta = (incident: IncidentReport) => {
   return getIncidentDisplayMeta({
@@ -136,95 +45,17 @@ const getReportDisplayMeta = (incident: IncidentReport) => {
   });
 };
 
-const getEmergencyGuidance = (incident: IncidentReport | null): string => {
-  if (!incident) {
-    return "Lokasi SOS Anda sudah dicatat. Tetap tenang, cari tempat aman terdekat, dan hubungi pihak berwenang jika kondisi mendesak.";
-  }
-
-  const incidentKind = incident.subcategory ?? incident.type;
-
-  switch (incidentKind) {
-    case "flood":
-      return "Hindari arus air, pindah ke tempat lebih tinggi, dan jangan memaksa melewati jalan tergenang.";
-
-    case "earthquake":
-      return "Lindungi kepala, jauhi kaca atau bangunan rapuh, lalu keluar ke area terbuka saat aman.";
-
-    case "landslide":
-      return "Jauhi lereng, tebing, dan area tanah retak. Bergerak ke area yang lebih stabil.";
-
-    case "volcanic_eruption":
-      return "Gunakan masker, jauhi area abu tebal, ikuti arahan evakuasi, dan hindari daerah aliran lahar.";
-
-    case "strong_wind":
-      return "Jauhi pohon besar, tiang listrik, baliho, dan bangunan rapuh. Cari tempat berlindung yang aman.";
-
-    case "tsunami":
-      return "Segera menjauh dari pantai dan bergerak ke tempat tinggi. Ikuti jalur evakuasi resmi.";
-
-    case "fire":
-    case "building_fire":
-    case "vehicle_fire":
-    case "land_fire":
-    case "electrical_fire":
-      return "Jauhi sumber api, hindari asap, jangan gunakan lift, dan cari jalur evakuasi terdekat.";
-
-    case "traffic_accident":
-      return "Jauhi badan jalan, beri ruang untuk petugas, dan hindari kerumunan di sekitar lokasi.";
-
-    case "fallen_tree":
-      return "Jauhi pohon, kabel listrik, dan area tertutup. Gunakan jalur alternatif.";
-
-    case "road_block":
-      return "Cari jalur alternatif dan hindari memaksakan kendaraan melewati area terhalang.";
-
-    case "damaged_road":
-      return "Kurangi kecepatan, hindari lubang atau retakan besar, dan gunakan jalur lain bila memungkinkan.";
-
-    case "fallen_power_line":
-      return "Jangan menyentuh kabel, jauhi area sekitar kabel, dan segera laporkan ke petugas terkait.";
-
-    case "collapsed_building":
-      return "Jauhi reruntuhan, hindari masuk ke area bangunan, dan beri ruang untuk petugas penyelamat.";
-
-    case "crime":
-    case "theft":
-      return "Jaga jarak aman, jangan mengejar pelaku sendirian, dan segera hubungi pihak keamanan atau kepolisian.";
-
-    case "brawl":
-    case "risky_crowd":
-    case "mob_violence":
-    case "public_disturbance":
-      return "Hindari kerumunan, jangan ikut terlibat, tetap waspada, dan menjauh dari area yang tidak kondusif.";
-
-    case "medical":
-    case "fainted_person":
-    case "work_accident":
-    case "drowning":
-    case "evacuation_needed":
-      return "Beri ruang kepada korban, hubungi bantuan medis, dan jangan memindahkan korban tanpa kebutuhan darurat.";
-
-    default:
-      return "Tetap tenang, jauhi area kejadian, dan hubungi pihak berwenang jika dibutuhkan.";
-  }
-};
-
 export default function MapScreen() {
   const { user } = useAuth();
 
   const mapRef = useRef<MapView | null>(null);
   const warnedIncidentIdRef = useRef<string | null>(null);
   const verificationPromptedIncidentIdRef = useRef<string | null>(null);
-  const lastStableUserLocationRef = useRef<UserMapPosition | null>(null);
 
   const knownIncidentIdsRef = useRef<Set<string>>(new Set());
   const notifiedIncidentIdsRef = useRef<Set<string>>(new Set());
   const initialIncidentSnapshotLoadedRef = useRef(false);
 
-  const [reports, setReports] = useState<IncidentReport[]>([]);
-  const [userLocation, setUserLocation] = useState<UserMapPosition | null>(
-    null
-  );
   const [draftCoordinate, setDraftCoordinate] = useState<Coordinate | null>(
     null
   );
@@ -243,59 +74,34 @@ export default function MapScreen() {
   const [isVerifyModalVisible, setIsVerifyModalVisible] = useState(false);
 
   const [selectedFilter, setSelectedFilter] = useState<MapFilterValue>("all");
-  const [region, setRegion] = useState<Region>(DEFAULT_REGION);
-
-  const [loadingLocation, setLoadingLocation] = useState(true);
-  const [loadingReports, setLoadingReports] = useState(true);
   const [sosLoading, setSosLoading] = useState(false);
-
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [nearbyIncidentNotification, setNearbyIncidentNotification] =
     useState<NearbyIncidentNotification | null>(null);
 
+  const {
+    userLocation,
+    region,
+    loadingLocation,
+    locationErrorMessage,
+    focusUserLocation,
+  } = useStableUserLocation(mapRef);
+
+  const {
+    reports,
+    filteredReports,
+    activeReports,
+    clusters,
+    nearestIncident,
+    loadingReports,
+    reportsErrorMessage,
+  } = useMapIncidents({
+    selectedFilter,
+    userLocation,
+  });
+
   const actorKey = user?.email ?? user?.uid ?? null;
-
-  const shouldUpdateUserLocation = (nextLocation: UserMapPosition): boolean => {
-    const lastLocation = lastStableUserLocationRef.current;
-
-    const nextAccuracy =
-      nextLocation.accuracy ?? USER_LOCATION_MAX_ACCURACY_METERS;
-
-    if (nextAccuracy > USER_LOCATION_MAX_ACCURACY_METERS) {
-      return false;
-    }
-
-    if (!lastLocation) {
-      return true;
-    }
-
-    const distance = getDistanceInMeters(lastLocation, nextLocation);
-
-    if (distance > USER_LOCATION_MAX_JUMP_METERS) {
-      return false;
-    }
-
-    const lastAccuracy =
-      lastLocation.accuracy ?? USER_LOCATION_MAX_ACCURACY_METERS;
-
-    const accuracyImproved = nextAccuracy + 5 < lastAccuracy;
-
-    if (distance < USER_LOCATION_MIN_MOVE_METERS && !accuracyImproved) {
-      return false;
-    }
-
-    return true;
-  };
-
-  const updateStableUserLocation = (nextLocation: UserMapPosition) => {
-    if (!shouldUpdateUserLocation(nextLocation)) {
-      return;
-    }
-
-    lastStableUserLocationRef.current = nextLocation;
-    setUserLocation(nextLocation);
-  };
+  const errorMessage = locationErrorMessage ?? reportsErrorMessage;
 
   const selectedIncident = useMemo(() => {
     if (!selectedIncidentId) {
@@ -304,190 +110,6 @@ export default function MapScreen() {
 
     return reports.find((item) => item.id === selectedIncidentId) ?? null;
   }, [reports, selectedIncidentId]);
-
-  useEffect(() => {
-    let subscription: Location.LocationSubscription | null = null;
-    let mounted = true;
-
-    const setupLocation = async () => {
-      try {
-        setLoadingLocation(true);
-
-        const permission = await Location.requestForegroundPermissionsAsync();
-
-        if (permission.status !== "granted") {
-          setErrorMessage(
-            "Izin lokasi ditolak. Map tetap dapat digunakan, tetapi posisi Anda tidak bisa ditampilkan."
-          );
-          setLoadingLocation(false);
-          return;
-        }
-
-        const currentPosition = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.BestForNavigation,
-        });
-
-        if (!mounted) {
-          return;
-        }
-
-        const coordinate: UserMapPosition = {
-          latitude: currentPosition.coords.latitude,
-          longitude: currentPosition.coords.longitude,
-          accuracy: currentPosition.coords.accuracy,
-          heading: currentPosition.coords.heading,
-        };
-
-        const nextRegion: Region = {
-          latitude: coordinate.latitude,
-          longitude: coordinate.longitude,
-          latitudeDelta: 0.02,
-          longitudeDelta: 0.02,
-        };
-
-        lastStableUserLocationRef.current = coordinate;
-        setUserLocation(coordinate);
-        setRegion(nextRegion);
-        setLoadingLocation(false);
-
-        setTimeout(() => {
-          mapRef.current?.animateToRegion(nextRegion, 700);
-        }, 300);
-
-        subscription = await Location.watchPositionAsync(
-          {
-            accuracy: Location.Accuracy.High,
-            distanceInterval: 2,
-            timeInterval: 1500,
-          },
-          (position) => {
-            const nextCoordinate: UserMapPosition = {
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-              accuracy: position.coords.accuracy,
-              heading: position.coords.heading,
-            };
-
-            updateStableUserLocation(nextCoordinate);
-          }
-        );
-      } catch (error) {
-        console.error("Location error:", error);
-
-        setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : "Gagal mengambil lokasi perangkat."
-        );
-
-        setLoadingLocation(false);
-      }
-    };
-
-    setupLocation();
-
-    return () => {
-      mounted = false;
-
-      if (subscription) {
-        subscription.remove();
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    setLoadingReports(true);
-
-    const unsubscribe = subscribeToIncidents(
-      (items) => {
-        setReports(items);
-        setLoadingReports(false);
-      },
-      (error) => {
-        console.error("Map reports error:", error);
-        setErrorMessage(error.message || "Gagal memuat data laporan.");
-        setLoadingReports(false);
-      }
-    );
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  const filteredReports = useMemo(() => {
-    const validReports = reports.filter((report) => {
-      return isValidCoordinate(report.latitude, report.longitude);
-    });
-
-    if (selectedFilter === "all") {
-      return validReports;
-    }
-
-    if (selectedFilter === "active") {
-      return validReports.filter((report) => report.status === "active");
-    }
-
-    if (selectedFilter === "resolved") {
-      return validReports.filter((report) => report.status === "resolved");
-    }
-
-    if (isIncidentCategory(selectedFilter)) {
-      return validReports.filter((report) => {
-        return report.category === selectedFilter;
-      });
-    }
-
-    return validReports;
-  }, [reports, selectedFilter]);
-
-  const activeReports = useMemo(() => {
-    return reports.filter((report) => {
-      return (
-        report.status === "active" &&
-        isValidCoordinate(report.latitude, report.longitude)
-      );
-    });
-  }, [reports]);
-
-  // const visibleActiveReports = useMemo(() => {
-  //   return filteredReports.filter((report) => {
-  //     return (
-  //       report.status === "active" &&
-  //       isValidCoordinate(report.latitude, report.longitude)
-  //     );
-  //   });
-  // }, [filteredReports]);
-
-  const clusters = useMemo(() => {
-    return createClusters(filteredReports);
-  }, [filteredReports]);
-
-  // const heatmapPoints = useMemo(() => {
-  //   return visibleActiveReports.map((report) => {
-  //     return {
-  //       latitude: report.latitude,
-  //       longitude: report.longitude,
-  //       weight:
-  //         report.severity === "high"
-  //           ? 3
-  //           : report.severity === "medium"
-  //             ? 2
-  //             : 1,
-  //     };
-  //   });
-  // }, [visibleActiveReports]);
-
-  const nearestIncident = useMemo(() => {
-    if (!userLocation) {
-      return {
-        incident: null,
-        distance: null,
-      };
-    }
-
-    return getNearestIncident(userLocation, activeReports);
-  }, [userLocation, activeReports]);
 
   const isOwnIncident = (incident: IncidentReport) => {
     if (!actorKey) {
@@ -832,143 +454,6 @@ export default function MapScreen() {
     setSelectedResolveIncident(null);
   };
 
-  const focusUserLocation = () => {
-    if (!userLocation) {
-      Alert.alert(
-        "Lokasi Tidak Tersedia",
-        "Izinkan akses lokasi untuk menampilkan posisi Anda."
-      );
-      return;
-    }
-
-    const nextRegion: Region = {
-      latitude: userLocation.latitude,
-      longitude: userLocation.longitude,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01,
-    };
-
-    setRegion(nextRegion);
-    mapRef.current?.animateToRegion(nextRegion, 700);
-  };
-
-  const renderUserLocationMarker = () => {
-    if (!userLocation) {
-      return null;
-    }
-
-    const accuracyRadius = Math.max(userLocation.accuracy ?? 18, 8);
-    const heading = userLocation.heading ?? 0;
-
-    return (
-      <>
-        <Circle
-          center={{
-            latitude: userLocation.latitude,
-            longitude: userLocation.longitude,
-          }}
-          radius={accuracyRadius}
-          strokeWidth={1}
-          strokeColor="#2563EB66"
-          fillColor="#2563EB18"
-        />
-
-        <Marker
-          coordinate={{
-            latitude: userLocation.latitude,
-            longitude: userLocation.longitude,
-          }}
-          anchor={{
-            x: 0.5,
-            y: 0.5,
-          }}
-          tracksViewChanges
-          flat
-          rotation={heading}
-        >
-          <View style={localStyles.userMarkerWrapper}>
-            <View style={localStyles.headingPointer} />
-
-            <View style={localStyles.userMarkerOuter}>
-              <View style={localStyles.userMarkerInner}>
-                <Text style={localStyles.userIcon}>🧍</Text>
-              </View>
-            </View>
-          </View>
-        </Marker>
-      </>
-    );
-  };
-
-  const renderIncidentMarker = (incident: IncidentReport) => {
-    const meta = getReportDisplayMeta(incident);
-    const trust = getIncidentTrustMeta(incident);
-    const urgency = getIncidentUrgencyMeta(incident, userLocation);
-
-    return (
-      <Marker
-        key={incident.id}
-        coordinate={{
-          latitude: incident.latitude,
-          longitude: incident.longitude,
-        }}
-        tracksViewChanges={false}
-        onPress={() => handleOpenIncidentThread(incident)}
-      >
-        <View style={styles.markerContainer}>
-          <View
-            style={[
-              localStyles.markerTrustRing,
-              {
-                borderColor: urgency.color,
-                backgroundColor: urgency.lightColor,
-              },
-            ]}
-          >
-            <View style={[styles.markerBubble, { backgroundColor: meta.color }]}>
-              <Text style={styles.markerIcon}>{meta.icon}</Text>
-            </View>
-
-            <View
-              style={[
-                localStyles.markerTrustBadge,
-                {
-                  backgroundColor: trust.color,
-                },
-              ]}
-            >
-              <Text style={localStyles.markerTrustBadgeText}>
-                {trust.shortIcon}
-              </Text>
-            </View>
-
-            <View
-              style={[
-                localStyles.markerUrgencyBadge,
-                {
-                  backgroundColor: urgency.color,
-                },
-              ]}
-            >
-              <Text style={localStyles.markerUrgencyBadgeText}>
-                {urgency.shortLabel}
-              </Text>
-            </View>
-          </View>
-
-          <View
-            style={[
-              styles.markerPointer,
-              {
-                backgroundColor: urgency.color,
-              },
-            ]}
-          />
-        </View>
-      </Marker>
-    );
-  };
-
   if (loadingLocation && loadingReports) {
     return (
       <View style={styles.container}>
@@ -992,45 +477,22 @@ export default function MapScreen() {
           handleLongPress(event.nativeEvent.coordinate);
         }}
       >
-        {renderUserLocationMarker()}
+        <UserLocationMarker userLocation={userLocation} />
 
-        {draftCoordinate ? (
-          <Marker coordinate={draftCoordinate} tracksViewChanges={false}>
-            <View style={styles.draftMarker}>
-              <View style={styles.draftBubble}>
-                <Text style={styles.draftIcon}>📌</Text>
-              </View>
-            </View>
-          </Marker>
-        ) : null}
+        <DraftReportMarker coordinate={draftCoordinate} />
 
         {clusters.map((cluster) => {
           if (cluster.incidents.length === 1) {
-            return renderIncidentMarker(cluster.incidents[0]);
+            return (
+              <IncidentMapMarker
+                key={cluster.incidents[0].id}
+                incident={cluster.incidents[0]}
+                onPress={handleOpenIncidentThread}
+              />
+            );
           }
 
-          return (
-            <Marker
-              key={`cluster-${cluster.id}-${cluster.incidents.length}`}
-              coordinate={{
-                latitude: cluster.latitude,
-                longitude: cluster.longitude,
-              }}
-              tracksViewChanges={false}
-              onPress={() => {
-                Alert.alert(
-                  "Cluster Kejadian",
-                  `Ada ${cluster.incidents.length} laporan di area ini. Zoom in untuk melihat detail.`
-                );
-              }}
-            >
-              <View style={styles.clusterMarker}>
-                <Text style={styles.clusterText}>
-                  {cluster.incidents.length}
-                </Text>
-              </View>
-            </Marker>
-          );
+          return <ClusterMarker key={cluster.id} cluster={cluster} />;
         })}
       </MapView>
 
@@ -1046,8 +508,8 @@ export default function MapScreen() {
           </View>
 
           <Text style={styles.headerSubtitle}>
-            Pin menunjukkan lokasi laporan warga. Tap pin untuk detail. Long press
-            dekat posisi Anda untuk membuat laporan baru.
+            Pin menunjukkan lokasi laporan warga. Tap pin untuk detail. Long
+            press dekat posisi Anda untuk membuat laporan baru.
           </Text>
         </View>
 
@@ -1152,94 +614,3 @@ export default function MapScreen() {
     </View>
   );
 }
-
-const localStyles = StyleSheet.create({
-  userMarkerWrapper: {
-    width: 58,
-    height: 58,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headingPointer: {
-    position: "absolute",
-    top: 0,
-    width: 0,
-    height: 0,
-    borderLeftWidth: 9,
-    borderRightWidth: 9,
-    borderBottomWidth: 18,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    borderBottomColor: "#2563EB",
-    opacity: 0.9,
-  },
-  userMarkerOuter: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#0F172A",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  userMarkerInner: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: "#2563EB",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#DBEAFE",
-  },
-  userIcon: {
-    fontSize: 18,
-  },
-  markerTrustRing: {
-    borderWidth: 3,
-    borderRadius: 999,
-    padding: 3,
-    position: "relative",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  markerTrustBadge: {
-    position: "absolute",
-    top: -7,
-    right: -7,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
-  },
-  markerTrustBadgeText: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: "#FFFFFF",
-  },
-  markerUrgencyBadge: {
-    position: "absolute",
-    bottom: -8,
-    left: -12,
-    borderRadius: 999,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
-  },
-  markerUrgencyBadgeText: {
-    fontSize: 8,
-    fontWeight: "900",
-    color: "#FFFFFF",
-  },
-});
