@@ -1,80 +1,64 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+
 import {
   INCIDENT_CATEGORY_OPTIONS,
-  getCategoryBySubcategory,
   getIncidentCategoryMeta,
-  getSubcategoriesByCategory,
   isIncidentCategory,
-  isIncidentType,
 } from "../constants/incident";
-import {
-  IncidentCategory,
-  IncidentSubcategory,
-  IncidentType,
-} from "../types/incident";
+import { colors } from "../theme/colors";
+import { radius, spacing } from "../theme/layout";
+import { typography } from "../theme/typography";
+import { IncidentCategory } from "../types/incident";
 
-export type MapFilterValue =
-  | "all"
-  | "active"
-  | "resolved"
-  | IncidentCategory
-  | IncidentType;
+export type MapFilterValue = "all" | "active" | "resolved" | IncidentCategory;
+
+type AppIconName = keyof typeof Ionicons.glyphMap;
 
 type FilterBarProps = {
   selectedFilter: MapFilterValue;
   onChange: (value: MapFilterValue) => void;
 };
 
-const STATIC_FILTERS: {
+type StaticFilter = {
   value: MapFilterValue;
   label: string;
-  icon: string;
+  iconName: AppIconName;
   color: string;
   lightColor: string;
-}[] = [
+};
+
+const STATIC_FILTERS: StaticFilter[] = [
   {
     value: "all",
     label: "Semua",
-    icon: "🌐",
+    iconName: "globe",
     color: "#0F766E",
     lightColor: "#CCFBF1",
   },
   {
     value: "active",
     label: "Aktif",
-    icon: "🚨",
-    color: "#DC2626",
-    lightColor: "#FEE2E2",
+    iconName: "radio",
+    color: colors.danger,
+    lightColor: colors.dangerSoft,
   },
   {
     value: "resolved",
     label: "Selesai",
-    icon: "✅",
-    color: "#16A34A",
-    lightColor: "#DCFCE7",
+    iconName: "checkmark-circle",
+    color: colors.success,
+    lightColor: colors.successSoft,
   },
 ];
 
-const getActiveCategory = (
-  selectedFilter: MapFilterValue
-): IncidentCategory | null => {
-  if (isIncidentCategory(selectedFilter)) {
-    return selectedFilter;
-  }
-
-  if (isIncidentType(selectedFilter)) {
-    return getCategoryBySubcategory(selectedFilter as IncidentSubcategory);
-  }
-
-  return null;
-};
-
-export default function FilterBar({ selectedFilter, onChange }: FilterBarProps) {
-  const activeCategory = getActiveCategory(selectedFilter);
-
-  const subcategoryOptions = activeCategory
-    ? getSubcategoriesByCategory(activeCategory)
-    : [];
+export default function FilterBar({
+  selectedFilter,
+  onChange,
+}: FilterBarProps) {
+  const activeCategory = isIncidentCategory(selectedFilter)
+    ? getIncidentCategoryMeta(selectedFilter)
+    : null;
 
   return (
     <View style={styles.wrapper}>
@@ -87,178 +71,149 @@ export default function FilterBar({ selectedFilter, onChange }: FilterBarProps) 
           const active = selectedFilter === item.value;
 
           return (
-            <Pressable
+            <FilterChip
               key={item.value}
+              label={item.label}
+              iconName={item.iconName}
+              active={active}
+              color={item.color}
+              lightColor={item.lightColor}
               onPress={() => onChange(item.value)}
-              style={({ pressed }) => [
-                styles.button,
-                active && {
-                  backgroundColor: item.lightColor,
-                  borderColor: item.color,
-                },
-                pressed && styles.buttonPressed,
-              ]}
-            >
-              <View
-                style={[
-                  styles.iconCircle,
-                  active && {
-                    backgroundColor: item.color,
-                  },
-                ]}
-              >
-                <Text style={styles.icon}>{item.icon}</Text>
-              </View>
-
-              <Text
-                numberOfLines={1}
-                style={[
-                  styles.label,
-                  active && {
-                    color: item.color,
-                    fontWeight: "900",
-                  },
-                ]}
-              >
-                {item.label}
-              </Text>
-            </Pressable>
+            />
           );
         })}
 
         {INCIDENT_CATEGORY_OPTIONS.map((item) => {
-          const active =
-            selectedFilter === item.value || activeCategory === item.value;
+          const active = selectedFilter === item.value;
 
           return (
-            <Pressable
+            <FilterChip
               key={item.value}
+              label={item.shortLabel}
+              iconName={item.iconName}
+              active={active}
+              color={item.color}
+              lightColor={item.lightColor}
               onPress={() => onChange(item.value)}
-              style={({ pressed }) => [
-                styles.button,
-                active && {
-                  backgroundColor: item.lightColor,
-                  borderColor: item.color,
-                },
-                pressed && styles.buttonPressed,
-              ]}
-            >
-              <View
-                style={[
-                  styles.iconCircle,
-                  active && {
-                    backgroundColor: item.color,
-                  },
-                ]}
-              >
-                <Text style={styles.icon}>{item.icon}</Text>
-              </View>
-
-              <Text
-                numberOfLines={2}
-                style={[
-                  styles.label,
-                  active && {
-                    color: item.color,
-                    fontWeight: "900",
-                  },
-                ]}
-              >
-                {item.label}
-              </Text>
-            </Pressable>
+            />
           );
         })}
       </ScrollView>
 
       {activeCategory ? (
-        <View style={styles.subcategorySection}>
-          <Text style={styles.subcategoryTitle}>
-            Subkategori {getIncidentCategoryMeta(activeCategory).label}
-          </Text>
+        <View
+          style={[
+            styles.categoryInfo,
+            {
+              backgroundColor: activeCategory.lightColor,
+              borderColor: activeCategory.color,
+            },
+          ]}
+        >
+          <Ionicons
+            name={activeCategory.iconName}
+            size={18}
+            color={activeCategory.color}
+          />
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.subcategoryContainer}
-          >
-            <Pressable
-              onPress={() => onChange(activeCategory)}
-              style={({ pressed }) => [
-                styles.subcategoryButton,
-                selectedFilter === activeCategory && {
-                  backgroundColor: getIncidentCategoryMeta(activeCategory).color,
-                  borderColor: getIncidentCategoryMeta(activeCategory).color,
+          <View style={styles.categoryInfoTextGroup}>
+            <Text
+              style={[
+                styles.categoryInfoTitle,
+                {
+                  color: activeCategory.color,
                 },
-                pressed && styles.buttonPressed,
               ]}
             >
-              <Text
-                style={[
-                  styles.subcategoryText,
-                  selectedFilter === activeCategory &&
-                    styles.subcategoryTextActive,
-                ]}
-              >
-                Semua
-              </Text>
-            </Pressable>
+              {activeCategory.label}
+            </Text>
 
-            {subcategoryOptions.map((item) => {
-              const active = selectedFilter === item.value;
-
-              return (
-                <Pressable
-                  key={item.value}
-                  onPress={() => onChange(item.value)}
-                  style={({ pressed }) => [
-                    styles.subcategoryButton,
-                    active && {
-                      backgroundColor: item.color,
-                      borderColor: item.color,
-                    },
-                    pressed && styles.buttonPressed,
-                  ]}
-                >
-                  <Text style={styles.subcategoryIcon}>{item.icon}</Text>
-
-                  <Text
-                    numberOfLines={1}
-                    style={[
-                      styles.subcategoryText,
-                      active && styles.subcategoryTextActive,
-                    ]}
-                  >
-                    {item.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+            <Text style={styles.categoryInfoDescription}>
+              {activeCategory.description}
+            </Text>
+          </View>
         </View>
       ) : null}
     </View>
   );
 }
 
+function FilterChip({
+  label,
+  iconName,
+  active,
+  color,
+  lightColor,
+  onPress,
+}: {
+  label: string;
+  iconName: AppIconName;
+  active: boolean;
+  color: string;
+  lightColor: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.button,
+        active && {
+          backgroundColor: lightColor,
+          borderColor: color,
+        },
+        pressed && styles.buttonPressed,
+      ]}
+    >
+      <View
+        style={[
+          styles.iconCircle,
+          active && {
+            backgroundColor: color,
+          },
+        ]}
+      >
+        <Ionicons
+          name={iconName}
+          size={20}
+          color={active ? colors.textInverse : color}
+        />
+      </View>
+
+      <Text
+        numberOfLines={1}
+        style={[
+          styles.label,
+          active && {
+            color,
+            fontWeight: "900",
+          },
+        ]}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   wrapper: {
-    gap: 10,
+    gap: spacing.sm,
   },
   container: {
-    gap: 10,
+    gap: spacing.sm,
     paddingHorizontal: 2,
     paddingVertical: 2,
   },
   button: {
     minWidth: 92,
-    maxWidth: 130,
-    backgroundColor: "#FFFFFF",
+    maxWidth: 116,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -269,14 +224,11 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 38,
     height: 38,
-    borderRadius: 19,
-    backgroundColor: "#F1F5F9",
+    borderRadius: radius.full,
+    backgroundColor: colors.surfaceMuted,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 6,
-  },
-  icon: {
-    fontSize: 20,
   },
   label: {
     fontSize: 11,
@@ -285,43 +237,23 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 14,
   },
-  subcategorySection: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 20,
-    padding: 10,
-  },
-  subcategoryTitle: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: "#0F172A",
-    marginBottom: 8,
-  },
-  subcategoryContainer: {
-    gap: 8,
-  },
-  subcategoryButton: {
+  categoryInfo: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "#F8FAFC",
+    alignItems: "flex-start",
+    gap: spacing.sm,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
+    borderRadius: radius.xl,
+    padding: spacing.md,
   },
-  subcategoryIcon: {
-    fontSize: 15,
+  categoryInfoTextGroup: {
+    flex: 1,
   },
-  subcategoryText: {
-    fontSize: 12,
-    fontWeight: "800",
+  categoryInfoTitle: {
+    ...typography.label,
+  },
+  categoryInfoDescription: {
+    marginTop: 4,
+    ...typography.caption,
     color: "#475569",
-    maxWidth: 150,
-  },
-  subcategoryTextActive: {
-    color: "#FFFFFF",
   },
 });

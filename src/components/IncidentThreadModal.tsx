@@ -1,21 +1,22 @@
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
+
 import {
   getIncidentCategoryMeta,
+  getIncidentDisplayMeta,
   getIncidentMeta,
 } from "../constants/incident";
 import { useAuth } from "../contexts/AuthContext";
@@ -25,6 +26,9 @@ import {
   subscribeToIncidentReplies,
   subscribeToIncidentVerifications,
 } from "../services/incidentService";
+import { colors } from "../theme/colors";
+import { radius, spacing } from "../theme/layout";
+import { typography } from "../theme/typography";
 import {
   IncidentConditionStatus,
   IncidentReply,
@@ -34,6 +38,14 @@ import {
 import { getIncidentExpiryMessage } from "../utils/incidentExpiry";
 import IncidentTrustBadge from "./IncidentTrustBadge";
 import IncidentUrgencyBadge from "./IncidentUrgencyBadge";
+import AppButton from "./ui/AppButton";
+import AppCard from "./ui/AppCard";
+import IconBadge from "./ui/IconBadge";
+import LoadingState from "./ui/LoadingState";
+import SectionHeader from "./ui/SectionHeader";
+import StatusBadge, { StatusBadgeVariant } from "./ui/StatusBadge";
+
+type AppIconName = keyof typeof Ionicons.glyphMap;
 
 type IncidentThreadModalProps = {
   visible: boolean;
@@ -43,132 +55,19 @@ type IncidentThreadModalProps = {
   onOpenResolve: (incident: IncidentReport) => void;
 };
 
-type TimelineItem =
-  | {
-      id: string;
-      kind: "report";
-      date?: Date;
-      title: string;
-      message: string;
-      imageUri?: string | null;
-      author?: string | null;
-      color: string;
-      badgeLabel: string;
-    }
-  | {
-      id: string;
-      kind: "verification";
-      date?: Date;
-      title: string;
-      message: string;
-      imageUri?: string | null;
-      author?: string | null;
-      color: string;
-      badgeLabel: string;
-      conditionLabel: string;
-    }
-  | {
-      id: string;
-      kind: "reply";
-      date?: Date;
-      title: string;
-      message: string;
-      author?: string | null;
-      color: string;
-      badgeLabel: string;
-    }
-  | {
-      id: string;
-      kind: "resolved";
-      date?: Date;
-      title: string;
-      message: string;
-      imageUri?: string | null;
-      author?: string | null;
-      color: string;
-      badgeLabel: string;
-    };
+type TimelineKind = "report" | "verification" | "reply" | "resolved";
 
-const formatDate = (date?: Date) => {
-  if (!date) {
-    return "Waktu tidak tersedia";
-  }
-
-  return date.toLocaleString("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-const getVerificationLabel = (
-  type: IncidentVerification["verificationType"]
-) => {
-  if (type === "valid") {
-    return "Benar terjadi";
-  }
-
-  if (type === "invalid") {
-    return "Tidak sesuai";
-  }
-
-  return "Update kondisi";
-};
-
-const getVerificationColor = (
-  type: IncidentVerification["verificationType"]
-) => {
-  if (type === "valid") {
-    return "#16A34A";
-  }
-
-  if (type === "invalid") {
-    return "#DC2626";
-  }
-
-  return "#F59E0B";
-};
-
-const getConditionLabel = (conditionStatus?: IncidentConditionStatus) => {
-  if (conditionStatus === "still_happening") {
-    return "Masih terjadi";
-  }
-
-  if (conditionStatus === "getting_worse") {
-    return "Semakin parah";
-  }
-
-  if (conditionStatus === "partially_resolved") {
-    return "Mulai terkendali";
-  }
-
-  if (conditionStatus === "resolved_but_not_closed") {
-    return "Tampak selesai";
-  }
-
-  if (conditionStatus === "not_found") {
-    return "Tidak ditemukan";
-  }
-
-  return "Kondisi belum ditentukan";
-};
-
-const getTimelineDotText = (kind: TimelineItem["kind"]) => {
-  if (kind === "report") {
-    return "1";
-  }
-
-  if (kind === "verification") {
-    return "✓";
-  }
-
-  if (kind === "reply") {
-    return "💬";
-  }
-
-  return "🏁";
+type TimelineItem = {
+  id: string;
+  kind: TimelineKind;
+  date?: Date;
+  title: string;
+  message: string;
+  imageUri?: string | null;
+  author?: string | null;
+  color: string;
+  badgeLabel: string;
+  conditionLabel?: string;
 };
 
 export default function IncidentThreadModal({
@@ -191,7 +90,10 @@ export default function IncidentThreadModal({
   const actorKey = user?.email ?? user?.uid ?? null;
 
   const meta = incident
-    ? getIncidentMeta(incident.subcategory ?? incident.type)
+    ? getIncidentDisplayMeta({
+      category: incident.category,
+      subcategory: incident.subcategory ?? incident.type,
+    })
     : null;
 
   const categoryMeta = incident
@@ -233,7 +135,7 @@ export default function IncidentThreadModal({
       unsubscribeVerifications();
       unsubscribeReplies();
     };
-  }, [visible, incident?.id]);
+  }, [visible, incident]);
 
   const isOwnIncident = useMemo(() => {
     if (!incident || !actorKey) {
@@ -303,7 +205,7 @@ export default function IncidentThreadModal({
         title: "Diskusi / Informasi Tambahan",
         message: item.message,
         author: item.userName || item.userEmail || "Anonymous",
-        color: "#0F766E",
+        color: colors.info,
         badgeLabel: "Reply",
       });
     });
@@ -317,7 +219,7 @@ export default function IncidentThreadModal({
         message: incident.resolutionNote || "Incident sudah ditandai selesai.",
         imageUri: incident.resolvedImageUri,
         author: incident.resolvedBy || "Anonymous",
-        color: "#64748B",
+        color: colors.textMuted,
         badgeLabel: "Resolved",
       });
     }
@@ -329,6 +231,8 @@ export default function IncidentThreadModal({
       return timeA - timeB;
     });
   }, [incident, meta, verifications, replies]);
+
+  const replyIsValid = replyText.trim().length >= 3;
 
   const handleClose = () => {
     setReplyText("");
@@ -346,12 +250,14 @@ export default function IncidentThreadModal({
         return;
       }
 
-      if (!replyText.trim()) {
+      const cleanReply = replyText.trim();
+
+      if (!cleanReply) {
         Alert.alert("Pesan Kosong", "Tulis pesan diskusi terlebih dahulu.");
         return;
       }
 
-      if (replyText.trim().length < 3) {
+      if (cleanReply.length < 3) {
         Alert.alert("Pesan Terlalu Pendek", "Pesan minimal 3 karakter.");
         return;
       }
@@ -360,7 +266,7 @@ export default function IncidentThreadModal({
 
       await createIncidentReply({
         reportId: incident.id,
-        message: replyText,
+        message: cleanReply,
         userName: user.displayName ?? user.email ?? "Anonymous",
         userEmail: user.email ?? null,
         actorKey,
@@ -425,80 +331,78 @@ export default function IncidentThreadModal({
                 </Text>
               </View>
 
-              <Pressable
+              <AppButton
+                title="×"
+                variant="secondary"
+                size="sm"
                 onPress={handleClose}
-                style={({ pressed }) => [
-                  styles.closeButton,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <Text style={styles.closeText}>×</Text>
-              </Pressable>
+                style={styles.closeButton}
+                textStyle={styles.closeText}
+              />
             </View>
 
             <ScrollView
               showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
               contentContainerStyle={styles.content}
             >
-              <View style={styles.originalCard}>
+              <AppCard style={styles.originalCard}>
                 <View style={styles.originalHeader}>
-                  <View
-                    style={[
-                      styles.iconBox,
-                      {
-                        backgroundColor: meta.lightColor,
-                      },
-                    ]}
+                  <IconBadge
+                    variant="neutral"
+                    size="lg"
+                    rounded={false}
+                    style={{
+                      backgroundColor: meta.lightColor,
+                    }}
                   >
-                    <Text style={styles.icon}>{meta.icon}</Text>
-                  </View>
+                    <Ionicons
+                      name={getIncidentIcon(incident)}
+                      size={24}
+                      color={meta.color}
+                    />
+                  </IconBadge>
 
                   <View style={styles.originalInfo}>
-                    <Text style={styles.incidentTitle}>{incident.title}</Text>
-                    <Text style={styles.incidentType}>
+                    <Text style={styles.incidentTitle} numberOfLines={2}>
+                      {incident.title}
+                    </Text>
+
+                    <Text style={styles.incidentType} numberOfLines={1}>
                       {categoryMeta.label} • {meta.label}
                     </Text>
                   </View>
 
-                  <View
-                    style={[
-                      styles.statusPill,
-                      incident.status === "active"
-                        ? styles.activePill
-                        : styles.resolvedPill,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.statusText,
-                        incident.status === "active"
-                          ? styles.activeText
-                          : styles.resolvedText,
-                      ]}
-                    >
-                      {incident.status === "active" ? "Active" : "Resolved"}
-                    </Text>
-                  </View>
+                  <StatusBadge
+                    label={getStatusLabel(incident.status)}
+                    variant={getStatusVariant(incident.status)}
+                    size="sm"
+                  />
                 </View>
 
                 <Text style={styles.description}>{incident.description}</Text>
 
-                <View style={styles.trustBox}>
+                <View style={styles.badgeStack}>
                   <IncidentTrustBadge incident={incident} variant="full" />
-                </View>
-
-                <View style={styles.urgencyBox}>
                   <IncidentUrgencyBadge incident={incident} variant="full" />
                 </View>
 
-                <View style={styles.expiryBox}>
-                  <Text style={styles.expiryTitle}>
-                    Status Update Otomatis
-                  </Text>
+                <AppCard variant="muted" padding="sm" style={styles.expiryBox}>
+                  <View style={styles.expiryHeader}>
+                    <Ionicons
+                      name="sync-circle"
+                      size={18}
+                      color={colors.info}
+                    />
+                    <Text style={styles.expiryTitle}>
+                      Status Update Otomatis
+                    </Text>
+                  </View>
+
                   <Text style={styles.expiryText}>
                     {getIncidentExpiryMessage(incident)}
                   </Text>
-                </View>
+                </AppCard>
 
                 {incident.imageUri ? (
                   <Image
@@ -508,234 +412,171 @@ export default function IncidentThreadModal({
                 ) : null}
 
                 <View style={styles.metaBox}>
-                  <Text style={styles.metaText}>
-                    Pelapor: {incident.reportedBy || "Anonymous"}
-                  </Text>
-                  <Text style={styles.metaText}>
-                    Dibuat: {formatDate(incident.createdAt)}
-                  </Text>
+                  <InfoLine
+                    icon="person"
+                    label={`Pelapor: ${incident.reportedBy || "Anonymous"}`}
+                  />
+                  <InfoLine
+                    icon="time"
+                    label={`Dibuat: ${formatDate(incident.createdAt)}`}
+                  />
                 </View>
-              </View>
+              </AppCard>
 
               <View style={styles.summaryGrid}>
-                <View style={styles.summaryCard}>
-                  <Text style={styles.summaryValue}>
-                    {incident.verificationCount ?? 0}
-                  </Text>
-                  <Text style={styles.summaryLabel}>Benar</Text>
-                </View>
+                <SummaryCard
+                  value={incident.verificationCount ?? 0}
+                  label="Benar"
+                  icon="checkmark-circle"
+                  color={colors.success}
+                />
 
-                <View style={styles.summaryCard}>
-                  <Text style={styles.summaryValue}>
-                    {incident.disputeCount ?? 0}
-                  </Text>
-                  <Text style={styles.summaryLabel}>Tidak Sesuai</Text>
-                </View>
+                <SummaryCard
+                  value={incident.disputeCount ?? 0}
+                  label="Tidak Sesuai"
+                  icon="close-circle"
+                  color={colors.danger}
+                />
 
-                <View style={styles.summaryCard}>
-                  <Text style={styles.summaryValue}>
-                    {incident.evidenceCount ?? 0}
-                  </Text>
-                  <Text style={styles.summaryLabel}>Bukti</Text>
-                </View>
+                <SummaryCard
+                  value={incident.evidenceCount ?? 0}
+                  label="Bukti"
+                  icon="image"
+                  color={colors.info}
+                />
 
-                <View style={styles.summaryCard}>
-                  <Text style={styles.summaryValue}>
-                    {incident.replyCount ?? 0}
-                  </Text>
-                  <Text style={styles.summaryLabel}>Diskusi</Text>
-                </View>
+                <SummaryCard
+                  value={incident.replyCount ?? 0}
+                  label="Diskusi"
+                  icon="chatbubbles"
+                  color={colors.warningDark}
+                />
               </View>
 
               <View style={styles.actions}>
-                <Pressable
-                  onPress={() => onOpenVerify(incident)}
-                  style={({ pressed }) => [
-                    styles.primaryAction,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <Text style={styles.primaryActionText}>
-                    {isOwnIncident
+                <AppButton
+                  title={
+                    isOwnIncident
                       ? "Update Kondisi"
                       : hasUserVerified
                         ? "Update Kondisi"
-                        : "Verifikasi / Update"}
-                  </Text>
-                </Pressable>
+                        : "Verifikasi / Update"
+                  }
+                  variant="primary"
+                  size="md"
+                  onPress={() => onOpenVerify(incident)}
+                  fullWidth
+                  leftIcon={
+                    <Ionicons
+                      name="shield-checkmark"
+                      size={18}
+                      color={colors.textInverse}
+                    />
+                  }
+                  style={styles.primaryAction}
+                />
 
-                {incident.status === "active" ? (
-                  <Pressable
-                    onPress={() => onOpenResolve(incident)}
-                    style={({ pressed }) => [
-                      styles.secondaryAction,
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    <Text style={styles.secondaryActionText}>
-                      Tandai Selesai
-                    </Text>
-                  </Pressable>
-                ) : (
-                  <Pressable
-                    onPress={handleReopen}
-                    style={({ pressed }) => [
-                      styles.secondaryAction,
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    <Text style={styles.secondaryActionText}>
-                      Aktifkan Lagi
-                    </Text>
-                  </Pressable>
-                )}
+                <AppButton
+                  title={
+                    incident.status === "active"
+                      ? "Tandai Selesai"
+                      : "Aktifkan Lagi"
+                  }
+                  variant="secondary"
+                  size="md"
+                  onPress={
+                    incident.status === "active"
+                      ? () => onOpenResolve(incident)
+                      : handleReopen
+                  }
+                  fullWidth
+                  leftIcon={
+                    <Ionicons
+                      name={
+                        incident.status === "active"
+                          ? "checkmark-done"
+                          : "refresh"
+                      }
+                      size={18}
+                      color={colors.text}
+                    />
+                  }
+                  style={styles.secondaryAction}
+                />
               </View>
 
               <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <View>
-                    <Text style={styles.sectionTitle}>Timeline Kejadian</Text>
-                    <Text style={styles.sectionSubtitle}>
-                      Semua laporan awal, verifikasi, update kondisi, diskusi,
-                      dan penyelesaian ditampilkan secara kronologis.
-                    </Text>
-                  </View>
-                </View>
+                <SectionHeader
+                  title="Timeline Kejadian"
+                  subtitle="Semua laporan awal, verifikasi, update kondisi, diskusi, dan penyelesaian ditampilkan secara kronologis."
+                  style={styles.sectionHeader}
+                />
 
                 {loadingThread ? (
-                  <View style={styles.loadingBox}>
-                    <ActivityIndicator color="#0F766E" />
-                    <Text style={styles.loadingText}>Memuat timeline...</Text>
-                  </View>
+                  <AppCard style={styles.loadingBox}>
+                    <LoadingState message="Memuat timeline..." />
+                  </AppCard>
                 ) : null}
 
                 {!loadingThread && timelineItems.length === 0 ? (
-                  <View style={styles.emptyBox}>
-                    <Text style={styles.emptyTitle}>Belum ada timeline</Text>
-                    <Text style={styles.emptyText}>
-                      Timeline akan muncul setelah ada laporan atau update
-                      kondisi.
-                    </Text>
-                  </View>
+                  <EmptyThreadCard
+                    title="Belum ada timeline"
+                    message="Timeline akan muncul setelah ada laporan atau update kondisi."
+                  />
                 ) : (
                   <View style={styles.timelineList}>
-                    {timelineItems.map((item, index) => {
-                      const isLast = index === timelineItems.length - 1;
-
-                      return (
-                        <View key={item.id} style={styles.timelineRow}>
-                          <View style={styles.timelineRail}>
-                            <View
-                              style={[
-                                styles.timelineDot,
-                                {
-                                  backgroundColor: item.color,
-                                },
-                              ]}
-                            >
-                              <Text style={styles.timelineDotText}>
-                                {getTimelineDotText(item.kind)}
-                              </Text>
-                            </View>
-
-                            {!isLast ? (
-                              <View style={styles.timelineLine} />
-                            ) : null}
-                          </View>
-
-                          <View style={styles.timelineCard}>
-                            <View style={styles.timelineCardHeader}>
-                              <View
-                                style={[
-                                  styles.timelineBadge,
-                                  {
-                                    backgroundColor: item.color,
-                                  },
-                                ]}
-                              >
-                                <Text style={styles.timelineBadgeText}>
-                                  {item.badgeLabel}
-                                </Text>
-                              </View>
-
-                              <Text style={styles.timelineDate}>
-                                {formatDate(item.date)}
-                              </Text>
-                            </View>
-
-                            <Text style={styles.timelineTitle}>
-                              {item.title}
-                            </Text>
-
-                            <Text style={styles.timelineAuthor}>
-                              Oleh: {item.author || "Anonymous"}
-                            </Text>
-
-                            {"conditionLabel" in item ? (
-                              <View style={styles.conditionPill}>
-                                <Text style={styles.conditionPillText}>
-                                  Kondisi: {item.conditionLabel}
-                                </Text>
-                              </View>
-                            ) : null}
-
-                            <Text style={styles.timelineMessage}>
-                              {item.message}
-                            </Text>
-
-                            {"imageUri" in item && item.imageUri ? (
-                              <Image
-                                source={{ uri: item.imageUri }}
-                                style={styles.timelineImage}
-                              />
-                            ) : null}
-                          </View>
-                        </View>
-                      );
-                    })}
+                    {timelineItems.map((item, index) => (
+                      <TimelineRow
+                        key={item.id}
+                        item={item}
+                        isLast={index === timelineItems.length - 1}
+                      />
+                    ))}
                   </View>
                 )}
               </View>
 
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Discussion</Text>
+                <SectionHeader
+                  title="Discussion"
+                  subtitle="Tambahkan update kondisi, rute alternatif, atau informasi lapangan."
+                  style={styles.sectionHeader}
+                />
 
-                <View style={styles.replyInputBox}>
+                <AppCard style={styles.replyInputBox}>
                   <TextInput
                     value={replyText}
                     onChangeText={setReplyText}
+                    editable={!replySubmitting}
                     placeholder="Tulis update atau diskusi tentang incident..."
-                    placeholderTextColor="#94A3B8"
+                    placeholderTextColor={colors.textSoft}
                     multiline
                     textAlignVertical="top"
                     style={styles.replyInput}
                   />
 
-                  <Pressable
-                    disabled={replySubmitting}
+                  <AppButton
+                    title="Kirim Reply"
+                    variant="primary"
+                    size="md"
+                    loading={replySubmitting}
+                    disabled={!replyIsValid || replySubmitting}
                     onPress={handleSubmitReply}
-                    style={({ pressed }) => [
-                      styles.replyButton,
-                      pressed && styles.pressed,
-                      replySubmitting && styles.disabled,
-                    ]}
-                  >
-                    {replySubmitting ? (
-                      <ActivityIndicator color="#FFFFFF" />
-                    ) : (
-                      <Text style={styles.replyButtonText}>Kirim Reply</Text>
-                    )}
-                  </Pressable>
-                </View>
+                    leftIcon={
+                      <Ionicons
+                        name="send"
+                        size={17}
+                        color={colors.textInverse}
+                      />
+                    }
+                  />
+                </AppCard>
 
                 {replies.length === 0 ? (
-                  <View style={styles.emptyBox}>
-                    <Text style={styles.emptyTitle}>Belum ada diskusi</Text>
-                    <Text style={styles.emptyText}>
-                      Tambahkan update kondisi, rute alternatif, atau informasi
-                      lapangan.
-                    </Text>
-                  </View>
+                  <EmptyThreadCard
+                    title="Belum ada diskusi"
+                    message="Tambahkan update kondisi, rute alternatif, atau informasi lapangan."
+                  />
                 ) : null}
               </View>
             </ScrollView>
@@ -744,6 +585,298 @@ export default function IncidentThreadModal({
       </View>
     </Modal>
   );
+}
+
+function SummaryCard({
+  value,
+  label,
+  icon,
+  color,
+}: {
+  value: number;
+  label: string;
+  icon: AppIconName;
+  color: string;
+}) {
+  return (
+    <AppCard padding="sm" style={styles.summaryCard}>
+      <Ionicons name={icon} size={18} color={color} />
+      <Text style={styles.summaryValue}>{value}</Text>
+      <Text style={styles.summaryLabel} numberOfLines={1}>
+        {label}
+      </Text>
+    </AppCard>
+  );
+}
+
+function InfoLine({ icon, label }: { icon: AppIconName; label: string }) {
+  return (
+    <View style={styles.infoLine}>
+      <Ionicons name={icon} size={14} color={colors.textSoft} />
+      <Text style={styles.metaText} numberOfLines={1}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function TimelineRow({
+  item,
+  isLast,
+}: {
+  item: TimelineItem;
+  isLast: boolean;
+}) {
+  return (
+    <View style={styles.timelineRow}>
+      <View style={styles.timelineRail}>
+        <View
+          style={[
+            styles.timelineDot,
+            {
+              backgroundColor: item.color,
+            },
+          ]}
+        >
+          <Ionicons
+            name={getTimelineIcon(item.kind)}
+            size={14}
+            color={colors.textInverse}
+          />
+        </View>
+
+        {!isLast ? <View style={styles.timelineLine} /> : null}
+      </View>
+
+      <AppCard style={styles.timelineCard}>
+        <View style={styles.timelineCardHeader}>
+          <View
+            style={[
+              styles.timelineBadge,
+              {
+                backgroundColor: item.color,
+              },
+            ]}
+          >
+            <Text style={styles.timelineBadgeText} numberOfLines={1}>
+              {item.badgeLabel}
+            </Text>
+          </View>
+
+          <Text style={styles.timelineDate} numberOfLines={1}>
+            {formatDate(item.date)}
+          </Text>
+        </View>
+
+        <Text style={styles.timelineTitle}>{item.title}</Text>
+
+        <Text style={styles.timelineAuthor} numberOfLines={1}>
+          Oleh: {item.author || "Anonymous"}
+        </Text>
+
+        {item.conditionLabel ? (
+          <StatusBadge
+            label={`Kondisi: ${item.conditionLabel}`}
+            variant="neutral"
+            size="sm"
+            style={styles.conditionPill}
+          />
+        ) : null}
+
+        <Text style={styles.timelineMessage}>{item.message}</Text>
+
+        {item.imageUri ? (
+          <Image source={{ uri: item.imageUri }} style={styles.timelineImage} />
+        ) : null}
+      </AppCard>
+    </View>
+  );
+}
+
+function EmptyThreadCard({
+  title,
+  message,
+}: {
+  title: string;
+  message: string;
+}) {
+  return (
+    <AppCard variant="muted" style={styles.emptyBox}>
+      <Text style={styles.emptyTitle}>{title}</Text>
+      <Text style={styles.emptyText}>{message}</Text>
+    </AppCard>
+  );
+}
+
+function formatDate(date?: Date) {
+  if (!date) {
+    return "Waktu tidak tersedia";
+  }
+
+  return date.toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getStatusLabel(status: IncidentReport["status"]) {
+  if (status === "active") {
+    return "Active";
+  }
+
+  if (status === "resolved") {
+    return "Resolved";
+  }
+
+  return String(status);
+}
+
+function getStatusVariant(status: IncidentReport["status"]): StatusBadgeVariant {
+  if (status === "active") {
+    return "active";
+  }
+
+  if (status === "resolved") {
+    return "resolved";
+  }
+
+  return "neutral";
+}
+
+function getVerificationLabel(
+  type: IncidentVerification["verificationType"]
+) {
+  if (type === "valid") {
+    return "Benar terjadi";
+  }
+
+  if (type === "invalid") {
+    return "Tidak sesuai";
+  }
+
+  return "Update kondisi";
+}
+
+function getVerificationColor(
+  type: IncidentVerification["verificationType"]
+) {
+  if (type === "valid") {
+    return colors.success;
+  }
+
+  if (type === "invalid") {
+    return colors.danger;
+  }
+
+  return colors.warning;
+}
+
+function getConditionLabel(conditionStatus?: IncidentConditionStatus) {
+  if (conditionStatus === "still_happening") {
+    return "Masih terjadi";
+  }
+
+  if (conditionStatus === "getting_worse") {
+    return "Semakin parah";
+  }
+
+  if (conditionStatus === "partially_resolved") {
+    return "Mulai terkendali";
+  }
+
+  if (conditionStatus === "resolved_but_not_closed") {
+    return "Tampak selesai";
+  }
+
+  if (conditionStatus === "not_found") {
+    return "Tidak ditemukan";
+  }
+
+  return "Kondisi belum ditentukan";
+}
+
+function getTimelineIcon(kind: TimelineKind): AppIconName {
+  if (kind === "report") {
+    return "document-text";
+  }
+
+  if (kind === "verification") {
+    return "shield-checkmark";
+  }
+
+  if (kind === "reply") {
+    return "chatbubble-ellipses";
+  }
+
+  return "flag";
+}
+
+function getIncidentIcon(report: IncidentReport): AppIconName {
+  const type = report.subcategory ?? report.type;
+
+  switch (type) {
+    case "flood":
+      return "water";
+
+    case "earthquake":
+      return "pulse";
+
+    case "landslide":
+    case "collapsed_building":
+      return "trail-sign";
+
+    case "volcanic_eruption":
+      return "flame";
+
+    case "strong_wind":
+      return "cloudy";
+
+    case "tsunami":
+      return "radio";
+
+    case "fire":
+    case "building_fire":
+    case "vehicle_fire":
+    case "land_fire":
+    case "electrical_fire":
+      return "flame";
+
+    case "traffic_accident":
+      return "car-sport";
+
+    case "fallen_tree":
+      return "leaf";
+
+    case "road_block":
+    case "damaged_road":
+      return "construct";
+
+    case "fallen_power_line":
+      return "flash";
+
+    case "crime":
+    case "theft":
+      return "shield";
+
+    case "brawl":
+    case "risky_crowd":
+    case "mob_violence":
+    case "public_disturbance":
+      return "people";
+
+    case "medical":
+    case "fainted_person":
+    case "work_accident":
+    case "drowning":
+    case "evacuation_needed":
+      return "medkit";
+
+    default:
+      return "alert-circle";
+  }
 }
 
 const styles = StyleSheet.create({
@@ -758,28 +891,28 @@ const styles = StyleSheet.create({
   },
   sheet: {
     maxHeight: "94%",
-    backgroundColor: "#F8FAFC",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    backgroundColor: colors.background,
+    borderTopLeftRadius: radius["3xl"],
+    borderTopRightRadius: radius["3xl"],
     overflow: "hidden",
   },
   handle: {
     width: 44,
     height: 5,
-    borderRadius: 999,
+    borderRadius: radius.full,
     backgroundColor: "#CBD5E1",
     alignSelf: "center",
-    marginTop: 12,
-    marginBottom: 12,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingBottom: 14,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.md,
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 16,
+    gap: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
+    borderBottomColor: colors.border,
   },
   headerText: {
     flex: 1,
@@ -787,53 +920,35 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
   },
   subtitle: {
     marginTop: 4,
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#64748B",
-    lineHeight: 19,
+    ...typography.caption,
+    color: colors.textMuted,
   },
   closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#E2E8F0",
-    alignItems: "center",
-    justifyContent: "center",
+    width: 38,
+    height: 38,
+    minHeight: 38,
+    paddingHorizontal: 0,
+    borderRadius: radius.full,
   },
   closeText: {
     fontSize: 22,
-    fontWeight: "900",
-    color: "#0F172A",
+    lineHeight: 24,
   },
   content: {
-    padding: 20,
-    paddingBottom: 40,
+    padding: spacing.xl,
+    paddingBottom: spacing["3xl"],
   },
   originalCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
+    gap: spacing.md,
   },
   originalHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-  },
-  iconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  icon: {
-    fontSize: 24,
+    gap: spacing.md,
   },
   originalInfo: {
     flex: 1,
@@ -841,186 +956,111 @@ const styles = StyleSheet.create({
   incidentTitle: {
     fontSize: 16,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
   },
   incidentType: {
     marginTop: 3,
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#64748B",
-  },
-  statusPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  activePill: {
-    backgroundColor: "#FEE2E2",
-  },
-  resolvedPill: {
-    backgroundColor: "#DCFCE7",
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: "900",
-  },
-  activeText: {
-    color: "#DC2626",
-  },
-  resolvedText: {
-    color: "#16A34A",
+    ...typography.caption,
+    color: colors.textMuted,
   },
   description: {
-    marginTop: 12,
-    fontSize: 13,
-    fontWeight: "600",
+    ...typography.caption,
     color: "#475569",
-    lineHeight: 20,
   },
-  trustBox: {
-    marginTop: 12,
-  },
-  urgencyBox: {
-    marginTop: 12,
+  badgeStack: {
+    gap: spacing.sm,
   },
   expiryBox: {
-    marginTop: 12,
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 18,
-    padding: 12,
+    gap: spacing.xs,
+  },
+  expiryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   expiryTitle: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: "#0F172A",
+    ...typography.label,
+    color: colors.text,
   },
   expiryText: {
-    marginTop: 5,
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#64748B",
-    lineHeight: 18,
+    ...typography.caption,
+    color: colors.textMuted,
   },
   mainImage: {
-    marginTop: 12,
     width: "100%",
     height: 210,
-    borderRadius: 20,
-    backgroundColor: "#E2E8F0",
+    borderRadius: radius.xl,
+    backgroundColor: colors.border,
   },
   metaBox: {
-    marginTop: 12,
-    gap: 4,
+    gap: spacing.xs,
+  },
+  infoLine: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   metaText: {
+    flex: 1,
     fontSize: 11,
     fontWeight: "700",
-    color: "#94A3B8",
+    color: colors.textSoft,
   },
   summaryGrid: {
-    marginTop: 14,
+    marginTop: spacing.md,
     flexDirection: "row",
-    gap: 10,
+    gap: spacing.sm,
   },
   summaryCard: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
     alignItems: "center",
+    minHeight: 84,
   },
   summaryValue: {
+    marginTop: 4,
     fontSize: 18,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
   },
   summaryLabel: {
-    marginTop: 4,
+    marginTop: 3,
     fontSize: 10,
     fontWeight: "800",
-    color: "#64748B",
+    color: colors.textMuted,
+    textAlign: "center",
   },
   actions: {
-    marginTop: 14,
+    marginTop: spacing.md,
     flexDirection: "row",
-    gap: 10,
+    gap: spacing.sm,
   },
   primaryAction: {
-    flex: 1.5,
-    backgroundColor: "#0F766E",
-    borderRadius: 18,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  primaryActionText: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: "#FFFFFF",
+    flex: 1.4,
   },
   secondaryAction: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
-    borderRadius: 18,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  secondaryActionText: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: "#0F172A",
   },
   section: {
-    marginTop: 24,
+    marginTop: spacing["2xl"],
   },
   sectionHeader: {
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: "900",
-    color: "#0F172A",
-    marginBottom: 5,
-  },
-  sectionSubtitle: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#64748B",
-    lineHeight: 18,
+    marginBottom: spacing.md,
   },
   loadingBox: {
-    paddingVertical: 20,
-    alignItems: "center",
-    gap: 8,
-  },
-  loadingText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#64748B",
+    minHeight: 100,
+    justifyContent: "center",
   },
   emptyBox: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
+    gap: spacing.xs,
   },
   emptyTitle: {
     fontSize: 14,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
   },
   emptyText: {
-    marginTop: 5,
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#64748B",
-    lineHeight: 18,
+    ...typography.caption,
+    color: colors.textMuted,
   },
   timelineList: {
     gap: 0,
@@ -1034,19 +1074,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   timelineDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 30,
+    height: 30,
+    borderRadius: radius.full,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 3,
-    borderColor: "#FFFFFF",
+    borderColor: colors.surface,
     zIndex: 2,
-  },
-  timelineDotText: {
-    fontSize: 10,
-    fontWeight: "900",
-    color: "#FFFFFF",
   },
   timelineLine: {
     width: 2,
@@ -1057,107 +1092,67 @@ const styles = StyleSheet.create({
   },
   timelineCard: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    marginBottom: 14,
+    marginBottom: spacing.md,
   },
   timelineCardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 10,
+    gap: spacing.sm,
     alignItems: "center",
   },
   timelineBadge: {
-    paddingHorizontal: 10,
+    maxWidth: "58%",
+    paddingHorizontal: spacing.md,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: radius.full,
   },
   timelineBadgeText: {
     fontSize: 10,
     fontWeight: "900",
-    color: "#FFFFFF",
+    color: colors.textInverse,
   },
   timelineDate: {
+    flex: 1,
     fontSize: 10,
     fontWeight: "700",
-    color: "#94A3B8",
-    flexShrink: 1,
+    color: colors.textSoft,
     textAlign: "right",
   },
   timelineTitle: {
-    marginTop: 10,
+    marginTop: spacing.sm,
     fontSize: 14,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
   },
   timelineAuthor: {
     marginTop: 5,
     fontSize: 11,
     fontWeight: "800",
-    color: "#64748B",
+    color: colors.textMuted,
   },
   conditionPill: {
-    marginTop: 9,
-    alignSelf: "flex-start",
-    backgroundColor: "#F1F5F9",
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  conditionPillText: {
-    fontSize: 11,
-    fontWeight: "900",
-    color: "#334155",
+    marginTop: spacing.sm,
   },
   timelineMessage: {
-    marginTop: 9,
-    fontSize: 13,
-    fontWeight: "600",
+    marginTop: spacing.sm,
+    ...typography.caption,
     color: "#475569",
-    lineHeight: 19,
   },
   timelineImage: {
-    marginTop: 10,
+    marginTop: spacing.sm,
     width: "100%",
     height: 175,
-    borderRadius: 18,
-    backgroundColor: "#E2E8F0",
+    borderRadius: radius.lg,
+    backgroundColor: colors.border,
   },
   replyInputBox: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    marginBottom: 12,
+    gap: spacing.md,
   },
   replyInput: {
-    minHeight: 84,
+    minHeight: 92,
     fontSize: 14,
     fontWeight: "600",
-    color: "#0F172A",
+    color: colors.text,
     textAlignVertical: "top",
-  },
-  replyButton: {
-    marginTop: 10,
-    backgroundColor: "#0F766E",
-    borderRadius: 16,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  replyButtonText: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: "#FFFFFF",
-  },
-  pressed: {
-    opacity: 0.82,
-    transform: [{ scale: 0.99 }],
-  },
-  disabled: {
-    opacity: 0.5,
   },
 });

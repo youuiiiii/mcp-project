@@ -1,13 +1,20 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Href, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { subscribeToIncidents } from "../../services/incidentService";
-import { homeStyles as styles } from "../../styles/homeStyles";
+import { colors } from "../../theme/colors";
+import { radius, shadow, spacing } from "../../theme/layout";
+import { typography } from "../../theme/typography";
 import { IncidentReport } from "../../types/incident";
 import IncidentCard from "../IncidentCard";
+import AppButton from "../ui/AppButton";
+import AppCard from "../ui/AppCard";
+import IconBadge from "../ui/IconBadge";
 import LoadingState from "../ui/LoadingState";
+import SectionHeader from "../ui/SectionHeader";
+import StatusBadge from "../ui/StatusBadge";
 
 const MAP_ROUTE = "/(tabs)/map" as Href;
 
@@ -56,95 +63,114 @@ export default function HomeLatestReportsSection() {
   };
 
   if (loading) {
-    return <LoadingState message="Memuat laporan terbaru..." />;
+    return (
+      <AppCard style={styles.loadingCard}>
+        <LoadingState message="Memuat laporan terbaru..." />
+      </AppCard>
+    );
   }
 
   return (
-    <View style={localStyles.wrapper}>
-      <View style={localStyles.statusCard}>
-        <View style={localStyles.statusHeader}>
-          <View style={localStyles.statusTitleGroup}>
-            <Text style={localStyles.statusLabel}>Area Status</Text>
+    <View style={styles.wrapper}>
+      <AppCard style={styles.statusCard}>
+        <View style={styles.statusHeader}>
+          <View style={styles.statusTitleGroup}>
+            <StatusBadge
+              label="Area Status"
+              variant={activeReports.length > 0 ? "active" : "success"}
+              size="sm"
+              style={styles.areaBadge}
+            />
 
-            <Text style={localStyles.statusTitle}>
+            <Text style={styles.statusTitle}>
               {activeReports.length > 0
                 ? "Active Monitoring"
                 : "No Active Incident"}
             </Text>
           </View>
 
-          <View style={localStyles.liveBadge}>
-            <View style={localStyles.liveDot} />
-            <Text style={localStyles.liveText}>LIVE</Text>
+          <View style={styles.liveBadge}>
+            <View style={styles.liveDot} />
+            <Text style={styles.liveText}>LIVE</Text>
           </View>
         </View>
 
-        <Text style={localStyles.statusDescription}>
+        <Text style={styles.statusDescription}>
           Ada {activeReports.length} laporan aktif dari total {reports.length}{" "}
           laporan komunitas. {highSeverityReports.length} laporan berstatus high
           severity.
         </Text>
 
-        <Pressable
+        <AppButton
+          title="Open Crisis Map"
+          variant="secondary"
+          size="md"
+          fullWidth
           onPress={handleOpenMap}
-          style={({ pressed }) => [
-            localStyles.mapButton,
-            pressed && localStyles.buttonPressed,
-          ]}
-        >
-          <Ionicons name="map" size={18} color="#0F172A" />
-          <Text style={localStyles.mapButtonText}>Open Crisis Map</Text>
-        </Pressable>
-      </View>
+          leftIcon={<Ionicons name="map" size={18} color={colors.text} />}
+        />
+      </AppCard>
 
       {errorMessage ? (
-        <View style={styles.errorBox}>
-          <Text style={styles.errorTitle}>Gagal memuat laporan</Text>
-          <Text style={styles.errorMessage}>{errorMessage}</Text>
-        </View>
+        <AppCard variant="muted" style={styles.errorCard}>
+          <IconBadge variant="danger" size="md" rounded={false}>
+            <Ionicons name="warning" size={22} color={colors.danger} />
+          </IconBadge>
+
+          <View style={styles.errorContent}>
+            <Text style={styles.errorTitle}>Gagal memuat laporan</Text>
+            <Text style={styles.errorMessage}>{errorMessage}</Text>
+          </View>
+        </AppCard>
       ) : null}
 
       <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <View style={localStyles.sectionTitleGroup}>
-            <Text style={styles.sectionTitle}>Latest Community Reports</Text>
-            <Text style={styles.sectionSubtitle}>3 laporan terbaru</Text>
-          </View>
-
-          <Pressable
-            onPress={handleOpenMap}
-            style={({ pressed }) => [
-              localStyles.viewMapButton,
-              pressed && localStyles.viewMapButtonPressed,
-            ]}
-          >
-            <Text style={localStyles.viewMapText}>View Map</Text>
-            <Ionicons name="chevron-forward" size={15} color="#DC2626" />
-          </Pressable>
-        </View>
+        <SectionHeader
+          title="Latest Community Reports"
+          subtitle="3 laporan terbaru"
+          style={styles.sectionHeader}
+          right={
+            <AppButton
+              title="View Map"
+              variant="ghost"
+              size="sm"
+              onPress={handleOpenMap}
+              rightIcon={
+                <Ionicons
+                  name="chevron-forward"
+                  size={15}
+                  color={colors.danger}
+                />
+              }
+              textStyle={styles.viewMapText}
+            />
+          }
+        />
 
         {reports.length === 0 ? (
-          <View style={localStyles.emptyCard}>
-            <View style={localStyles.emptyIcon}>
-              <Ionicons name="map-outline" size={28} color="#64748B" />
-            </View>
+          <AppCard style={styles.emptyCard}>
+            <IconBadge variant="neutral" size="lg" rounded={false}>
+              <Ionicons
+                name="map-outline"
+                size={28}
+                color={colors.textMuted}
+              />
+            </IconBadge>
 
-            <Text style={localStyles.emptyTitle}>Belum ada laporan</Text>
+            <Text style={styles.emptyTitle}>Belum ada laporan</Text>
 
-            <Text style={localStyles.emptyText}>
+            <Text style={styles.emptyText}>
               Laporan warga akan muncul di sini setelah dikirim.
             </Text>
 
-            <Pressable
+            <AppButton
+              title="Open Map"
+              variant="primary"
+              size="md"
               onPress={handleOpenMap}
-              style={({ pressed }) => [
-                localStyles.emptyButton,
-                pressed && localStyles.buttonPressed,
-              ]}
-            >
-              <Text style={localStyles.emptyButtonText}>Open Map</Text>
-            </Pressable>
-          </View>
+              style={styles.emptyButton}
+            />
+          </AppCard>
         ) : (
           <View style={styles.latestList}>
             {latestReports.map((incident) => (
@@ -161,146 +187,115 @@ export default function HomeLatestReportsSection() {
   );
 }
 
-const localStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   wrapper: {
-    marginBottom: 22,
+    gap: spacing["2xl"],
+  },
+  loadingCard: {
+    minHeight: 110,
+    justifyContent: "center",
   },
   statusCard: {
-    backgroundColor: "#0F172A",
-    borderRadius: 28,
-    padding: 18,
-    marginBottom: 22,
-    shadowColor: "#0F172A",
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.18,
-    shadowRadius: 18,
-    elevation: 5,
+    backgroundColor: colors.dark,
+    borderColor: colors.dark,
+    borderRadius: radius["3xl"],
+    ...shadow.floating,
   },
   statusHeader: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    gap: 14,
-    marginBottom: 12,
+    gap: spacing.md,
+    marginBottom: spacing.md,
   },
   statusTitleGroup: {
     flex: 1,
   },
-  statusLabel: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: "#94A3B8",
-    marginBottom: 4,
+  areaBadge: {
+    marginBottom: spacing.sm,
+    backgroundColor: colors.darkSoft,
   },
   statusTitle: {
     fontSize: 22,
     fontWeight: "900",
-    color: "#FFFFFF",
+    color: colors.textInverse,
   },
   statusDescription: {
-    fontSize: 13,
-    fontWeight: "600",
+    ...typography.body,
     color: "#CBD5E1",
-    lineHeight: 21,
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   liveBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#DCFCE7",
-    paddingHorizontal: 10,
+    backgroundColor: colors.successSoft,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: radius.full,
     gap: 6,
   },
   liveDot: {
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: "#16A34A",
+    backgroundColor: colors.success,
   },
   liveText: {
     fontSize: 11,
     fontWeight: "900",
     color: "#166534",
   },
-  mapButton: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingVertical: 13,
-    alignItems: "center",
-    justifyContent: "center",
+  errorCard: {
     flexDirection: "row",
-    gap: 8,
+    alignItems: "flex-start",
+    gap: spacing.md,
+    backgroundColor: "#FEF2F2",
+    borderColor: "#FECACA",
   },
-  mapButtonText: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: "#0F172A",
-  },
-  buttonPressed: {
-    opacity: 0.88,
-    transform: [{ scale: 0.99 }],
-  },
-  sectionTitleGroup: {
+  errorContent: {
     flex: 1,
   },
-  viewMapButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
+  errorTitle: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#991B1B",
+    marginBottom: 4,
   },
-  viewMapButtonPressed: {
-    opacity: 0.75,
+  errorMessage: {
+    ...typography.caption,
+    color: colors.primaryDark,
+  },
+  section: {
+    gap: spacing.md,
+  },
+  sectionHeader: {
+    marginBottom: 0,
   },
   viewMapText: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: "#DC2626",
+    color: colors.danger,
   },
   emptyCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 26,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
     alignItems: "center",
-  },
-  emptyIcon: {
-    width: 58,
-    height: 58,
-    borderRadius: 22,
-    backgroundColor: "#F1F5F9",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 14,
+    paddingVertical: spacing["2xl"],
   },
   emptyTitle: {
+    marginTop: spacing.md,
     fontSize: 16,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
+    textAlign: "center",
   },
   emptyText: {
-    marginTop: 6,
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#64748B",
+    marginTop: spacing.sm,
+    ...typography.caption,
+    color: colors.textMuted,
     textAlign: "center",
-    lineHeight: 20,
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   emptyButton: {
-    backgroundColor: "#0F172A",
-    borderRadius: 16,
-    paddingHorizontal: 18,
-    paddingVertical: 11,
+    paddingHorizontal: spacing.xl,
   },
-  emptyButtonText: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: "#FFFFFF",
+  latestList: {
+    gap: spacing.sm,
   },
 });

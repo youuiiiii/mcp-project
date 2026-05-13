@@ -13,9 +13,12 @@ import {
   serverTimestamp,
   Timestamp,
   updateDoc,
+  UpdateData,
 } from "firebase/firestore";
+
 import {
   getCategoryBySubcategory,
+  getIncidentCategoryMeta,
   getIncidentMeta,
   isIncidentCategory,
   isIncidentType,
@@ -46,6 +49,8 @@ const SOS_LOGS_COLLECTION = "sos_logs";
 const VERIFICATIONS_COLLECTION = "verifications";
 const REPLIES_COLLECTION = "replies";
 
+const FALLBACK_CATEGORY: IncidentCategory = "security_public_order";
+
 const toDate = (value: unknown): Date | undefined => {
   if (!value) {
     return undefined;
@@ -62,31 +67,37 @@ const toDate = (value: unknown): Date | undefined => {
   return undefined;
 };
 
-const normalizeSubcategory = (value: unknown): IncidentSubcategory => {
+const normalizeSubcategory = (
+  value: unknown
+): IncidentSubcategory | null => {
   if (typeof value === "string" && isIncidentType(value)) {
     return value;
   }
 
-  return "public_disturbance";
+  return null;
 };
 
-const normalizeType = (value: unknown): IncidentType => {
+const normalizeType = (value: unknown): IncidentType | null => {
   if (typeof value === "string" && isIncidentType(value)) {
     return value;
   }
 
-  return "public_disturbance";
+  return null;
 };
 
 const normalizeCategory = (
   value: unknown,
-  fallbackSubcategory: IncidentSubcategory
+  fallbackSubcategory?: IncidentSubcategory | null
 ): IncidentCategory => {
   if (typeof value === "string" && isIncidentCategory(value)) {
     return value;
   }
 
-  return getCategoryBySubcategory(fallbackSubcategory);
+  if (fallbackSubcategory) {
+    return getCategoryBySubcategory(fallbackSubcategory);
+  }
+
+  return FALLBACK_CATEGORY;
 };
 
 const normalizeStatus = (value: unknown): IncidentStatus => {
@@ -144,7 +155,7 @@ const normalizeStringArray = (value: unknown): string[] => {
     return [];
   }
 
-  return value.filter((item) => typeof item === "string");
+  return value.filter((item): item is string => typeof item === "string");
 };
 
 const getNextVerificationStatus = (
@@ -168,8 +179,8 @@ const mapIncidentDocument = (
   const data = snapshot.data();
 
   const subcategory = normalizeSubcategory(data.subcategory ?? data.type);
+  const type = normalizeType(data.type ?? data.subcategory);
   const category = normalizeCategory(data.category, subcategory);
-  const type = normalizeType(data.type ?? subcategory);
 
   return {
     id: snapshot.id,
@@ -354,21 +365,26 @@ export const createIncidentReport = async (
     throw new Error("Kategori kejadian wajib dipilih.");
   }
 
-  if (!payload.subcategory) {
-    throw new Error("Subkategori kejadian wajib dipilih.");
+  if (!isIncidentCategory(payload.category)) {
+    throw new Error("Kategori kejadian tidak valid.");
   }
 
-  if (!payload.title.trim()) {
-    throw new Error("Judul laporan wajib diisi.");
+  const title = payload.title.trim();
+  const description = payload.description.trim();
+
+  if (title.length < 5) {
+    throw new Error("Judul laporan minimal 5 karakter.");
   }
 
-  if (!payload.description.trim()) {
-    throw new Error("Deskripsi laporan wajib diisi.");
+  if (description.length < 10) {
+    throw new Error("Deskripsi laporan minimal 10 karakter.");
   }
 
   if (
     typeof payload.latitude !== "number" ||
-    typeof payload.longitude !== "number"
+    typeof payload.longitude !== "number" ||
+    Number.isNaN(payload.latitude) ||
+    Number.isNaN(payload.longitude)
   ) {
     throw new Error("Lokasi laporan tidak valid.");
   }
@@ -377,18 +393,30 @@ export const createIncidentReport = async (
     throw new Error("Bukti foto laporan wajib diisi.");
   }
 
-  const meta = getIncidentMeta(payload.subcategory);
+  const subcategory = payload.subcategory ?? payload.type ?? null;
+
+  if (subcategory && getCategoryBySubcategory(subcategory) !== payload.category) {
+    throw new Error(
+      "Subkategori tidak sesuai dengan kategori utama laporan."
+    );
+  }
+
+  const type = payload.type ?? subcategory ?? null;
+
+  const categoryMeta = getIncidentCategoryMeta(payload.category);
+  const subcategoryMeta = subcategory ? getIncidentMeta(subcategory) : null;
 
   const docRef = await addDoc(collection(db, REPORTS_COLLECTION), {
     category: payload.category,
-    subcategory: payload.subcategory,
-    type: payload.subcategory,
+    subcategory,
+    type,
 
-    categoryLabel: payload.category,
-    subcategoryLabel: meta.label,
+    categoryLabel: categoryMeta.label,
+    subcategoryLabel: subcategoryMeta?.label ?? null,
+    displayLabel: subcategoryMeta?.label ?? categoryMeta.label,
 
-    title: payload.title.trim(),
-    description: payload.description.trim(),
+    title,
+    description,
     latitude: payload.latitude,
     longitude: payload.longitude,
     status: "active",
@@ -434,8 +462,8 @@ export const createIncidentVerification = async (
     throw new Error("Bukti foto verifikasi wajib diisi.");
   }
 
-  if (!payload.note.trim()) {
-    throw new Error("Catatan verifikasi wajib diisi.");
+  if (payload.note.trim().length < 8) {
+    throw new Error("Catatan verifikasi minimal 8 karakter.");
   }
 
   const reportRef = doc(db, REPORTS_COLLECTION, payload.reportId);
@@ -499,7 +527,7 @@ export const createIncidentVerification = async (
       createdAt: serverTimestamp(),
     });
 
-    const updateData: Record<string, any> = {
+    const updateData: UpdateData<DocumentData> = {
       verificationStatus: nextVerificationStatus,
       verificationCount: nextVerificationCount,
       disputeCount: nextDisputeCount,
@@ -533,8 +561,8 @@ export const createIncidentReply = async (
     throw new Error("User tidak valid.");
   }
 
-  if (!payload.message.trim()) {
-    throw new Error("Pesan diskusi tidak boleh kosong.");
+  if (payload.message.trim().length < 3) {
+    throw new Error("Pesan diskusi minimal 3 karakter.");
   }
 
   const repliesRef = collection(
@@ -574,8 +602,8 @@ export const resolveIncidentReport = async (
     throw new Error("Bukti gambar selesai wajib diisi.");
   }
 
-  if (!payload.resolutionNote.trim()) {
-    throw new Error("Catatan penyelesaian wajib diisi.");
+  if (payload.resolutionNote.trim().length < 10) {
+    throw new Error("Catatan penyelesaian minimal 10 karakter.");
   }
 
   const reportRef = doc(db, REPORTS_COLLECTION, payload.reportId);
@@ -616,7 +644,9 @@ export const createSOSLog = async (
 ): Promise<string> => {
   if (
     typeof payload.latitude !== "number" ||
-    typeof payload.longitude !== "number"
+    typeof payload.longitude !== "number" ||
+    Number.isNaN(payload.latitude) ||
+    Number.isNaN(payload.longitude)
   ) {
     throw new Error("Lokasi SOS tidak valid.");
   }

@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import MapView, {
   Circle,
-  Heatmap,
   Marker,
   PROVIDER_GOOGLE,
   Region,
@@ -30,9 +29,8 @@ import {
   VERIFICATION_DISTANCE_METERS,
   WARNING_DISTANCE_METERS,
   getFilterLabel,
-  getIncidentMeta,
+  getIncidentDisplayMeta,
   isIncidentCategory,
-  isIncidentType,
 } from "../../src/constants/incident";
 import { useAuth } from "../../src/contexts/AuthContext";
 import {
@@ -42,7 +40,6 @@ import {
 import { mapStyles as styles } from "../../src/styles/mapStyles";
 import { Coordinate, IncidentReport } from "../../src/types/incident";
 import {
-  clampIncidentRadius,
   formatDistance,
   getDistanceInMeters,
   getNearestIncident,
@@ -130,6 +127,13 @@ const createClusters = (incidents: IncidentReport[]): MapCluster[] => {
   });
 
   return clusters;
+};
+
+const getReportDisplayMeta = (incident: IncidentReport) => {
+  return getIncidentDisplayMeta({
+    category: incident.category,
+    subcategory: incident.subcategory ?? incident.type,
+  });
 };
 
 const getEmergencyGuidance = (incident: IncidentReport | null): string => {
@@ -434,14 +438,6 @@ export default function MapScreen() {
       });
     }
 
-    if (isIncidentType(selectedFilter)) {
-      return validReports.filter((report) => {
-        return (
-          report.subcategory === selectedFilter || report.type === selectedFilter
-        );
-      });
-    }
-
     return validReports;
   }, [reports, selectedFilter]);
 
@@ -454,33 +450,33 @@ export default function MapScreen() {
     });
   }, [reports]);
 
-  const visibleActiveReports = useMemo(() => {
-    return filteredReports.filter((report) => {
-      return (
-        report.status === "active" &&
-        isValidCoordinate(report.latitude, report.longitude)
-      );
-    });
-  }, [filteredReports]);
+  // const visibleActiveReports = useMemo(() => {
+  //   return filteredReports.filter((report) => {
+  //     return (
+  //       report.status === "active" &&
+  //       isValidCoordinate(report.latitude, report.longitude)
+  //     );
+  //   });
+  // }, [filteredReports]);
 
   const clusters = useMemo(() => {
     return createClusters(filteredReports);
   }, [filteredReports]);
 
-  const heatmapPoints = useMemo(() => {
-    return visibleActiveReports.map((report) => {
-      return {
-        latitude: report.latitude,
-        longitude: report.longitude,
-        weight:
-          report.severity === "high"
-            ? 3
-            : report.severity === "medium"
-              ? 2
-              : 1,
-      };
-    });
-  }, [visibleActiveReports]);
+  // const heatmapPoints = useMemo(() => {
+  //   return visibleActiveReports.map((report) => {
+  //     return {
+  //       latitude: report.latitude,
+  //       longitude: report.longitude,
+  //       weight:
+  //         report.severity === "high"
+  //           ? 3
+  //           : report.severity === "medium"
+  //             ? 2
+  //             : 1,
+  //     };
+  //   });
+  // }, [visibleActiveReports]);
 
   const nearestIncident = useMemo(() => {
     if (!userLocation) {
@@ -578,7 +574,7 @@ export default function MapScreen() {
 
     verificationPromptedIncidentIdRef.current = candidate.id;
 
-    const meta = getIncidentMeta(candidate.subcategory ?? candidate.type);
+    const meta = getReportDisplayMeta(candidate);
 
     Alert.alert(
       "Incident Perlu Verifikasi",
@@ -677,9 +673,7 @@ export default function MapScreen() {
 
     warnedIncidentIdRef.current = nearestIncident.incident.id;
 
-    const meta = getIncidentMeta(
-      nearestIncident.incident.subcategory ?? nearestIncident.incident.type
-    );
+    const meta = getReportDisplayMeta(nearestIncident.incident);
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(
       () => {}
@@ -711,7 +705,7 @@ export default function MapScreen() {
       const nearest = getNearestIncident(userLocation, activeReports);
 
       const nearestMeta = nearest.incident
-        ? getIncidentMeta(nearest.incident.subcategory ?? nearest.incident.type)
+        ? getReportDisplayMeta(nearest.incident)
         : null;
 
       const vibrationPattern =
@@ -907,7 +901,7 @@ export default function MapScreen() {
   };
 
   const renderIncidentMarker = (incident: IncidentReport) => {
-    const meta = getIncidentMeta(incident.subcategory ?? incident.type);
+    const meta = getReportDisplayMeta(incident);
     const trust = getIncidentTrustMeta(incident);
     const urgency = getIncidentUrgencyMeta(incident, userLocation);
 
@@ -1010,38 +1004,6 @@ export default function MapScreen() {
           </Marker>
         ) : null}
 
-        {heatmapPoints.length > 0 ? (
-          <Heatmap
-            points={heatmapPoints}
-            radius={35}
-            opacity={0.45}
-            gradient={{
-              colors: ["#22C55E", "#FACC15", "#FB923C", "#DC2626"],
-              startPoints: [0.2, 0.45, 0.7, 1],
-              colorMapSize: 256,
-            }}
-          />
-        ) : null}
-
-        {visibleActiveReports.map((incident) => {
-          const meta = getIncidentMeta(incident.subcategory ?? incident.type);
-          const radius = clampIncidentRadius(meta.radius);
-
-          return (
-            <Circle
-              key={`circle-${incident.id}`}
-              center={{
-                latitude: incident.latitude,
-                longitude: incident.longitude,
-              }}
-              radius={radius}
-              strokeWidth={1.5}
-              strokeColor={`${meta.color}99`}
-              fillColor={`${meta.color}22`}
-            />
-          );
-        })}
-
         {clusters.map((cluster) => {
           if (cluster.incidents.length === 1) {
             return renderIncidentMarker(cluster.incidents[0]);
@@ -1084,9 +1046,8 @@ export default function MapScreen() {
           </View>
 
           <Text style={styles.headerSubtitle}>
-            Ring marker menunjukkan urgency otomatis. Badge kanan menunjukkan
-            trust level. Long press untuk report maksimal 20 meter dari posisi
-            realtime Anda.
+            Pin menunjukkan lokasi laporan warga. Tap pin untuk detail. Long press
+            dekat posisi Anda untuk membuat laporan baru.
           </Text>
         </View>
 
@@ -1127,8 +1088,8 @@ export default function MapScreen() {
           </Text>
 
           <Text style={styles.infoDescription}>
-            Ring marker = urgency • Badge kanan = trust • LOW/MED/HIGH/CRT =
-            skor otomatis
+            Pin = laporan warga • Cluster = banyak laporan berdekatan • SOS =
+            catat posisi darurat
           </Text>
 
           {nearestIncident.incident && nearestIncident.distance !== null ? (
@@ -1136,16 +1097,9 @@ export default function MapScreen() {
               <Text style={styles.warningTitle}>Kejadian Terdekat</Text>
 
               <Text style={styles.warningText}>
-                {getIncidentMeta(
-                  nearestIncident.incident.subcategory ??
-                    nearestIncident.incident.type
-                ).icon}{" "}
-                {getIncidentMeta(
-                  nearestIncident.incident.subcategory ??
-                    nearestIncident.incident.type
-                ).label}{" "}
-                sekitar {formatDistance(nearestIncident.distance)} dari posisi
-                Anda.
+                {getReportDisplayMeta(nearestIncident.incident).icon}{" "}
+                {getReportDisplayMeta(nearestIncident.incident).label} sekitar{" "}
+                {formatDistance(nearestIncident.distance)} dari posisi Anda.
               </Text>
             </View>
           ) : null}

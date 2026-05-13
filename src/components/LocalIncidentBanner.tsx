@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { getIncidentMeta } from "../constants/incident";
+import { getIncidentDisplayMeta, getIncidentMeta } from "../constants/incident";
 import { IncidentReport } from "../types/incident";
 import { formatDistance } from "../utils/geo";
 import { getIncidentTrustMeta } from "../utils/incidentTrust";
@@ -24,7 +24,10 @@ export default function LocalIncidentBanner({
     return null;
   }
 
-  const meta = getIncidentMeta(incident.subcategory ?? incident.type);
+  const meta = getIncidentDisplayMeta({
+    category: incident.category,
+    subcategory: incident.subcategory ?? incident.type,
+  });
   const trust = getIncidentTrustMeta(incident);
   const urgency = getIncidentUrgencyMeta(incident);
 

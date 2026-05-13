@@ -1,128 +1,61 @@
+import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { Href, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Alert, Image, StyleSheet, Text, TextInput, View } from "react-native";
 
 import {
-  getCategoryBySubcategory,
-  getIncidentMeta,
+  INCIDENT_CATEGORY_OPTIONS,
+  SEVERITY_OPTIONS,
 } from "../../src/constants/incident";
 import { useAuth } from "../../src/contexts/AuthContext";
 import { createIncidentReport } from "../../src/services/incidentService";
+import { colors } from "../../src/theme/colors";
+import { radius, shadow, spacing } from "../../src/theme/layout";
+import { typography } from "../../src/theme/typography";
 import {
+  IncidentCategory,
   IncidentSeverity,
-  IncidentSubcategory,
 } from "../../src/types/incident";
+
+import AppButton from "../../src/components/ui/AppButton";
+import AppCard from "../../src/components/ui/AppCard";
+import AppScreen from "../../src/components/ui/AppScreen";
+import IconBadge from "../../src/components/ui/IconBadge";
+import SectionHeader from "../../src/components/ui/SectionHeader";
+import StatusBadge from "../../src/components/ui/StatusBadge";
 
 const MAP_ROUTE = "/(tabs)/map" as Href;
 
 const LOCATION_MAX_ACCURACY_METERS = 80;
 
-type IncidentOption = {
-  subcategory: IncidentSubcategory;
-  description: string;
-};
-
-const INCIDENT_OPTIONS: IncidentOption[] = [
-  {
-    subcategory: "flood",
-    description: "Banjir, genangan tinggi, atau arus air berbahaya.",
-  },
-  {
-    subcategory: "earthquake",
-    description: "Guncangan gempa atau dampak kerusakan sekitar.",
-  },
-  {
-    subcategory: "fire",
-    description: "Api, asap tebal, atau kebakaran di sekitar.",
-  },
-  {
-    subcategory: "traffic_accident",
-    description: "Kecelakaan lalu lintas atau kondisi jalan berbahaya.",
-  },
-  {
-    subcategory: "fallen_tree",
-    description: "Pohon tumbang yang menghalangi jalan atau area publik.",
-  },
-  {
-    subcategory: "road_block",
-    description: "Jalan tertutup, akses terhalang, atau kemacetan bahaya.",
-  },
-  {
-    subcategory: "crime",
-    description: "Kriminalitas, pencurian, atau kondisi keamanan berisiko.",
-  },
-  {
-    subcategory: "medical",
-    description: "Orang pingsan, darurat medis, atau butuh bantuan cepat.",
-  },
-  {
-    subcategory: "public_disturbance",
-    description: "Kerumunan berisiko, gangguan publik, atau situasi tidak aman.",
-  },
-];
-
-const SEVERITY_OPTIONS: {
-  value: IncidentSeverity;
-  label: string;
-  description: string;
-  color: string;
-  backgroundColor: string;
-}[] = [
-  {
-    value: "low",
-    label: "Low",
-    description: "Perlu diketahui",
-    color: "#16A34A",
-    backgroundColor: "#DCFCE7",
-  },
-  {
-    value: "medium",
-    label: "Medium",
-    description: "Perlu diwaspadai",
-    color: "#D97706",
-    backgroundColor: "#FEF3C7",
-  },
-  {
-    value: "high",
-    label: "High",
-    description: "Butuh perhatian cepat",
-    color: "#DC2626",
-    backgroundColor: "#FEE2E2",
-  },
-];
-
 export default function ReportScreen() {
   const router = useRouter();
   const { user } = useAuth();
 
-  const [subcategory, setSubcategory] = useState<IncidentSubcategory | null>(
-    null
-  );
+  const [category, setCategory] = useState<IncidentCategory | null>(null);
   const [severity, setSeverity] = useState<IncidentSeverity>("medium");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const selectedMeta = useMemo(() => {
-    if (!subcategory) {
+  const selectedCategoryMeta = useMemo(() => {
+    if (!category) {
       return null;
     }
 
-    return getIncidentMeta(subcategory);
-  }, [subcategory]);
+    return INCIDENT_CATEGORY_OPTIONS.find((item) => item.value === category) ?? null;
+  }, [category]);
+
+  const canSubmit = Boolean(
+    category &&
+      title.trim().length >= 5 &&
+      description.trim().length >= 10 &&
+      photo &&
+      !loading
+  );
 
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -138,7 +71,7 @@ export default function ReportScreen() {
       quality: 0.75,
     });
 
-    if (!result.canceled) {
+    if (!result.canceled && result.assets[0]?.uri) {
       setPhoto(result.assets[0].uri);
     }
   };
@@ -155,15 +88,16 @@ export default function ReportScreen() {
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.75,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
     });
 
-    if (!result.canceled) {
+    if (!result.canceled && result.assets[0]?.uri) {
       setPhoto(result.assets[0].uri);
     }
   };
 
   const resetForm = () => {
-    setSubcategory(null);
+    setCategory(null);
     setSeverity("medium");
     setTitle("");
     setDescription("");
@@ -171,18 +105,21 @@ export default function ReportScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!subcategory) {
-      Alert.alert("Kategori Belum Dipilih", "Pilih jenis kejadian dulu.");
+    if (!category) {
+      Alert.alert("Kategori Belum Dipilih", "Pilih tema kejadian dulu.");
       return;
     }
 
-    if (!title.trim()) {
-      Alert.alert("Judul Wajib Diisi", "Masukkan judul laporan.");
+    const cleanTitle = title.trim();
+    const cleanDescription = description.trim();
+
+    if (cleanTitle.length < 5) {
+      Alert.alert("Judul Terlalu Pendek", "Judul minimal 5 karakter.");
       return;
     }
 
-    if (!description.trim()) {
-      Alert.alert("Deskripsi Wajib Diisi", "Jelaskan kondisi kejadian.");
+    if (cleanDescription.length < 10) {
+      Alert.alert("Deskripsi Terlalu Pendek", "Deskripsi minimal 10 karakter.");
       return;
     }
 
@@ -220,13 +157,12 @@ export default function ReportScreen() {
         return;
       }
 
-      const category = getCategoryBySubcategory(subcategory);
-
       await createIncidentReport({
         category,
-        subcategory,
-        title,
-        description,
+        subcategory: null,
+        type: null,
+        title: cleanTitle,
+        description: cleanDescription,
         severity,
         imageUri: photo,
         latitude: location.coords.latitude,
@@ -264,16 +200,14 @@ export default function ReportScreen() {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    >
+    <AppScreen keyboardAvoiding contentContainerStyle={styles.screenContent}>
       <View style={styles.header}>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>COMMUNITY REPORT</Text>
-        </View>
+        <StatusBadge
+          label="Community Report"
+          variant="danger"
+          size="sm"
+          style={styles.headerBadge}
+        />
 
         <Text style={styles.title}>Report Incident</Text>
 
@@ -284,66 +218,125 @@ export default function ReportScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>1. What happened?</Text>
-        <Text style={styles.sectionSubtitle}>
-          Pilih jenis kejadian yang paling sesuai.
-        </Text>
+        <SectionHeader
+          title="1. Tema Kejadian"
+          subtitle="Pilih kategori besar. Detail spesifik cukup ditulis di judul dan deskripsi."
+          style={styles.sectionHeader}
+        />
 
-        <View style={styles.incidentGrid}>
-          {INCIDENT_OPTIONS.map((item) => {
-            const meta = getIncidentMeta(item.subcategory);
-            const active = subcategory === item.subcategory;
+        <View style={styles.categoryList}>
+          {INCIDENT_CATEGORY_OPTIONS.map((item) => {
+            const active = category === item.value;
 
             return (
-              <Pressable
-                key={item.subcategory}
-                onPress={() => setSubcategory(item.subcategory)}
-                disabled={loading}
-                style={({ pressed }) => [
-                  styles.incidentCard,
+              <AppCard
+                key={item.value}
+                onPress={() => setCategory(item.value)}
+                padding="md"
+                style={[
+                  styles.categoryCard,
                   active && {
-                    borderColor: meta.color,
-                    backgroundColor: `${meta.color}12`,
+                    borderColor: item.color,
+                    backgroundColor: item.lightColor,
                   },
-                  pressed && styles.cardPressed,
                 ]}
               >
-                <View
-                  style={[
-                    styles.incidentIconWrap,
-                    {
-                      backgroundColor: `${meta.color}18`,
-                    },
-                  ]}
+                <IconBadge
+                  variant="neutral"
+                  size="lg"
+                  rounded={false}
+                  style={{
+                    backgroundColor: active ? item.color : colors.surfaceMuted,
+                  }}
                 >
-                  <Text style={styles.incidentIcon}>{meta.icon}</Text>
+                  <Ionicons
+                    name={item.iconName}
+                    size={24}
+                    color={active ? colors.textInverse : item.color}
+                  />
+                </IconBadge>
+
+                <View style={styles.categoryContent}>
+                  <Text
+                    style={[
+                      styles.categoryTitle,
+                      active && {
+                        color: item.color,
+                      },
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+
+                  <Text style={styles.categoryDescription}>
+                    {item.description}
+                  </Text>
                 </View>
 
-                <Text style={styles.incidentLabel}>{meta.label}</Text>
-                <Text style={styles.incidentDescription}>
-                  {item.description}
-                </Text>
-              </Pressable>
+                {active ? (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={22}
+                    color={item.color}
+                  />
+                ) : null}
+              </AppCard>
             );
           })}
         </View>
+
+        {selectedCategoryMeta ? (
+          <AppCard
+            variant="muted"
+            style={[
+              styles.categoryInfoCard,
+              {
+                backgroundColor: selectedCategoryMeta.lightColor,
+                borderColor: selectedCategoryMeta.color,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.categoryInfoTitle,
+                {
+                  color: selectedCategoryMeta.color,
+                },
+              ]}
+            >
+              {selectedCategoryMeta.label}
+            </Text>
+
+            <Text style={styles.categoryInfoText}>
+              Gunakan judul dan deskripsi untuk menjelaskan detail kejadian,
+              misalnya banjir, gempa, pohon tumbang, pencurian, atau kondisi
+              medis.
+            </Text>
+          </AppCard>
+        ) : null}
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>2. Details</Text>
+        <SectionHeader
+          title="2. Details"
+          subtitle="Judul dan deskripsi adalah sumber detail utama laporan."
+          style={styles.sectionHeader}
+        />
 
         <Text style={styles.label}>Judul laporan</Text>
         <TextInput
           value={title}
           onChangeText={setTitle}
           editable={!loading}
-          placeholder={
-            selectedMeta
-              ? `Contoh: ${selectedMeta.label} di dekat lokasi saya`
-              : "Contoh: Kebakaran di dekat lokasi saya"
-          }
-          placeholderTextColor="#94A3B8"
+          placeholder="Contoh: Pohon tumbang menutup jalan utama"
+          placeholderTextColor={colors.textSoft}
           style={styles.input}
+        />
+
+        <StatusBadge
+          label={`${title.trim().length}/5 minimum karakter`}
+          variant={title.trim().length >= 5 ? "success" : "neutral"}
+          size="sm"
         />
 
         <Text style={styles.label}>Deskripsi</Text>
@@ -351,109 +344,139 @@ export default function ReportScreen() {
           value={description}
           onChangeText={setDescription}
           editable={!loading}
-          placeholder="Jelaskan situasi, kondisi sekitar, dan hal penting yang perlu diketahui."
-          placeholderTextColor="#94A3B8"
+          placeholder="Jelaskan situasi, kondisi sekitar, dampak, dan hal penting yang perlu diketahui."
+          placeholderTextColor={colors.textSoft}
           multiline
           textAlignVertical="top"
           style={[styles.input, styles.textArea]}
         />
+
+        <StatusBadge
+          label={`${description.trim().length}/10 minimum karakter`}
+          variant={description.trim().length >= 10 ? "success" : "neutral"}
+          size="sm"
+        />
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>3. Severity</Text>
-        <Text style={styles.sectionSubtitle}>
-          Pilih seberapa mendesak kondisi saat ini.
-        </Text>
+        <SectionHeader
+          title="3. Severity"
+          subtitle="Pilih seberapa mendesak kondisi saat ini."
+          style={styles.sectionHeader}
+        />
 
         <View style={styles.severityRow}>
           {SEVERITY_OPTIONS.map((item) => {
             const active = severity === item.value;
 
             return (
-              <Pressable
+              <AppCard
                 key={item.value}
                 onPress={() => setSeverity(item.value)}
-                disabled={loading}
-                style={({ pressed }) => [
+                padding="sm"
+                style={[
                   styles.severityCard,
                   active && {
                     borderColor: item.color,
-                    backgroundColor: item.backgroundColor,
+                    backgroundColor: item.color,
                   },
-                  pressed && styles.cardPressed,
                 ]}
               >
+                <Ionicons
+                  name={item.iconName}
+                  size={22}
+                  color={active ? colors.textInverse : item.color}
+                />
+
                 <Text
                   style={[
                     styles.severityLabel,
-                    active && {
-                      color: item.color,
-                    },
+                    active && styles.severityLabelActive,
                   ]}
                 >
                   {item.label}
                 </Text>
 
-                <Text style={styles.severityDescription}>
+                <Text
+                  style={[
+                    styles.severityDescription,
+                    active && styles.severityDescriptionActive,
+                  ]}
+                >
                   {item.description}
                 </Text>
-              </Pressable>
+              </AppCard>
             );
           })}
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>4. Evidence</Text>
-        <Text style={styles.sectionSubtitle}>
-          Foto wajib untuk membantu validasi laporan.
-        </Text>
+        <SectionHeader
+          title="4. Evidence"
+          subtitle="Foto wajib untuk membantu validasi laporan."
+          style={styles.sectionHeader}
+        />
 
         <View style={styles.photoRow}>
-          <Pressable
+          <AppCard
             onPress={takePhoto}
-            disabled={loading}
-            style={({ pressed }) => [
-              styles.photoButton,
-              pressed && styles.cardPressed,
-            ]}
+            padding="lg"
+            variant="outlined"
+            style={styles.photoButton}
           >
-            <Text style={styles.photoButtonIcon}>📷</Text>
-            <Text style={styles.photoButtonText}>Camera</Text>
-          </Pressable>
+            <IconBadge variant="danger" size="md" rounded={false}>
+              <Ionicons name="camera" size={22} color={colors.danger} />
+            </IconBadge>
 
-          <Pressable
+            <Text style={styles.photoButtonText}>Camera</Text>
+          </AppCard>
+
+          <AppCard
             onPress={pickFromGallery}
-            disabled={loading}
-            style={({ pressed }) => [
-              styles.photoButton,
-              pressed && styles.cardPressed,
-            ]}
+            padding="lg"
+            variant="outlined"
+            style={styles.photoButton}
           >
-            <Text style={styles.photoButtonIcon}>🖼️</Text>
+            <IconBadge variant="info" size="md" rounded={false}>
+              <Ionicons name="image" size={22} color={colors.info} />
+            </IconBadge>
+
             <Text style={styles.photoButtonText}>Gallery</Text>
-          </Pressable>
+          </AppCard>
         </View>
 
         {photo ? (
-          <View style={styles.previewWrap}>
+          <AppCard padding="none" style={styles.previewCard}>
             <Image source={{ uri: photo }} style={styles.previewImage} />
 
-            <Pressable
-              onPress={() => setPhoto(null)}
-              disabled={loading}
-              style={styles.removePhotoButton}
-            >
-              <Text style={styles.removePhotoText}>Remove photo</Text>
-            </Pressable>
-          </View>
+            <View style={styles.previewFooter}>
+              <View style={styles.previewInfo}>
+                <Ionicons
+                  name="checkmark-circle"
+                  size={18}
+                  color={colors.success}
+                />
+                <Text style={styles.previewText}>Foto bukti sudah dipilih</Text>
+              </View>
+
+              <AppButton
+                title="Remove"
+                variant="ghost"
+                size="sm"
+                disabled={loading}
+                onPress={() => setPhoto(null)}
+                textStyle={styles.removePhotoText}
+              />
+            </View>
+          </AppCard>
         ) : null}
       </View>
 
-      <View style={styles.locationCard}>
-        <View style={styles.locationIcon}>
-          <Text style={styles.locationIconText}>📍</Text>
-        </View>
+      <AppCard variant="muted" style={styles.locationCard}>
+        <IconBadge variant="info" size="md" rounded={false}>
+          <Ionicons name="location" size={22} color={colors.info} />
+        </IconBadge>
 
         <View style={styles.locationInfo}>
           <Text style={styles.locationTitle}>Realtime location</Text>
@@ -462,233 +485,180 @@ export default function ReportScreen() {
             berada di sekitar lokasi kejadian.
           </Text>
         </View>
-      </View>
+      </AppCard>
 
-      <Pressable
+      <AppButton
+        title="Submit Report"
+        variant="danger"
+        size="lg"
+        fullWidth
+        loading={loading}
+        disabled={!canSubmit}
         onPress={handleSubmit}
-        disabled={loading}
-        style={({ pressed }) => [
-          styles.submitButton,
-          pressed && styles.submitButtonPressed,
-          loading && styles.submitButtonDisabled,
-        ]}
-      >
-        {loading ? (
-          <ActivityIndicator color="#FFFFFF" />
-        ) : (
-          <Text style={styles.submitButtonText}>Submit Report</Text>
-        )}
-      </Pressable>
-    </ScrollView>
+        leftIcon={
+          <Ionicons name="send" size={18} color={colors.textInverse} />
+        }
+        style={styles.submitButton}
+      />
+    </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-  },
-  content: {
-    paddingHorizontal: 18,
-    paddingTop: 58,
-    paddingBottom: 36,
+  screenContent: {
+    gap: spacing["2xl"],
   },
   header: {
-    marginBottom: 24,
+    gap: spacing.sm,
   },
-  badge: {
-    alignSelf: "flex-start",
-    backgroundColor: "#FEE2E2",
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 999,
-    marginBottom: 14,
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: "900",
-    color: "#B91C1C",
-    letterSpacing: 0.4,
+  headerBadge: {
+    marginBottom: spacing.xs,
   },
   title: {
-    fontSize: 32,
-    fontWeight: "900",
-    color: "#0F172A",
+    ...typography.hero,
+    color: colors.text,
   },
   subtitle: {
-    marginTop: 8,
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#64748B",
-    lineHeight: 22,
+    ...typography.body,
+    color: colors.textMuted,
   },
   section: {
-    marginBottom: 24,
+    gap: spacing.md,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: "#0F172A",
-    marginBottom: 6,
+  sectionHeader: {
+    marginBottom: 0,
   },
-  sectionSubtitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#64748B",
-    lineHeight: 20,
-    marginBottom: 12,
+  categoryList: {
+    gap: spacing.md,
   },
-  incidentGrid: {
-    gap: 12,
-  },
-  incidentCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#0F172A",
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 2,
-  },
-  cardPressed: {
-    opacity: 0.86,
-    transform: [{ scale: 0.99 }],
-  },
-  incidentIconWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 18,
+  categoryCard: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
+    gap: spacing.md,
   },
-  incidentIcon: {
-    fontSize: 24,
+  categoryContent: {
+    flex: 1,
   },
-  incidentLabel: {
-    fontSize: 16,
+  categoryTitle: {
+    fontSize: 15,
     fontWeight: "900",
-    color: "#0F172A",
-    marginBottom: 5,
+    color: colors.text,
   },
-  incidentDescription: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#64748B",
-    lineHeight: 20,
+  categoryDescription: {
+    marginTop: 4,
+    ...typography.caption,
+    color: colors.textMuted,
+  },
+  categoryInfoCard: {
+    gap: spacing.xs,
+  },
+  categoryInfoTitle: {
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  categoryInfoText: {
+    ...typography.caption,
+    color: "#475569",
   },
   label: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: "#0F172A",
-    marginBottom: 8,
-    marginTop: 12,
+    ...typography.label,
+    color: colors.text,
+    marginTop: spacing.xs,
   },
   input: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    paddingHorizontal: 14,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.lg,
     paddingVertical: 13,
     fontSize: 14,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.text,
   },
   textArea: {
     minHeight: 120,
   },
   severityRow: {
     flexDirection: "row",
-    gap: 10,
+    gap: spacing.sm,
   },
   severityCard: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
+    minHeight: 112,
+    alignItems: "flex-start",
+    justifyContent: "space-between",
   },
   severityLabel: {
     fontSize: 14,
     fontWeight: "900",
-    color: "#0F172A",
-    marginBottom: 4,
+    color: colors.text,
+    marginTop: spacing.sm,
+  },
+  severityLabelActive: {
+    color: colors.textInverse,
   },
   severityDescription: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "700",
-    color: "#64748B",
-    lineHeight: 16,
+    color: colors.textMuted,
+    lineHeight: 14,
+    marginTop: 4,
+  },
+  severityDescriptionActive: {
+    color: colors.textInverse,
   },
   photoRow: {
     flexDirection: "row",
-    gap: 12,
+    gap: spacing.md,
   },
   photoButton: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 18,
     alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: "#CBD5E1",
     borderStyle: "dashed",
-  },
-  photoButtonIcon: {
-    fontSize: 28,
-    marginBottom: 8,
+    borderColor: "#CBD5E1",
+    gap: spacing.sm,
   },
   photoButtonText: {
     fontSize: 13,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
   },
-  previewWrap: {
-    marginTop: 14,
+  previewCard: {
+    overflow: "hidden",
   },
   previewImage: {
     width: "100%",
     height: 220,
-    borderRadius: 22,
     resizeMode: "cover",
   },
-  removePhotoButton: {
-    alignSelf: "flex-end",
-    marginTop: 10,
+  previewFooter: {
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.md,
+  },
+  previewInfo: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  previewText: {
+    flex: 1,
+    ...typography.caption,
+    color: colors.textMuted,
   },
   removePhotoText: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: "#DC2626",
+    color: colors.danger,
   },
   locationCard: {
     flexDirection: "row",
-    gap: 12,
-    backgroundColor: "#EFF6FF",
-    borderRadius: 22,
-    padding: 16,
-    borderWidth: 1,
+    alignItems: "flex-start",
+    gap: spacing.md,
+    backgroundColor: colors.infoSoft,
     borderColor: "#BFDBFE",
-    marginBottom: 20,
-  },
-  locationIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 16,
-    backgroundColor: "#DBEAFE",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  locationIconText: {
-    fontSize: 22,
   },
   locationInfo: {
     flex: 1,
@@ -700,35 +670,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   locationText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#2563EB",
-    lineHeight: 19,
+    ...typography.caption,
+    color: colors.info,
   },
   submitButton: {
-    backgroundColor: "#DC2626",
-    borderRadius: 20,
-    paddingVertical: 16,
-    alignItems: "center",
-    shadowColor: "#991B1B",
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.18,
-    shadowRadius: 14,
-    elevation: 4,
-  },
-  submitButtonPressed: {
-    opacity: 0.88,
-    transform: [{ scale: 0.99 }],
-  },
-  submitButtonDisabled: {
-    opacity: 0.6,
-  },
-  submitButtonText: {
-    fontSize: 15,
-    fontWeight: "900",
-    color: "#FFFFFF",
+    ...shadow.floating,
+    shadowColor: colors.primaryDark,
   },
 });

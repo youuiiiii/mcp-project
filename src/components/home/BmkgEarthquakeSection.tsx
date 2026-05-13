@@ -1,17 +1,21 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import {
   checkAndNotifyNearbyDisaster,
   requestNotificationPermission,
 } from "../../services/notifications";
+import { colors } from "../../theme/colors";
+import { radius, spacing } from "../../theme/layout";
+import { typography } from "../../theme/typography";
+import AppButton from "../ui/AppButton";
+import AppCard from "../ui/AppCard";
+import IconBadge from "../ui/IconBadge";
+import LoadingState from "../ui/LoadingState";
+import SectionHeader from "../ui/SectionHeader";
+import StatusBadge, { StatusBadgeVariant } from "../ui/StatusBadge";
 
 type BmkgEarthquake = {
   Tanggal?: string;
@@ -34,9 +38,15 @@ export default function BmkgEarthquakeSection() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const latestEarthquakes = useMemo(() => {
+    return earthquakes.slice(0, 3);
+  }, [earthquakes]);
+
+  const mainEarthquake = latestEarthquakes[0];
+
   useEffect(() => {
-    requestNotificationPermission();
-    fetchBMKGData();
+    void requestNotificationPermission();
+    void fetchBMKGData();
   }, []);
 
   const fetchBMKGData = async () => {
@@ -75,37 +85,6 @@ export default function BmkgEarthquakeSection() {
     }
   };
 
-  const latestEarthquakes = useMemo(() => {
-    return earthquakes.slice(0, 3);
-  }, [earthquakes]);
-
-  const mainEarthquake = latestEarthquakes[0];
-
-  const getMagnitudeNumber = (value?: string) => {
-    const magnitude = Number(value);
-    return Number.isNaN(magnitude) ? 0 : magnitude;
-  };
-
-  const getMagnitudeColor = (value?: string) => {
-    const magnitude = getMagnitudeNumber(value);
-
-    if (magnitude >= 7) return "#7F1D1D";
-    if (magnitude >= 5) return "#DC2626";
-    if (magnitude >= 3) return "#F59E0B";
-
-    return "#16A34A";
-  };
-
-  const getMagnitudeLabel = (value?: string) => {
-    const magnitude = getMagnitudeNumber(value);
-
-    if (magnitude >= 7) return "Major";
-    if (magnitude >= 5) return "Strong";
-    if (magnitude >= 3) return "Moderate";
-
-    return "Light";
-  };
-
   const handleOpenEarthquake = (item: BmkgEarthquake) => {
     router.push({
       pathname: "/(tabs)/detail",
@@ -124,145 +103,70 @@ export default function BmkgEarthquakeSection() {
 
   return (
     <View style={styles.wrapper}>
-      <View style={styles.sectionHeader}>
-        <View>
-          <Text style={styles.sectionEyebrow}>OFFICIAL UPDATE</Text>
-          <Text style={styles.sectionTitle}>BMKG Earthquake</Text>
-        </View>
-
-        <Pressable
-          onPress={fetchBMKGData}
-          disabled={loading}
-          style={({ pressed }) => [
-            styles.refreshButton,
-            pressed && styles.pressed,
-            loading && styles.disabled,
-          ]}
-        >
-          <Text style={styles.refreshText}>Refresh</Text>
-        </Pressable>
-      </View>
+      <SectionHeader
+        title="BMKG Earthquake"
+        subtitle="Official earthquake update"
+        style={styles.sectionHeader}
+        right={
+          <AppButton
+            title="Refresh"
+            variant="secondary"
+            size="sm"
+            loading={loading}
+            disabled={loading}
+            onPress={fetchBMKGData}
+            leftIcon={
+              <Ionicons
+                name="refresh"
+                size={15}
+                color={colors.text}
+              />
+            }
+          />
+        }
+      />
 
       {loading ? (
-        <View style={styles.loadingCard}>
-          <ActivityIndicator color="#DC2626" />
-          <Text style={styles.loadingText}>Memuat data resmi BMKG...</Text>
-        </View>
+        <AppCard style={styles.loadingCard}>
+          <LoadingState message="Memuat data resmi BMKG..." />
+        </AppCard>
       ) : errorMessage ? (
-        <View style={styles.errorCard}>
-          <Text style={styles.errorTitle}>BMKG unavailable</Text>
-          <Text style={styles.errorText}>{errorMessage}</Text>
-        </View>
+        <AppCard variant="muted" style={styles.errorCard}>
+          <IconBadge variant="danger" size="md" rounded={false}>
+            <Ionicons name="warning" size={22} color={colors.danger} />
+          </IconBadge>
+
+          <View style={styles.errorContent}>
+            <Text style={styles.errorTitle}>BMKG unavailable</Text>
+            <Text style={styles.errorText}>{errorMessage}</Text>
+          </View>
+        </AppCard>
       ) : !mainEarthquake ? (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyIcon}>🌍</Text>
+        <AppCard style={styles.emptyCard}>
+          <IconBadge variant="info" size="lg" rounded={false}>
+            <Ionicons name="earth" size={30} color={colors.info} />
+          </IconBadge>
+
           <Text style={styles.emptyTitle}>Belum ada update gempa</Text>
           <Text style={styles.emptyText}>
             Data gempa resmi akan tampil di sini saat tersedia.
           </Text>
-        </View>
+        </AppCard>
       ) : (
         <>
-          <Pressable
+          <FeaturedEarthquakeCard
+            earthquake={mainEarthquake}
             onPress={() => handleOpenEarthquake(mainEarthquake)}
-            style={({ pressed }) => [
-              styles.featuredCard,
-              pressed && styles.pressed,
-            ]}
-          >
-            <View style={styles.featuredTop}>
-              <View>
-                <Text style={styles.featuredLabel}>Latest Earthquake</Text>
-                <Text style={styles.featuredLocation}>
-                  {mainEarthquake.Wilayah ?? "Lokasi tidak diketahui"}
-                </Text>
-              </View>
-
-              <View
-                style={[
-                  styles.magnitudeBadge,
-                  {
-                    backgroundColor: getMagnitudeColor(
-                      mainEarthquake.Magnitude
-                    ),
-                  },
-                ]}
-              >
-                <Text style={styles.magnitudeLabel}>M</Text>
-                <Text style={styles.magnitudeValue}>
-                  {mainEarthquake.Magnitude ?? "-"}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.featuredMetaRow}>
-              <View style={styles.metaItem}>
-                <Text style={styles.metaLabel}>Status</Text>
-                <Text style={styles.metaValue}>
-                  {getMagnitudeLabel(mainEarthquake.Magnitude)}
-                </Text>
-              </View>
-
-              <View style={styles.metaItem}>
-                <Text style={styles.metaLabel}>Depth</Text>
-                <Text style={styles.metaValue}>
-                  {mainEarthquake.Kedalaman ?? "-"}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.timeCard}>
-              <Text style={styles.timeText}>
-                {mainEarthquake.Jam ?? "-"}, {mainEarthquake.Tanggal ?? "-"}
-              </Text>
-            </View>
-
-            <Text style={styles.openDetailText}>Open earthquake detail →</Text>
-          </Pressable>
+          />
 
           {latestEarthquakes.length > 1 ? (
             <View style={styles.miniList}>
               {latestEarthquakes.slice(1).map((item, index) => (
-                <Pressable
+                <MiniEarthquakeCard
                   key={`${item.DateTime ?? index}-${item.Magnitude ?? ""}`}
+                  earthquake={item}
                   onPress={() => handleOpenEarthquake(item)}
-                  style={({ pressed }) => [
-                    styles.miniCard,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.miniMagnitude,
-                      {
-                        backgroundColor: `${getMagnitudeColor(
-                          item.Magnitude
-                        )}18`,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.miniMagnitudeText,
-                        {
-                          color: getMagnitudeColor(item.Magnitude),
-                        },
-                      ]}
-                    >
-                      M {item.Magnitude ?? "-"}
-                    </Text>
-                  </View>
-
-                  <View style={styles.miniInfo}>
-                    <Text style={styles.miniTitle} numberOfLines={2}>
-                      {item.Wilayah ?? "Lokasi tidak diketahui"}
-                    </Text>
-
-                    <Text style={styles.miniSubtitle}>
-                      {item.Jam ?? "-"} · {item.Kedalaman ?? "-"}
-                    </Text>
-                  </View>
-                </Pressable>
+                />
               ))}
             </View>
           ) : null}
@@ -272,69 +176,201 @@ export default function BmkgEarthquakeSection() {
   );
 }
 
+function FeaturedEarthquakeCard({
+  earthquake,
+  onPress,
+}: {
+  earthquake: BmkgEarthquake;
+  onPress: () => void;
+}) {
+  const magnitudeColor = getMagnitudeColor(earthquake.Magnitude);
+
+  return (
+    <AppCard onPress={onPress} style={styles.featuredCard}>
+      <View style={styles.featuredTop}>
+        <View style={styles.featuredInfo}>
+          <StatusBadge
+            label="Latest Earthquake"
+            variant={getMagnitudeVariant(earthquake.Magnitude)}
+            size="sm"
+            style={styles.featuredBadge}
+          />
+
+          <Text style={styles.featuredLocation}>
+            {earthquake.Wilayah ?? "Lokasi tidak diketahui"}
+          </Text>
+        </View>
+
+        <View
+          style={[
+            styles.magnitudeBadge,
+            {
+              backgroundColor: magnitudeColor,
+            },
+          ]}
+        >
+          <Text style={styles.magnitudeLabel}>M</Text>
+          <Text style={styles.magnitudeValue}>
+            {earthquake.Magnitude ?? "-"}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.featuredMetaRow}>
+        <MetaItem
+          label="Status"
+          value={getMagnitudeLabel(earthquake.Magnitude)}
+          icon="pulse"
+        />
+
+        <MetaItem
+          label="Depth"
+          value={earthquake.Kedalaman ?? "-"}
+          icon="navigate"
+        />
+      </View>
+
+      <AppCard variant="muted" padding="sm" style={styles.timeCard}>
+        <Ionicons name="time" size={17} color={colors.primaryDark} />
+        <Text style={styles.timeText}>
+          {earthquake.Jam ?? "-"}, {earthquake.Tanggal ?? "-"}
+        </Text>
+      </AppCard>
+
+      <View style={styles.openDetailRow}>
+        <Text style={styles.openDetailText}>Open earthquake detail</Text>
+        <Ionicons name="chevron-forward" size={16} color={colors.danger} />
+      </View>
+    </AppCard>
+  );
+}
+
+function MiniEarthquakeCard({
+  earthquake,
+  onPress,
+}: {
+  earthquake: BmkgEarthquake;
+  onPress: () => void;
+}) {
+  const magnitudeColor = getMagnitudeColor(earthquake.Magnitude);
+
+  return (
+    <AppCard onPress={onPress} style={styles.miniCard}>
+      <View
+        style={[
+          styles.miniMagnitude,
+          {
+            backgroundColor: withAlpha(magnitudeColor, "18"),
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.miniMagnitudeText,
+            {
+              color: magnitudeColor,
+            },
+          ]}
+        >
+          M {earthquake.Magnitude ?? "-"}
+        </Text>
+      </View>
+
+      <View style={styles.miniInfo}>
+        <Text style={styles.miniTitle} numberOfLines={2}>
+          {earthquake.Wilayah ?? "Lokasi tidak diketahui"}
+        </Text>
+
+        <Text style={styles.miniSubtitle}>
+          {earthquake.Jam ?? "-"} · {earthquake.Kedalaman ?? "-"}
+        </Text>
+      </View>
+    </AppCard>
+  );
+}
+
+function MetaItem({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}) {
+  return (
+    <AppCard variant="muted" padding="sm" style={styles.metaItem}>
+      <Ionicons name={icon} size={18} color={colors.textMuted} />
+      <Text style={styles.metaLabel}>{label}</Text>
+      <Text style={styles.metaValue} numberOfLines={1}>
+        {value}
+      </Text>
+    </AppCard>
+  );
+}
+
+function getMagnitudeNumber(value?: string) {
+  const magnitude = Number(value);
+  return Number.isNaN(magnitude) ? 0 : magnitude;
+}
+
+function getMagnitudeColor(value?: string) {
+  const magnitude = getMagnitudeNumber(value);
+
+  if (magnitude >= 7) return "#7F1D1D";
+  if (magnitude >= 5) return colors.danger;
+  if (magnitude >= 3) return colors.warning;
+
+  return colors.success;
+}
+
+function getMagnitudeLabel(value?: string) {
+  const magnitude = getMagnitudeNumber(value);
+
+  if (magnitude >= 7) return "Major";
+  if (magnitude >= 5) return "Strong";
+  if (magnitude >= 3) return "Moderate";
+
+  return "Light";
+}
+
+function getMagnitudeVariant(value?: string): StatusBadgeVariant {
+  const magnitude = getMagnitudeNumber(value);
+
+  if (magnitude >= 5) return "danger";
+  if (magnitude >= 3) return "warning";
+
+  return "success";
+}
+
+function withAlpha(hexColor: string, alpha: string) {
+  if (!hexColor.startsWith("#") || hexColor.length !== 7) {
+    return hexColor;
+  }
+
+  return `${hexColor}${alpha}`;
+}
+
 const styles = StyleSheet.create({
   wrapper: {
-    marginBottom: 24,
+    gap: spacing.md,
   },
   sectionHeader: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    gap: 14,
-    marginBottom: 12,
-  },
-  sectionEyebrow: {
-    fontSize: 11,
-    fontWeight: "900",
-    color: "#DC2626",
-    letterSpacing: 0.7,
-    marginBottom: 4,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "900",
-    color: "#0F172A",
-  },
-  refreshButton: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  refreshText: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: "#0F172A",
-  },
-  disabled: {
-    opacity: 0.6,
-  },
-  pressed: {
-    opacity: 0.86,
-    transform: [{ scale: 0.99 }],
+    marginBottom: 0,
   },
   loadingCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    alignItems: "center",
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#64748B",
+    minHeight: 110,
+    justifyContent: "center",
   },
   errorCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md,
     backgroundColor: "#FEF2F2",
-    borderRadius: 24,
-    padding: 18,
-    borderWidth: 1,
     borderColor: "#FECACA",
+  },
+  errorContent: {
+    flex: 1,
   },
   errorTitle: {
     fontSize: 15,
@@ -343,147 +379,121 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   errorText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#B91C1C",
-    lineHeight: 20,
+    ...typography.caption,
+    color: colors.primaryDark,
   },
   emptyCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
     alignItems: "center",
-  },
-  emptyIcon: {
-    fontSize: 34,
-    marginBottom: 10,
+    paddingVertical: spacing["2xl"],
   },
   emptyTitle: {
+    marginTop: spacing.md,
     fontSize: 16,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
+    textAlign: "center",
   },
   emptyText: {
-    marginTop: 6,
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#64748B",
+    marginTop: spacing.sm,
+    ...typography.caption,
+    color: colors.textMuted,
     textAlign: "center",
-    lineHeight: 20,
   },
   featuredCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 28,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#0F172A",
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 3,
+    borderRadius: radius["3xl"],
   },
   featuredTop: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 14,
-    marginBottom: 16,
+    gap: spacing.md,
+    marginBottom: spacing.lg,
   },
-  featuredLabel: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: "#64748B",
-    marginBottom: 5,
+  featuredInfo: {
+    flex: 1,
+  },
+  featuredBadge: {
+    marginBottom: spacing.sm,
   },
   featuredLocation: {
-    flexShrink: 1,
     fontSize: 18,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
     lineHeight: 24,
   },
   magnitudeBadge: {
     minWidth: 74,
     height: 74,
-    borderRadius: 24,
+    borderRadius: radius["2xl"],
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 10,
+    paddingHorizontal: spacing.sm,
   },
   magnitudeLabel: {
     fontSize: 11,
     fontWeight: "900",
-    color: "#FFFFFF",
+    color: colors.textInverse,
     opacity: 0.82,
   },
   magnitudeValue: {
     fontSize: 25,
     fontWeight: "900",
-    color: "#FFFFFF",
+    color: colors.textInverse,
     marginTop: 2,
   },
   featuredMetaRow: {
     flexDirection: "row",
-    gap: 10,
-    marginBottom: 12,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
   metaItem: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
-    borderRadius: 18,
-    padding: 12,
+    gap: 4,
   },
   metaLabel: {
-    fontSize: 11,
-    fontWeight: "900",
-    color: "#64748B",
-    marginBottom: 4,
+    ...typography.label,
+    color: colors.textMuted,
   },
   metaValue: {
     fontSize: 14,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
   },
   timeCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
     backgroundColor: "#FEF2F2",
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 14,
+    borderColor: "#FECACA",
+    marginBottom: spacing.md,
   },
   timeText: {
+    flex: 1,
     fontSize: 13,
     fontWeight: "800",
-    color: "#B91C1C",
+    color: colors.primaryDark,
+  },
+  openDetailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
   },
   openDetailText: {
     fontSize: 13,
     fontWeight: "900",
-    color: "#DC2626",
+    color: colors.danger,
   },
   miniList: {
-    marginTop: 12,
-    gap: 10,
+    gap: spacing.sm,
   },
   miniCard: {
     flexDirection: "row",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    gap: 12,
     alignItems: "center",
+    gap: spacing.md,
   },
   miniMagnitude: {
     minWidth: 62,
-    borderRadius: 16,
-    paddingHorizontal: 10,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 9,
     alignItems: "center",
   },
@@ -497,13 +507,12 @@ const styles = StyleSheet.create({
   miniTitle: {
     fontSize: 14,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
     lineHeight: 19,
   },
   miniSubtitle: {
     marginTop: 4,
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#64748B",
+    ...typography.caption,
+    color: colors.textMuted,
   },
 });

@@ -1,32 +1,65 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Href, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Alert, StyleSheet, Text, View } from "react-native";
 
+import AppButton from "../../src/components/ui/AppButton";
+import AppCard from "../../src/components/ui/AppCard";
+import AppScreen from "../../src/components/ui/AppScreen";
+import IconBadge from "../../src/components/ui/IconBadge";
 import LoadingState from "../../src/components/ui/LoadingState";
+import SectionHeader from "../../src/components/ui/SectionHeader";
+import StatusBadge from "../../src/components/ui/StatusBadge";
 import { useAuth } from "../../src/contexts/AuthContext";
 import {
   subscribeToIncidents,
   subscribeToSOSLogs,
 } from "../../src/services/incidentService";
+import { colors } from "../../src/theme/colors";
+import { radius, shadow, spacing } from "../../src/theme/layout";
+import { typography } from "../../src/theme/typography";
 import { IncidentReport, SOSLog } from "../../src/types/incident";
 
 const LOGIN_ROUTE = "/login" as Href;
 
+type AppIconName = keyof typeof Ionicons.glyphMap;
+
 type StatItem = {
   label: string;
   value: number;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: AppIconName;
   color: string;
-  backgroundColor: string;
+  variant: "danger" | "success" | "warning" | "info";
 };
+
+type InfoItem = {
+  icon: AppIconName;
+  label: string;
+  value: string;
+};
+
+const APP_INFO: InfoItem[] = [
+  {
+    icon: "phone-portrait",
+    label: "Application",
+    value: "Community Safety Monitoring",
+  },
+  {
+    icon: "flash",
+    label: "Realtime Database",
+    value: "Firebase Firestore",
+  },
+  {
+    icon: "map",
+    label: "Core Feature",
+    value: "Map-based Incident Reporting",
+  },
+  {
+    icon: "pricetag",
+    label: "Version",
+    value: "1.0.0 Development",
+  },
+];
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -100,36 +133,38 @@ export default function ProfileScreen() {
     return reports.filter((report) => report.severity === "high");
   }, [reports]);
 
-  const stats: StatItem[] = [
-    {
-      label: "Total Reports",
-      value: reports.length,
-      icon: "location",
-      color: "#2563EB",
-      backgroundColor: "#DBEAFE",
-    },
-    {
-      label: "Active",
-      value: activeReports.length,
-      icon: "radio",
-      color: "#DC2626",
-      backgroundColor: "#FEE2E2",
-    },
-    {
-      label: "Resolved",
-      value: resolvedReports.length,
-      icon: "checkmark-circle",
-      color: "#16A34A",
-      backgroundColor: "#DCFCE7",
-    },
-    {
-      label: "SOS Logs",
-      value: sosLogs.length,
-      icon: "alert-circle",
-      color: "#D97706",
-      backgroundColor: "#FEF3C7",
-    },
-  ];
+  const stats = useMemo<StatItem[]>(() => {
+    return [
+      {
+        label: "Total Reports",
+        value: reports.length,
+        icon: "location",
+        color: colors.info,
+        variant: "info",
+      },
+      {
+        label: "Active",
+        value: activeReports.length,
+        icon: "radio",
+        color: colors.danger,
+        variant: "danger",
+      },
+      {
+        label: "Resolved",
+        value: resolvedReports.length,
+        icon: "checkmark-circle",
+        color: colors.success,
+        variant: "success",
+      },
+      {
+        label: "SOS Logs",
+        value: sosLogs.length,
+        icon: "alert-circle",
+        color: colors.warningDark,
+        variant: "warning",
+      },
+    ];
+  }, [reports.length, activeReports.length, resolvedReports.length, sosLogs.length]);
 
   const handleLogout = () => {
     Alert.alert("Logout", "Keluar dari akun ini?", [
@@ -155,124 +190,112 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <AppScreen scroll={false} contentContainerStyle={styles.loadingContainer}>
         <LoadingState message="Memuat profile..." />
-      </View>
+      </AppScreen>
     );
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
+    <AppScreen contentContainerStyle={styles.screenContent}>
       <View style={styles.hero}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{userInitial}</Text>
         </View>
 
-        <Text style={styles.name}>{displayName}</Text>
-        <Text style={styles.email}>{userEmail}</Text>
+        <Text style={styles.name} numberOfLines={1}>
+          {displayName}
+        </Text>
 
-        <View style={styles.roleBadge}>
-          <Ionicons name="shield-checkmark" size={15} color="#FFFFFF" />
-          <Text style={styles.roleText}>Community Reporter</Text>
-        </View>
+        <Text style={styles.email} numberOfLines={1}>
+          {userEmail}
+        </Text>
+
+        <StatusBadge
+          label="Community Reporter"
+          variant="info"
+          size="sm"
+          style={styles.roleBadge}
+          textStyle={styles.roleBadgeText}
+        />
       </View>
 
       {errorMessage ? (
-        <View style={styles.errorBox}>
-          <Text style={styles.errorTitle}>Sebagian data gagal dimuat</Text>
-          <Text style={styles.errorMessage}>{errorMessage}</Text>
-        </View>
+        <AppCard variant="muted" style={styles.errorCard}>
+          <IconBadge variant="danger" size="md" rounded={false}>
+            <Ionicons name="warning" size={22} color={colors.danger} />
+          </IconBadge>
+
+          <View style={styles.errorContent}>
+            <Text style={styles.errorTitle}>Sebagian data gagal dimuat</Text>
+            <Text style={styles.errorMessage}>{errorMessage}</Text>
+          </View>
+        </AppCard>
       ) : null}
 
       <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Contribution Summary</Text>
-          <Text style={styles.sectionSubtitle}>
-            Aktivitas komunitas realtime
-          </Text>
-        </View>
+        <SectionHeader
+          title="Contribution Summary"
+          subtitle="Aktivitas komunitas realtime"
+          style={styles.sectionHeader}
+        />
 
         <View style={styles.statsGrid}>
           {stats.map((item) => (
-            <View key={item.label} style={styles.statCard}>
-              <View
-                style={[
-                  styles.statIconWrapper,
-                  {
-                    backgroundColor: item.backgroundColor,
-                  },
-                ]}
-              >
+            <AppCard key={item.label} style={styles.statCard}>
+              <IconBadge variant={item.variant} size="md" rounded={false}>
                 <Ionicons name={item.icon} size={23} color={item.color} />
-              </View>
+              </IconBadge>
 
               <Text style={styles.statValue}>{item.value}</Text>
               <Text style={styles.statLabel}>{item.label}</Text>
-            </View>
+            </AppCard>
           ))}
         </View>
       </View>
 
-      <View style={styles.alertCard}>
-        <View style={styles.alertIcon}>
-          <Ionicons name="warning" size={22} color="#B91C1C" />
-        </View>
+      <AppCard variant="muted" style={styles.highSeverityCard}>
+        <IconBadge variant="danger" size="md" rounded={false}>
+          <Ionicons name="warning" size={22} color={colors.danger} />
+        </IconBadge>
 
-        <View style={styles.alertContent}>
-          <Text style={styles.alertTitle}>High Severity Reports</Text>
-          <Text style={styles.alertText}>
+        <View style={styles.highSeverityContent}>
+          <Text style={styles.highSeverityTitle}>High Severity Reports</Text>
+          <Text style={styles.highSeverityText}>
             Ada {highReports.length} laporan high severity yang tercatat di
             sistem.
           </Text>
         </View>
-      </View>
+      </AppCard>
 
       <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>App Information</Text>
-          <Text style={styles.sectionSubtitle}>Status aplikasi dan data</Text>
-        </View>
+        <SectionHeader
+          title="App Information"
+          subtitle="Status aplikasi dan data"
+          style={styles.sectionHeader}
+        />
 
-        <View style={styles.infoCard}>
-          <InfoRow
-            icon="phone-portrait"
-            label="Application"
-            value="Community Safety Monitoring"
-          />
+        <AppCard style={styles.infoCard}>
+          {APP_INFO.map((item, index) => (
+            <View key={item.label}>
+              <InfoRow item={item} />
 
-          <Divider />
-
-          <InfoRow
-            icon="flash"
-            label="Realtime Database"
-            value="Firebase Firestore"
-          />
-
-          <Divider />
-
-          <InfoRow
-            icon="map"
-            label="Core Feature"
-            value="Map-based Incident Reporting"
-          />
-
-          <Divider />
-
-          <InfoRow
-            icon="pricetag"
-            label="Version"
-            value="1.0.0 Development"
-          />
-        </View>
+              {index < APP_INFO.length - 1 ? <View style={styles.divider} /> : null}
+            </View>
+          ))}
+        </AppCard>
       </View>
 
-      <View style={styles.reminderCard}>
+      <AppCard variant="muted" style={styles.reminderCard}>
         <View style={styles.reminderHeader}>
-          <Ionicons name="information-circle" size={22} color="#1D4ED8" />
+          <IconBadge variant="info" size="sm">
+            <Ionicons
+              name="information-circle"
+              size={18}
+              color={colors.info}
+            />
+          </IconBadge>
+
           <Text style={styles.reminderTitle}>Emergency Reminder</Text>
         </View>
 
@@ -281,122 +304,100 @@ export default function ProfileScreen() {
           tidak menggantikan layanan darurat resmi. Jika kondisi berbahaya,
           segera hubungi pihak berwenang.
         </Text>
-      </View>
+      </AppCard>
 
-      <Pressable
+      <AppButton
+        title="Logout"
+        variant="danger"
+        size="lg"
+        fullWidth
         onPress={handleLogout}
-        style={({ pressed }) => [
-          styles.logoutButton,
-          pressed && styles.logoutButtonPressed,
-        ]}
-      >
-        <Ionicons name="log-out-outline" size={20} color="#FFFFFF" />
-        <Text style={styles.logoutText}>Logout</Text>
-      </Pressable>
-    </ScrollView>
+        leftIcon={
+          <Ionicons
+            name="log-out-outline"
+            size={20}
+            color={colors.textInverse}
+          />
+        }
+        style={styles.logoutButton}
+      />
+    </AppScreen>
   );
 }
 
-function InfoRow({
-  icon,
-  label,
-  value,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  value: string;
-}) {
+function InfoRow({ item }: { item: InfoItem }) {
   return (
     <View style={styles.infoRow}>
-      <View style={styles.infoIcon}>
-        <Ionicons name={icon} size={22} color="#0F172A" />
-      </View>
+      <IconBadge variant="neutral" size="md" rounded={false}>
+        <Ionicons name={item.icon} size={22} color={colors.text} />
+      </IconBadge>
 
       <View style={styles.infoContent}>
-        <Text style={styles.infoLabel}>{label}</Text>
-        <Text style={styles.infoValue}>{value}</Text>
+        <Text style={styles.infoLabel}>{item.label}</Text>
+        <Text style={styles.infoValue}>{item.value}</Text>
       </View>
     </View>
   );
 }
 
-function Divider() {
-  return <View style={styles.divider} />;
-}
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
+  loadingContainer: {
+    justifyContent: "center",
   },
-  content: {
-    paddingHorizontal: 18,
-    paddingTop: 58,
-    paddingBottom: 36,
+  screenContent: {
+    gap: spacing["2xl"],
   },
   hero: {
-    backgroundColor: "#0F172A",
-    borderRadius: 32,
-    padding: 22,
+    backgroundColor: colors.dark,
+    borderRadius: radius["3xl"],
+    padding: spacing["2xl"],
     alignItems: "center",
-    marginBottom: 22,
-    shadowColor: "#0F172A",
-    shadowOffset: {
-      width: 0,
-      height: 12,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 6,
+    ...shadow.floating,
   },
   avatar: {
     width: 82,
     height: 82,
     borderRadius: 30,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 14,
+    marginBottom: spacing.md,
   },
   avatarText: {
     fontSize: 26,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
   },
   name: {
+    maxWidth: "100%",
     fontSize: 24,
     fontWeight: "900",
-    color: "#FFFFFF",
+    color: colors.textInverse,
     textAlign: "center",
   },
   email: {
+    maxWidth: "100%",
     marginTop: 5,
-    fontSize: 13,
-    fontWeight: "700",
+    ...typography.caption,
     color: "#CBD5E1",
+    textAlign: "center",
   },
   roleBadge: {
-    marginTop: 14,
-    backgroundColor: "#1E293B",
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    marginTop: spacing.md,
+    backgroundColor: colors.darkSoft,
+  },
+  roleBadgeText: {
+    color: colors.textInverse,
+  },
+  errorCard: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-  },
-  roleText: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: "#FFFFFF",
-  },
-  errorBox: {
+    alignItems: "flex-start",
+    gap: spacing.md,
     backgroundColor: "#FEF2F2",
-    borderRadius: 20,
-    padding: 14,
-    borderWidth: 1,
     borderColor: "#FECACA",
-    marginBottom: 20,
+  },
+  errorContent: {
+    flex: 1,
   },
   errorTitle: {
     fontSize: 14,
@@ -405,154 +406,91 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   errorMessage: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#B91C1C",
-    lineHeight: 20,
+    ...typography.caption,
+    color: colors.primaryDark,
   },
   section: {
-    marginBottom: 22,
+    gap: spacing.md,
   },
   sectionHeader: {
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 19,
-    fontWeight: "900",
-    color: "#0F172A",
-  },
-  sectionSubtitle: {
-    marginTop: 4,
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#64748B",
+    marginBottom: 0,
   },
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    gap: spacing.md,
   },
   statCard: {
     width: "48%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
     minHeight: 132,
-    shadowColor: "#0F172A",
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 2,
-  },
-  statIconWrapper: {
-    width: 44,
-    height: 44,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
   },
   statValue: {
+    marginTop: spacing.md,
     fontSize: 27,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
   },
   statLabel: {
     marginTop: 4,
     fontSize: 12,
     fontWeight: "800",
-    color: "#64748B",
+    color: colors.textMuted,
   },
-  alertCard: {
-    backgroundColor: "#FEF2F2",
-    borderRadius: 24,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#FECACA",
+  highSeverityCard: {
     flexDirection: "row",
-    gap: 12,
-    marginBottom: 22,
+    alignItems: "flex-start",
+    gap: spacing.md,
+    backgroundColor: "#FEF2F2",
+    borderColor: "#FECACA",
   },
-  alertIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 16,
-    backgroundColor: "#FEE2E2",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  alertContent: {
+  highSeverityContent: {
     flex: 1,
   },
-  alertTitle: {
+  highSeverityTitle: {
     fontSize: 15,
     fontWeight: "900",
     color: "#991B1B",
     marginBottom: 4,
   },
-  alertText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#B91C1C",
-    lineHeight: 20,
+  highSeverityText: {
+    ...typography.caption,
+    color: colors.primaryDark,
   },
   infoCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 26,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
+    paddingVertical: spacing.md,
   },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-  },
-  infoIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 16,
-    backgroundColor: "#F1F5F9",
-    alignItems: "center",
-    justifyContent: "center",
+    gap: spacing.md,
   },
   infoContent: {
     flex: 1,
   },
   infoLabel: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: "#64748B",
+    ...typography.label,
+    color: colors.textMuted,
     marginBottom: 3,
   },
   infoValue: {
     fontSize: 14,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
   },
   divider: {
     height: 1,
-    backgroundColor: "#E2E8F0",
-    marginVertical: 14,
+    backgroundColor: colors.border,
+    marginVertical: spacing.md,
   },
   reminderCard: {
-    backgroundColor: "#EFF6FF",
-    borderRadius: 24,
-    padding: 16,
-    borderWidth: 1,
+    backgroundColor: colors.infoSoft,
     borderColor: "#BFDBFE",
-    marginBottom: 20,
   },
   reminderHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 8,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   reminderTitle: {
     fontSize: 15,
@@ -560,35 +498,11 @@ const styles = StyleSheet.create({
     color: "#1E3A8A",
   },
   reminderText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#2563EB",
-    lineHeight: 21,
+    ...typography.caption,
+    color: colors.info,
   },
   logoutButton: {
-    backgroundColor: "#DC2626",
-    borderRadius: 20,
-    paddingVertical: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-    gap: 8,
-    shadowColor: "#991B1B",
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.18,
-    shadowRadius: 14,
-    elevation: 4,
-  },
-  logoutButtonPressed: {
-    opacity: 0.88,
-    transform: [{ scale: 0.99 }],
-  },
-  logoutText: {
-    fontSize: 15,
-    fontWeight: "900",
-    color: "#FFFFFF",
+    ...shadow.floating,
+    shadowColor: colors.primaryDark,
   },
 });

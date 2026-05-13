@@ -1,17 +1,27 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleProp, StyleSheet, Text, TextStyle, View, ViewStyle } from "react-native";
+
+import { colors } from "../theme/colors";
+import { radius, spacing } from "../theme/layout";
+import { typography } from "../theme/typography";
 import { Coordinate, IncidentReport } from "../types/incident";
 import { getIncidentUrgencyMeta } from "../utils/incidentUrgency";
+
+type IncidentUrgencyBadgeVariant = "compact" | "full";
 
 type IncidentUrgencyBadgeProps = {
   incident: IncidentReport;
   userLocation?: Coordinate | null;
-  variant?: "compact" | "full";
+  variant?: IncidentUrgencyBadgeVariant;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
 };
 
 export default function IncidentUrgencyBadge({
   incident,
   userLocation,
   variant = "compact",
+  style,
+  textStyle,
 }: IncidentUrgencyBadgeProps) {
   const urgency = getIncidentUrgencyMeta(incident, userLocation);
 
@@ -24,6 +34,7 @@ export default function IncidentUrgencyBadge({
             backgroundColor: urgency.lightColor,
             borderColor: urgency.color,
           },
+          style,
         ]}
       >
         <View
@@ -44,12 +55,16 @@ export default function IncidentUrgencyBadge({
               {
                 color: urgency.color,
               },
+              textStyle,
             ]}
+            numberOfLines={1}
           >
             {urgency.label}
           </Text>
 
-          <Text style={styles.fullDescription}>{urgency.description}</Text>
+          <Text style={styles.fullDescription}>
+            {urgency.description}
+          </Text>
 
           <Text style={styles.fullMeta}>
             Skor otomatis dihitung dari severity, jenis incident, trust level,
@@ -68,6 +83,7 @@ export default function IncidentUrgencyBadge({
           backgroundColor: urgency.lightColor,
           borderColor: urgency.color,
         },
+        style,
       ]}
     >
       <Text
@@ -76,7 +92,9 @@ export default function IncidentUrgencyBadge({
           {
             color: urgency.color,
           },
+          textStyle,
         ]}
+        numberOfLines={1}
       >
         {urgency.shortLabel} {urgency.score}
       </Text>
@@ -88,32 +106,34 @@ const styles = StyleSheet.create({
   compactContainer: {
     alignSelf: "flex-start",
     borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 10,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
     paddingVertical: 6,
+    maxWidth: "100%",
   },
   compactText: {
-    fontSize: 11,
-    fontWeight: "900",
+    ...typography.label,
   },
   fullContainer: {
     flexDirection: "row",
-    gap: 12,
+    alignItems: "flex-start",
+    gap: spacing.md,
     borderWidth: 1,
-    borderRadius: 22,
-    padding: 14,
+    borderRadius: radius["2xl"],
+    padding: spacing.md,
   },
   scoreBox: {
     width: 46,
     height: 46,
-    borderRadius: 18,
+    borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
   },
   scoreText: {
     fontSize: 17,
     fontWeight: "900",
-    color: "#FFFFFF",
+    color: colors.textInverse,
   },
   fullContent: {
     flex: 1,
@@ -124,16 +144,14 @@ const styles = StyleSheet.create({
   },
   fullDescription: {
     marginTop: 5,
-    fontSize: 12,
-    fontWeight: "600",
+    ...typography.caption,
     color: "#475569",
-    lineHeight: 18,
   },
   fullMeta: {
-    marginTop: 10,
+    marginTop: spacing.sm,
     fontSize: 11,
     fontWeight: "700",
-    color: "#64748B",
+    color: colors.textMuted,
     lineHeight: 17,
   },
 });

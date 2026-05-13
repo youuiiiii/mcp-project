@@ -35,6 +35,12 @@ export type IncidentSubcategory =
   | "drowning"
   | "evacuation_needed";
 
+/**
+ * Legacy alias.
+ *
+ * Jangan dipakai untuk flow baru.
+ * Field ini dipertahankan sementara supaya data lama / komponen lama tidak crash.
+ */
 export type IncidentType = IncidentSubcategory;
 
 export type IncidentStatus = "active" | "resolved";
@@ -60,9 +66,24 @@ export type Coordinate = {
 export type IncidentReport = {
   id: string;
 
+  /**
+   * Main taxonomy.
+   * Ini yang dipakai flow baru.
+   */
   category: IncidentCategory;
-  subcategory: IncidentSubcategory;
-  type: IncidentType;
+
+  /**
+   * Optional detail taxonomy.
+   * Tidak wajib diisi dari report form.
+   * Boleh dipakai nanti untuk admin review / AI classification / legacy data.
+   */
+  subcategory?: IncidentSubcategory | null;
+
+  /**
+   * Deprecated legacy field.
+   * Jangan dipakai untuk report baru.
+   */
+  type?: IncidentType | null;
 
   title: string;
   description: string;
@@ -121,8 +142,17 @@ export type IncidentReply = {
 
 export type CreateIncidentPayload = {
   category: IncidentCategory;
-  subcategory: IncidentSubcategory;
-  type?: IncidentType;
+
+  /**
+   * Optional only.
+   * Jangan wajibkan user memilih ini.
+   */
+  subcategory?: IncidentSubcategory | null;
+
+  /**
+   * Deprecated legacy compatibility only.
+   */
+  type?: IncidentType | null;
 
   title: string;
   description: string;
