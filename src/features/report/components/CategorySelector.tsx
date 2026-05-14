@@ -2,12 +2,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
 import AppCard from "../../../components/ui/AppCard";
-import IconBadge from "../../../components/ui/IconBadge";
 import SectionHeader from "../../../components/ui/SectionHeader";
 import { INCIDENT_CATEGORY_OPTIONS } from "../../../constants/incident";
 import { colors } from "../../../theme/colors";
-import { spacing } from "../../../theme/layout";
-import { typography } from "../../../theme/typography";
+import { radius, spacing } from "../../../theme/layout";
 import type { IncidentCategory } from "../../../types/incident";
 
 type CategorySelectorProps = {
@@ -24,63 +22,53 @@ export default function CategorySelector({
   return (
     <View style={styles.section}>
       <SectionHeader
-        title="1. Tema Kejadian"
-        subtitle="Pilih kategori besar. Detail spesifik cukup ditulis di judul dan deskripsi."
+        title="1. Kategori"
+        subtitle="Pilih jenis kejadian utama. Detailnya cukup dijelaskan di judul dan deskripsi."
       />
 
-      <View style={styles.list}>
+      <View style={styles.grid}>
         {INCIDENT_CATEGORY_OPTIONS.map((item) => {
           const active = selectedCategory === item.value;
 
           return (
             <AppCard
               key={item.value}
+              padding="sm"
               onPress={disabled ? undefined : () => onSelectCategory(item.value)}
               style={[
                 styles.card,
                 active && {
-                  borderColor: item.color,
                   backgroundColor: item.lightColor,
+                  borderColor: item.color,
                 },
               ]}
             >
-              <IconBadge
-                variant="neutral"
-                size="lg"
-                rounded={false}
-                style={{
-                  backgroundColor: active ? item.color : colors.surfaceMuted,
-                }}
+              <View
+                style={[
+                  styles.iconBox,
+                  active && {
+                    backgroundColor: item.color,
+                  },
+                ]}
               >
                 <Ionicons
                   name={item.iconName}
-                  size={24}
+                  size={22}
                   color={active ? colors.textInverse : item.color}
                 />
-              </IconBadge>
-
-              <View style={styles.content}>
-                <Text
-                  style={[
-                    styles.title,
-                    active && {
-                      color: item.color,
-                    },
-                  ]}
-                >
-                  {item.label}
-                </Text>
-
-                <Text style={styles.description}>{item.description}</Text>
               </View>
 
-              {active ? (
-                <Ionicons
-                  name="checkmark-circle"
-                  size={22}
-                  color={item.color}
-                />
-              ) : null}
+              <Text
+                numberOfLines={2}
+                style={[
+                  styles.label,
+                  active && {
+                    color: item.color,
+                  },
+                ]}
+              >
+                {item.label}
+              </Text>
             </AppCard>
           );
         })}
@@ -93,25 +81,29 @@ const styles = StyleSheet.create({
   section: {
     gap: spacing.md,
   },
-  list: {
-    gap: spacing.md,
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
   },
   card: {
-    flexDirection: "row",
+    width: "48.7%",
+    minHeight: 112,
+    justifyContent: "space-between",
+  },
+  iconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surfaceMuted,
     alignItems: "center",
-    gap: spacing.md,
+    justifyContent: "center",
   },
-  content: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 15,
-    fontWeight: "900",
+  label: {
+    marginTop: spacing.md,
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: "800",
     color: colors.text,
-  },
-  description: {
-    marginTop: 4,
-    ...typography.caption,
-    color: colors.textMuted,
   },
 });

@@ -3,7 +3,6 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import AppButton from "../../../components/ui/AppButton";
 import AppCard from "../../../components/ui/AppCard";
-import IconBadge from "../../../components/ui/IconBadge";
 import StatusBadge from "../../../components/ui/StatusBadge";
 import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
@@ -29,11 +28,11 @@ export default function HomeHero({
   onOpenReport,
 }: HomeHeroProps) {
   return (
-    <AppCard style={styles.heroCard}>
+    <AppCard style={styles.card}>
       <View style={styles.topRow}>
-        <View style={styles.userTextGroup}>
-          <Text style={styles.greeting}>Welcome back,</Text>
-          <Text style={styles.displayName} numberOfLines={1}>
+        <View style={styles.identity}>
+          <Text style={styles.greeting}>Welcome back</Text>
+          <Text style={styles.name} numberOfLines={1}>
             {displayName}
           </Text>
         </View>
@@ -41,52 +40,44 @@ export default function HomeHero({
         <Pressable
           onPress={onOpenProfile}
           style={({ pressed }) => [
-            styles.avatarButton,
-            pressed && styles.pressed,
+            styles.avatar,
+            pressed && styles.avatarPressed,
           ]}
         >
           <Text style={styles.avatarText}>{initials}</Text>
         </Pressable>
       </View>
 
-      <View style={styles.titleBlock}>
+      <View style={styles.messageBlock}>
         <StatusBadge label="Live Monitoring" variant="success" size="sm" />
 
-        <Text style={styles.title}>Monitor incidents around you</Text>
+        <Text style={styles.title}>Pantau laporan warga di sekitar Anda</Text>
 
         <Text style={styles.subtitle}>
-          Lihat laporan warga di map, laporkan kejadian dari lokasi Anda, dan
-          buka detail kejadian dari pin yang tersedia.
+          Buka map untuk melihat pin kejadian, atau buat laporan dari lokasi
+          Anda saat ini.
         </Text>
       </View>
 
-      <View style={styles.statusRow}>
-        <View style={styles.statusItem}>
-          <IconBadge variant="info" size="md" rounded={false}>
-            <Ionicons name="map" size={20} color={colors.info} />
-          </IconBadge>
+      <View style={styles.summaryRow}>
+        <SummaryItem
+          iconName="map"
+          value={activeCount}
+          label="Aktif"
+          color={colors.info}
+        />
 
-          <View style={styles.statusTextGroup}>
-            <Text style={styles.statusValue}>{activeCount}</Text>
-            <Text style={styles.statusLabel}>Active reports</Text>
-          </View>
-        </View>
-
-        <View style={styles.statusItem}>
-          <IconBadge variant="danger" size="md" rounded={false}>
-            <Ionicons name="warning" size={20} color={colors.danger} />
-          </IconBadge>
-
-          <View style={styles.statusTextGroup}>
-            <Text style={styles.statusValue}>{highSeverityCount}</Text>
-            <Text style={styles.statusLabel}>High severity</Text>
-          </View>
-        </View>
+        <SummaryItem
+          iconName="warning"
+          value={highSeverityCount}
+          label="Severity tinggi"
+          color={colors.danger}
+        />
       </View>
 
       <View style={styles.actionRow}>
         <AppButton
-          title="Report Incident"
+          title="Report"
           variant="danger"
           size="md"
           onPress={onOpenReport}
@@ -97,7 +88,7 @@ export default function HomeHero({
         />
 
         <AppButton
-          title="Open Map"
+          title="Map"
           variant="secondary"
           size="md"
           onPress={onOpenMap}
@@ -109,8 +100,33 @@ export default function HomeHero({
   );
 }
 
+function SummaryItem({
+  iconName,
+  value,
+  label,
+  color,
+}: {
+  iconName: keyof typeof Ionicons.glyphMap;
+  value: number;
+  label: string;
+  color: string;
+}) {
+  return (
+    <View style={styles.summaryItem}>
+      <View style={[styles.summaryIcon, { backgroundColor: `${color}18` }]}>
+        <Ionicons name={iconName} size={18} color={color} />
+      </View>
+
+      <View style={styles.summaryText}>
+        <Text style={styles.summaryValue}>{value}</Text>
+        <Text style={styles.summaryLabel}>{label}</Text>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  heroCard: {
+  card: {
     gap: spacing.lg,
   },
   topRow: {
@@ -119,72 +135,84 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: spacing.md,
   },
-  userTextGroup: {
+  identity: {
     flex: 1,
   },
   greeting: {
     ...typography.caption,
     color: colors.textMuted,
   },
-  displayName: {
+  name: {
     marginTop: 2,
-    fontSize: 20,
-    fontWeight: "900",
+    fontSize: 24,
+    fontWeight: "800",
     color: colors.text,
   },
-  avatarButton: {
-    width: 46,
-    height: 46,
+  avatar: {
+    width: 44,
+    height: 44,
     borderRadius: radius.full,
     backgroundColor: colors.dark,
     alignItems: "center",
     justifyContent: "center",
   },
-  pressed: {
+  avatarPressed: {
     opacity: 0.85,
     transform: [{ scale: 0.98 }],
   },
   avatarText: {
     fontSize: 15,
-    fontWeight: "900",
+    fontWeight: "800",
     color: colors.textInverse,
   },
-  titleBlock: {
+  messageBlock: {
     gap: spacing.sm,
   },
   title: {
-    ...typography.title,
+    fontSize: 27,
+    lineHeight: 34,
+    fontWeight: "800",
     color: colors.text,
   },
   subtitle: {
-    ...typography.body,
+    fontSize: 15,
+    lineHeight: 24,
+    fontWeight: "500",
     color: colors.textMuted,
   },
-  statusRow: {
+  summaryRow: {
     flexDirection: "row",
     gap: spacing.sm,
   },
-  statusItem: {
+  summaryItem: {
     flex: 1,
+    minHeight: 68,
+    borderRadius: radius.xl,
+    backgroundColor: colors.surfaceMuted,
+    padding: spacing.md,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: radius.xl,
-    padding: spacing.md,
   },
-  statusTextGroup: {
+  summaryIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  summaryText: {
     flex: 1,
   },
-  statusValue: {
+  summaryValue: {
     fontSize: 18,
-    fontWeight: "900",
+    fontWeight: "800",
     color: colors.text,
   },
-  statusLabel: {
-    marginTop: 2,
-    fontSize: 10,
-    fontWeight: "800",
+  summaryLabel: {
+    marginTop: 1,
+    fontSize: 11,
+    fontWeight: "600",
     color: colors.textMuted,
   },
   actionRow: {
@@ -192,9 +220,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   primaryAction: {
-    flex: 1.2,
+    flex: 1.1,
   },
   secondaryAction: {
-    flex: 1,
+    flex: 0.9,
   },
 });

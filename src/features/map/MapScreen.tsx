@@ -1,8 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { type Href, useRouter } from "expo-router";
 import { useRef, useState } from "react";
-import { Text, View } from "react-native";
 import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
+import { Pressable, Text, View } from "react-native";
 
 import FilterBar, { type MapFilterValue } from "../../components/FilterBar";
 import IncidentThreadModal from "../../components/IncidentThreadModal";
@@ -17,7 +17,6 @@ import { useMapIncidents } from "./hooks/useMapIncidents";
 import { useMapModalState } from "./hooks/useMapModalState";
 import { useStableUserLocation } from "./hooks/useStableUserLocation";
 import { getReportDisplayMeta } from "./utils/reportDisplayMeta";
-
 
 const REPORT_ROUTE = "/(tabs)/report" as Href;
 
@@ -56,6 +55,8 @@ export default function MapScreen() {
     ? getReportDisplayMeta(nearestIncident.incident)
     : null;
 
+  const activeCount = reports.filter((report) => report.status === "active").length;
+
   const handleOpenReport = () => {
     router.push(REPORT_ROUTE);
   };
@@ -70,7 +71,7 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-        <MapView
+      <MapView
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
         style={styles.map}
@@ -79,34 +80,32 @@ export default function MapScreen() {
         showsMyLocationButton={false}
         showsCompass
         showsScale
-        >
+      >
         {filteredReports.map((incident) => (
-            <IncidentMapMarker
+          <IncidentMapMarker
             key={incident.id}
             incident={incident}
             onPress={modalState.openThreadModal}
-            />
+          />
         ))}
-        </MapView>
+      </MapView>
 
       <View style={styles.topOverlay}>
-        <View style={styles.headerCard}>
-          <View style={styles.headerRow}>
+        <View style={styles.compactHeader}>
+          <View style={styles.headerTitleGroup}>
+            <Text style={styles.headerEyebrow}>Live monitoring</Text>
             <Text style={styles.headerTitle}>Crisis Map</Text>
-
-            <View style={styles.liveBadge}>
-              <View style={styles.liveDot} />
-              <Text style={styles.liveText}>LIVE</Text>
-            </View>
           </View>
 
-            <Text style={styles.headerSubtitle}>
-            Pin menunjukkan lokasi laporan warga. Tap pin untuk melihat detail kejadian.
-            </Text>
+          <View style={styles.liveBadge}>
+            <View style={styles.liveDot} />
+            <Text style={styles.liveText}>{activeCount} active</Text>
+          </View>
         </View>
 
         {errorMessage ? (
           <View style={styles.errorBanner}>
+            <Ionicons name="warning" size={16} color={colors.primaryDark} />
             <Text style={styles.errorText}>{errorMessage}</Text>
           </View>
         ) : null}
@@ -119,7 +118,17 @@ export default function MapScreen() {
         </View>
       </View>
 
-      <View style={styles.reportButtonWrapper}>
+      <View style={styles.mapActions}>
+        <Pressable
+          onPress={focusUserLocation}
+          style={({ pressed }) => [
+            styles.locateButton,
+            pressed && styles.locateButtonPressed,
+          ]}
+        >
+          <Ionicons name="locate" size={23} color={colors.text} />
+        </Pressable>
+
         <AppButton
           title="Report"
           variant="danger"
@@ -134,42 +143,36 @@ export default function MapScreen() {
 
       <View style={styles.bottomOverlay}>
         <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>
-            {filteredReports.length} laporan ditampilkan
-          </Text>
+          <View style={styles.infoRow}>
+            <View style={styles.infoTextGroup}>
+              <Text style={styles.infoTitle}>
+                {filteredReports.length} laporan ditampilkan
+              </Text>
 
-          <Text style={styles.infoDescription}>
-            Filter aktif: {getFilterLabel(selectedFilter)}
-          </Text>
+              <Text style={styles.infoDescription}>
+                Filter: {getFilterLabel(selectedFilter)}
+              </Text>
+            </View>
 
-          <Text style={styles.infoDescription}>
-            Pin = laporan warga • Report = buat laporan dari lokasi Anda
-          </Text>
+            <Ionicons name="map" size={20} color={colors.textMuted} />
+          </View>
 
           {nearestIncident.incident &&
           nearestIncidentMeta &&
           nearestIncident.distance !== null ? (
-            <View style={styles.warningCard}>
-              <Text style={styles.warningTitle}>Kejadian Terdekat</Text>
+            <View style={styles.nearestRow}>
+              <Ionicons
+                name={nearestIncidentMeta.iconName}
+                size={17}
+                color={nearestIncidentMeta.color}
+              />
 
-              <View style={styles.warningContent}>
-                <Ionicons
-                  name={nearestIncidentMeta.iconName}
-                  size={18}
-                  color={nearestIncidentMeta.color}
-                />
-
-                <Text style={styles.warningText}>
-                  {nearestIncidentMeta.label} sekitar{" "}
-                  {formatDistance(nearestIncident.distance)} dari posisi Anda.
-                </Text>
-              </View>
+              <Text style={styles.nearestText} numberOfLines={1}>
+                Terdekat: {nearestIncidentMeta.label} •{" "}
+                {formatDistance(nearestIncident.distance)}
+              </Text>
             </View>
           ) : null}
-
-          <Text onPress={focusUserLocation} style={styles.focusLocationAction}>
-            Fokus ke lokasi saya
-          </Text>
         </View>
       </View>
 

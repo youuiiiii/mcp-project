@@ -15,7 +15,6 @@ import type {
   IncidentReport,
   IncidentVerification,
 } from "../../../types/incident";
-import { buildIncidentTimeline } from "./buildIncidentTimeline";
 
 type UseIncidentThreadParams = {
   visible: boolean;
@@ -55,6 +54,8 @@ export function useIncidentThread({
     if (!visible || !incident) {
       setVerifications([]);
       setReplies([]);
+      setReplyText("");
+      setLoadingThread(false);
       return;
     }
 
@@ -64,11 +65,9 @@ export function useIncidentThread({
       incident.id,
       (items) => {
         setVerifications(items);
-        setLoadingThread(false);
       },
       (error) => {
         console.error("Thread verifications error:", error);
-        setLoadingThread(false);
       }
     );
 
@@ -76,9 +75,11 @@ export function useIncidentThread({
       incident.id,
       (items) => {
         setReplies(items);
+        setLoadingThread(false);
       },
       (error) => {
         console.error("Thread replies error:", error);
+        setLoadingThread(false);
       }
     );
 
@@ -111,19 +112,6 @@ export function useIncidentThread({
       );
     });
   }, [verifications, actorKey]);
-
-  const timelineItems = useMemo(() => {
-    if (!incident || !meta) {
-      return [];
-    }
-
-    return buildIncidentTimeline({
-      incident,
-      incidentColor: meta.color,
-      verifications,
-      replies,
-    });
-  }, [incident, meta, verifications, replies]);
 
   const replyIsValid = replyText.trim().length >= 3;
 
@@ -194,7 +182,6 @@ export function useIncidentThread({
     meta,
     verifications,
     replies,
-    timelineItems,
     replyText,
     setReplyText,
     replySubmitting,

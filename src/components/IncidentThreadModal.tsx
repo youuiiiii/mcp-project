@@ -2,10 +2,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, View } from "react-native";
 
 import IncidentModalShell from "../features/incident/components/IncidentModalShell";
+import IncidentDiscussionList from "../features/incident/thread/IncidentDiscussionList";
 import IncidentOverviewCard from "../features/incident/thread/IncidentOverviewCard";
 import IncidentReplyComposer from "../features/incident/thread/IncidentReplyComposer";
-import IncidentThreadStats from "../features/incident/thread/IncidentThreadStats";
-import IncidentTimeline from "../features/incident/thread/IncidentTimeline";
 import { useIncidentThread } from "../features/incident/thread/useIncidentThread";
 import { colors } from "../theme/colors";
 import { spacing } from "../theme/layout";
@@ -52,14 +51,12 @@ export default function IncidentThreadModal({
   return (
     <IncidentModalShell
       visible={visible}
-      title="Incident Thread"
-      subtitle="Kronologi laporan, bukti, update kondisi, dan diskusi warga sekitar."
+      title="Incident Detail"
+      subtitle="Detail laporan dan diskusi warga."
       onClose={thread.closeThread}
       submitting={thread.replySubmitting}
     >
       <IncidentOverviewCard incident={incident} />
-
-      <IncidentThreadStats incident={incident} />
 
       {shouldShowActions ? (
         <View style={styles.actions}>
@@ -70,7 +67,7 @@ export default function IncidentThreadModal({
                   ? "Update Kondisi"
                   : thread.hasUserVerified
                     ? "Update Kondisi"
-                    : "Verifikasi / Update"
+                    : "Verifikasi"
               }
               variant="primary"
               size="md"
@@ -89,7 +86,7 @@ export default function IncidentThreadModal({
 
           {canShowResolveAction ? (
             <AppButton
-              title="Tandai Selesai"
+              title="Selesai"
               variant="secondary"
               size="md"
               onPress={() => onOpenResolve?.(incident)}
@@ -121,8 +118,8 @@ export default function IncidentThreadModal({
         </View>
       ) : null}
 
-      <IncidentTimeline
-        items={thread.timelineItems}
+      <IncidentDiscussionList
+        replies={thread.replies}
         loading={thread.loadingThread}
       />
 

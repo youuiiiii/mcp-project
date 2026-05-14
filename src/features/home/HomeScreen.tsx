@@ -16,7 +16,6 @@ import { spacing } from "../../theme/layout";
 import { typography } from "../../theme/typography";
 import type { IncidentReport } from "../../types/incident";
 import HomeHero from "./components/HomeHero";
-import QuickActionsGrid from "./components/QuickActionsGrid";
 import { useHomeScreen } from "./hooks/useHomeScreen";
 
 export default function HomeScreen() {
@@ -45,16 +44,11 @@ export default function HomeScreen() {
         onOpenReport={home.openReport}
       />
 
-      <QuickActionsGrid
-        onOpenMap={home.openMap}
-        onOpenReport={home.openReport}
-      />
-
       {home.errorMessage ? (
         <AppCard variant="muted" style={styles.errorCard}>
           <View style={styles.errorHeader}>
-            <Ionicons name="warning" size={20} color={colors.danger} />
-            <Text style={styles.errorTitle}>Sebagian data gagal dimuat</Text>
+            <Ionicons name="warning" size={18} color={colors.danger} />
+            <Text style={styles.errorTitle}>Data belum lengkap</Text>
           </View>
 
           <Text style={styles.errorMessage}>{home.errorMessage}</Text>
@@ -64,7 +58,7 @@ export default function HomeScreen() {
       <View style={styles.section}>
         <SectionHeader
           title="Latest Incidents"
-          subtitle="Laporan terbaru dari komunitas. Tap kartu untuk melihat detail."
+          subtitle="Laporan terbaru dari komunitas."
         />
 
         {home.loadingReports ? (
@@ -77,7 +71,7 @@ export default function HomeScreen() {
           <EmptyState
             iconName="map-outline"
             title="Belum ada laporan"
-            message="Laporan warga akan muncul di sini setelah ada incident yang dikirim."
+            message="Laporan warga akan muncul setelah ada incident yang dikirim."
           />
         ) : null}
 
@@ -120,13 +114,13 @@ function LatestReportCard({
     <AppCard onPress={onPress} style={styles.reportCard}>
       <IconBadge
         variant="neutral"
-        size="lg"
+        size="md"
         rounded={false}
         style={{
           backgroundColor: meta.lightColor,
         }}
       >
-        <Ionicons name={meta.iconName} size={24} color={meta.color} />
+        <Ionicons name={meta.iconName} size={21} color={meta.color} />
       </IconBadge>
 
       <View style={styles.reportContent}>
@@ -185,7 +179,7 @@ const styles = StyleSheet.create({
   },
   errorTitle: {
     fontSize: 14,
-    fontWeight: "900",
+    fontWeight: "800",
     color: colors.primaryDark,
   },
   errorMessage: {
@@ -193,7 +187,7 @@ const styles = StyleSheet.create({
     color: colors.primaryDark,
   },
   loadingCard: {
-    minHeight: 120,
+    minHeight: 100,
     justifyContent: "center",
   },
   reportList: {
@@ -215,7 +209,7 @@ const styles = StyleSheet.create({
   reportTitle: {
     flex: 1,
     fontSize: 15,
-    fontWeight: "900",
+    fontWeight: "800",
     color: colors.text,
   },
   reportMeta: {
@@ -225,7 +219,9 @@ const styles = StyleSheet.create({
   },
   reportDescription: {
     marginTop: spacing.sm,
-    ...typography.caption,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "500",
     color: "#475569",
   },
 });

@@ -6,8 +6,7 @@ import { typography } from "../theme/typography";
 
 const MAP_TOP_OFFSET = 52;
 const MAP_HORIZONTAL_PADDING = spacing.lg;
-const MAP_BOTTOM_OFFSET = 28;
-const REPORT_BUTTON_BOTTOM_OFFSET = 210;
+const MAP_BOTTOM_OFFSET = 24;
 
 export const mapStyles = StyleSheet.create({
   container: {
@@ -27,32 +26,38 @@ export const mapStyles = StyleSheet.create({
     gap: spacing.sm,
   },
 
-  headerCard: {
-    backgroundColor: colors.surface,
+  compactHeader: {
+    minHeight: 62,
+    backgroundColor: "rgba(255,255,255,0.94)",
     borderRadius: radius["2xl"],
-    padding: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: "rgba(226,232,240,0.9)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.md,
     ...shadow.card,
   },
 
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: spacing.md,
+  headerTitleGroup: {
+    flex: 1,
+  },
+
+  headerEyebrow: {
+    fontSize: 11,
+    fontWeight: "900",
+    color: colors.textMuted,
+    letterSpacing: 0.2,
+    textTransform: "uppercase",
   },
 
   headerTitle: {
-    fontSize: 18,
+    marginTop: 2,
+    fontSize: 20,
     fontWeight: "900",
     color: colors.text,
-  },
-
-  headerSubtitle: {
-    marginTop: spacing.xs,
-    ...typography.caption,
-    color: colors.textMuted,
   },
 
   liveBadge: {
@@ -61,7 +66,7 @@ export const mapStyles = StyleSheet.create({
     gap: 6,
     backgroundColor: colors.successSoft,
     paddingHorizontal: spacing.md,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: radius.full,
   },
 
@@ -73,9 +78,9 @@ export const mapStyles = StyleSheet.create({
   },
 
   liveText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "900",
-    color: colors.success,
+    color: colors.successDark,
   },
 
   filterWrapper: {
@@ -83,23 +88,47 @@ export const mapStyles = StyleSheet.create({
   },
 
   errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
     backgroundColor: colors.dangerSoft,
     borderRadius: radius.xl,
-    padding: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderWidth: 1,
     borderColor: "#FECACA",
   },
 
   errorText: {
+    flex: 1,
     ...typography.caption,
     color: colors.primaryDark,
   },
 
-  reportButtonWrapper: {
+  mapActions: {
     position: "absolute",
     right: spacing.lg,
-    bottom: REPORT_BUTTON_BOTTOM_OFFSET,
+    bottom: 122,
     zIndex: 20,
+    alignItems: "flex-end",
+    gap: spacing.sm,
+  },
+
+  locateButton: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.full,
+    backgroundColor: "rgba(255,255,255,0.96)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(226,232,240,0.92)",
+    ...shadow.card,
+  },
+
+  locateButtonPressed: {
+    opacity: 0.86,
+    transform: [{ scale: 0.96 }],
   },
 
   reportButton: {
@@ -115,57 +144,53 @@ export const mapStyles = StyleSheet.create({
   },
 
   infoCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: "rgba(255,255,255,0.96)",
     borderRadius: radius["2xl"],
-    padding: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: "rgba(226,232,240,0.92)",
     ...shadow.card,
   },
 
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.md,
+  },
+
+  infoTextGroup: {
+    flex: 1,
+  },
+
   infoTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "900",
     color: colors.text,
   },
 
   infoDescription: {
-    marginTop: 6,
-    ...typography.caption,
+    marginTop: 3,
+    fontSize: 11,
+    fontWeight: "800",
     color: colors.textMuted,
   },
 
-  warningCard: {
+  nearestRow: {
     marginTop: spacing.sm,
-    backgroundColor: colors.dangerSoft,
-    borderRadius: radius.xl,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: "#FECACA",
-  },
-
-  warningTitle: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: colors.dangerDark,
-  },
-
-  warningContent: {
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
   },
 
-  warningText: {
+  nearestText: {
     flex: 1,
-    ...typography.caption,
+    fontSize: 11,
+    fontWeight: "800",
     color: colors.textMuted,
-  },
-
-  focusLocationAction: {
-    marginTop: 10,
-    ...typography.caption,
-    color: colors.primary,
-    fontWeight: "900",
   },
 });

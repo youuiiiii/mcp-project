@@ -1,19 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image, StyleSheet, Text, View } from "react-native";
 
-import IncidentTrustBadge from "../../../components/IncidentTrustBadge";
 import AppCard from "../../../components/ui/AppCard";
 import IconBadge from "../../../components/ui/IconBadge";
 import StatusBadge from "../../../components/ui/StatusBadge";
-import {
-  getIncidentCategoryMeta,
-  getIncidentDisplayMeta,
-} from "../../../constants/incident";
+import { getIncidentDisplayMeta } from "../../../constants/incident";
 import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
 import { typography } from "../../../theme/typography";
-import type { IncidentReport, IncidentSeverity } from "../../../types/incident";
-import { getIncidentFreshnessMeta } from "../../../utils/incidentFreshness";
+import type { IncidentReport } from "../../../types/incident";
 import {
   formatIncidentDate,
   getStatusLabel,
@@ -24,31 +19,13 @@ type IncidentOverviewCardProps = {
   incident: IncidentReport;
 };
 
-type SeverityBadgeVariant = "success" | "warning" | "danger";
-
-const SEVERITY_LABEL_BY_VALUE = {
-  low: "Rendah",
-  medium: "Sedang",
-  high: "Tinggi",
-} as const satisfies Record<IncidentSeverity, string>;
-
-const SEVERITY_VARIANT_BY_VALUE = {
-  low: "success",
-  medium: "warning",
-  high: "danger",
-} as const satisfies Record<IncidentSeverity, SeverityBadgeVariant>;
-
 export default function IncidentOverviewCard({
   incident,
 }: IncidentOverviewCardProps) {
-  const displayMeta = getIncidentDisplayMeta({
+  const meta = getIncidentDisplayMeta({
     category: incident.category,
     subcategory: incident.subcategory ?? incident.type,
   });
-
-  const categoryMeta = getIncidentCategoryMeta(incident.category);
-  const freshness = getIncidentFreshnessMeta(incident);
-  const shouldShowFreshnessNotice = freshness.state === "stale";
 
   return (
     <AppCard style={styles.card}>
@@ -58,26 +35,19 @@ export default function IncidentOverviewCard({
           size="lg"
           rounded={false}
           style={{
-            backgroundColor: displayMeta.lightColor,
+            backgroundColor: meta.lightColor,
           }}
         >
-          <Ionicons
-            name={displayMeta.iconName}
-            size={24}
-            color={displayMeta.color}
-          />
+          <Ionicons name={meta.iconName} size={24} color={meta.color} />
         </IconBadge>
 
-        <View style={styles.headerInfo}>
+        <View style={styles.titleGroup}>
           <Text style={styles.title} numberOfLines={2}>
             {incident.title}
           </Text>
 
-          <Text style={styles.categoryText} numberOfLines={1}>
-            {categoryMeta.label}
-            {displayMeta.label !== categoryMeta.label
-              ? ` • ${displayMeta.label}`
-              : ""}
+          <Text style={styles.metaText} numberOfLines={1}>
+            {meta.label}
           </Text>
         </View>
 
@@ -88,41 +58,31 @@ export default function IncidentOverviewCard({
         />
       </View>
 
-      <Text style={styles.description}>{incident.description}</Text>
-
-      <View style={styles.compactBadgeRow}>
-        <IncidentTrustBadge incident={incident} variant="compact" />
-
+      <View style={styles.badgeRow}>
         <StatusBadge
-          label={SEVERITY_LABEL_BY_VALUE[incident.severity]}
-          variant={SEVERITY_VARIANT_BY_VALUE[incident.severity]}
+          label={getSeverityLabel(incident.severity)}
+          variant={getSeverityVariant(incident.severity)}
           size="sm"
         />
       </View>
 
-      {shouldShowFreshnessNotice ? (
-        <AppCard variant="muted" padding="sm" style={styles.freshnessBox}>
-          <View style={styles.freshnessHeader}>
-            <Ionicons name="alert-circle" size={18} color={colors.info} />
-            <Text style={styles.freshnessTitle}>Perlu Update Kondisi</Text>
-          </View>
-
-          <Text style={styles.freshnessText}>{freshness.message}</Text>
-        </AppCard>
-      ) : null}
+      <Text style={styles.description}>
+        {incident.description || "Tidak ada deskripsi."}
+      </Text>
 
       {incident.imageUri ? (
         <Image source={{ uri: incident.imageUri }} style={styles.image} />
       ) : null}
 
-      <View style={styles.metaBox}>
+      <View style={styles.infoBox}>
         <InfoLine
-          icon="person"
-          label={`Pelapor: ${incident.reportedBy || "Anonymous"}`}
+          iconName="person-outline"
+          text={`Pelapor: ${incident.reportedBy || "Anonymous"}`}
         />
+
         <InfoLine
-          icon="time"
-          label={`Dibuat: ${formatIncidentDate(incident.createdAt)}`}
+          iconName="time-outline"
+          text={`Dibuat: ${formatIncidentDate(incident.createdAt)}`}
         />
       </View>
     </AppCard>
@@ -130,20 +90,46 @@ export default function IncidentOverviewCard({
 }
 
 function InfoLine({
-  icon,
-  label,
+  iconName,
+  text,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
+  iconName: keyof typeof Ionicons.glyphMap;
+  text: string;
 }) {
   return (
     <View style={styles.infoLine}>
-      <Ionicons name={icon} size={14} color={colors.textSoft} />
-      <Text style={styles.metaText} numberOfLines={1}>
-        {label}
+      <Ionicons name={iconName} size={15} color={colors.textMuted} />
+      <Text style={styles.infoText} numberOfLines={1}>
+        {text}
       </Text>
     </View>
   );
+}
+
+function getSeverityLabel(severity: IncidentReport["severity"]) {
+  if (severity === "high") {
+    return "Tinggi";
+  }
+
+  if (severity === "medium") {
+    return "Sedang";
+  }
+
+  return "Rendah";
+}
+
+function getSeverityVariant(
+  severity: IncidentReport["severity"]
+): "success" | "warning" | "danger" {
+  if (severity === "high") {
+    return "danger";
+  }
+
+  if (severity === "medium") {
+    return "warning";
+  }
+
+  return "success";
 }
 
 const styles = StyleSheet.create({
@@ -152,65 +138,52 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: spacing.md,
   },
-  headerInfo: {
+  titleGroup: {
     flex: 1,
   },
   title: {
-    fontSize: 16,
-    fontWeight: "900",
+    fontSize: 18,
+    lineHeight: 23,
+    fontWeight: "800",
     color: colors.text,
   },
-  categoryText: {
+  metaText: {
     marginTop: 3,
     ...typography.caption,
     color: colors.textMuted,
   },
-  description: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  compactBadgeRow: {
+  badgeRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm,
   },
-  freshnessBox: {
-    gap: spacing.xs,
-  },
-  freshnessHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  freshnessTitle: {
-    ...typography.label,
-    color: colors.text,
-  },
-  freshnessText: {
-    ...typography.caption,
-    color: colors.textMuted,
+  description: {
+    fontSize: 14,
+    lineHeight: 22,
+    fontWeight: "500",
+    color: "#475569",
   },
   image: {
     width: "100%",
-    height: 210,
+    height: 190,
     borderRadius: radius.xl,
     backgroundColor: colors.border,
   },
-  metaBox: {
+  infoBox: {
     gap: spacing.xs,
   },
   infoLine: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: spacing.sm,
   },
-  metaText: {
+  infoText: {
     flex: 1,
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.textSoft,
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.textMuted,
   },
 });
