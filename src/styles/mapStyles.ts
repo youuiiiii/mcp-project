@@ -7,7 +7,7 @@ import { typography } from "../theme/typography";
 const MAP_TOP_OFFSET = 52;
 const MAP_HORIZONTAL_PADDING = spacing.lg;
 const MAP_BOTTOM_OFFSET = 28;
-const SOS_BOTTOM_OFFSET = 210;
+const REPORT_BUTTON_BOTTOM_OFFSET = 210;
 
 export const mapStyles = StyleSheet.create({
   container: {
@@ -95,11 +95,16 @@ export const mapStyles = StyleSheet.create({
     color: colors.primaryDark,
   },
 
-  sosWrapper: {
+  reportButtonWrapper: {
     position: "absolute",
     right: spacing.lg,
-    bottom: SOS_BOTTOM_OFFSET,
+    bottom: REPORT_BUTTON_BOTTOM_OFFSET,
     zIndex: 20,
+  },
+
+  reportButton: {
+    ...shadow.floating,
+    shadowColor: colors.primaryDark,
   },
 
   bottomOverlay: {
@@ -142,7 +147,13 @@ export const mapStyles = StyleSheet.create({
   warningTitle: {
     fontSize: 13,
     fontWeight: "900",
-    color: "#991B1B",
+    color: colors.dangerDark,
+  },
+
+  warningContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
 
   warningText: {
@@ -151,11 +162,6 @@ export const mapStyles = StyleSheet.create({
     color: colors.textMuted,
   },
 
-    warningContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
   focusLocationAction: {
     marginTop: 10,
     ...typography.caption,

@@ -1,8 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
+import { memo, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Marker } from "react-native-maps";
 
 import { getIncidentDisplayMeta } from "../../../constants/incident";
+import { colors } from "../../../theme/colors";
+import { radius, shadow } from "../../../theme/layout";
 import type { IncidentReport } from "../../../types/incident";
 
 type IncidentMapMarkerProps = {
@@ -10,17 +13,26 @@ type IncidentMapMarkerProps = {
   onPress: (incident: IncidentReport) => void;
 };
 
-export default function IncidentMapMarker({
-  incident,
-  onPress,
-}: IncidentMapMarkerProps) {
+function IncidentMapMarker({ incident, onPress }: IncidentMapMarkerProps) {
+  const [tracksViewChanges, setTracksViewChanges] = useState(true);
+
   const meta = getIncidentDisplayMeta({
     category: incident.category,
     subcategory: incident.subcategory ?? incident.type,
   });
 
   const isResolved = incident.status === "resolved";
-  const markerColor = isResolved ? "#64748B" : meta.color;
+  const markerColor = isResolved ? colors.textMuted : meta.color;
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setTracksViewChanges(false);
+    }, 500);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [incident.id, markerColor, meta.iconName]);
 
   return (
     <Marker
@@ -28,8 +40,9 @@ export default function IncidentMapMarker({
         latitude: incident.latitude,
         longitude: incident.longitude,
       }}
-      tracksViewChanges={false}
+      tracksViewChanges={tracksViewChanges}
       onPress={() => onPress(incident)}
+      anchor={{ x: 0.5, y: 1 }}
     >
       <View style={styles.container}>
         <View
@@ -41,7 +54,7 @@ export default function IncidentMapMarker({
             },
           ]}
         >
-          <Ionicons name={meta.iconName} size={22} color="#FFFFFF" />
+          <Ionicons name={meta.iconName} size={22} color={colors.textInverse} />
         </View>
 
         <View
@@ -58,6 +71,8 @@ export default function IncidentMapMarker({
   );
 }
 
+export default memo(IncidentMapMarker);
+
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
@@ -66,19 +81,12 @@ const styles = StyleSheet.create({
   bubble: {
     width: 42,
     height: 42,
-    borderRadius: 21,
+    borderRadius: radius.full,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 3,
-    borderColor: "#FFFFFF",
-    shadowColor: "#0F172A",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.22,
-    shadowRadius: 8,
-    elevation: 6,
+    borderColor: colors.surface,
+    ...shadow.floating,
   },
   pointer: {
     width: 12,
@@ -87,6 +95,6 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "45deg" }],
     borderRightWidth: 2,
     borderBottomWidth: 2,
-    borderColor: "#FFFFFF",
+    borderColor: colors.surface,
   },
 });

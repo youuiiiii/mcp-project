@@ -1,56 +1,101 @@
-import { useRouter } from "expo-router";
-import { useMemo } from "react";
+import { type Href, useRouter } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "../../../contexts/AuthContext";
-import { useBmkgEarthquakes } from "./useBmkgEarthquakes";
-import { useHomeReports } from "./useHomeReports";
+import { subscribeToIncidents } from "../../../services/incidentService";
+import type { IncidentReport } from "../../../types/incident";
 
-export const HOME_ROUTES = {
-  map: "/(tabs)/map",
-  report: "/(tabs)/report",
-  analytics: "/(tabs)/analytics",
-  profile: "/(tabs)/profile",
-  earthquakeDetail: "/(tabs)/detail",
-} as const;
+const MAP_ROUTE = "/(tabs)/map" as Href;
+const REPORT_ROUTE = "/(tabs)/report" as Href;
+const PROFILE_ROUTE = "/(tabs)/profile" as Href;
 
-const getInitials = (value: string): string => {
-  return value
+export function useHomeScreen() {
+  const router = useRouter();
+  const { user } = useAuth();
+
+  const [reports, setReports] = useState<IncidentReport[]>([]);
+  const [loadingReports, setLoadingReports] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const displayName =
+    user?.displayName || user?.email?.split("@")[0] || "Community Reporter";
+
+  const initials = displayName
     .split(" ")
+    .filter(Boolean)
     .map((item) => item.charAt(0))
     .join("")
     .slice(0, 2)
     .toUpperCase();
-};
 
-export const useHomeScreen = () => {
-  const router = useRouter();
-  const { user } = useAuth();
+  useEffect(() => {
+    setLoadingReports(true);
 
-  const reportsState = useHomeReports();
-  const earthquakesState = useBmkgEarthquakes();
-
-  const displayName = useMemo(() => {
-    return (
-      user?.displayName || user?.email?.split("@")[0] || "Community Reporter"
+    const unsubscribe = subscribeToIncidents(
+      (items) => {
+        setReports(items);
+        setErrorMessage(null);
+        setLoadingReports(false);
+      },
+      (error) => {
+        console.error("Home reports error:", error);
+        setErrorMessage(error.message || "Gagal memuat laporan terbaru.");
+        setLoadingReports(false);
+      }
     );
-  }, [user]);
 
-  const initials = useMemo(() => {
-    return getInitials(displayName);
-  }, [displayName]);
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
-  type NavigationTarget = Parameters<typeof router.push>[0];
+  const activeReports = useMemo(() => {
+    return reports.filter((report) => report.status === "active");
+  }, [reports]);
 
-  const navigateTo = (route: NavigationTarget) => {
-    router.push(route);
+  const highSeverityReports = useMemo(() => {
+    return reports.filter((report) => {
+      return report.status === "active" && report.severity === "high";
+    });
+  }, [reports]);
+
+  const latestReports = useMemo(() => {
+    return [...reports]
+      .sort((a, b) => {
+        const timeA = a.createdAt?.getTime() ?? 0;
+        const timeB = b.createdAt?.getTime() ?? 0;
+
+        return timeB - timeA;
+      })
+      .slice(0, 3);
+  }, [reports]);
+
+  const openMap = () => {
+    router.push(MAP_ROUTE);
+  };
+
+  const openReport = () => {
+    router.push(REPORT_ROUTE);
+  };
+
+  const openProfile = () => {
+    router.push(PROFILE_ROUTE);
   };
 
   return {
     displayName,
     initials,
-    routes: HOME_ROUTES,
-    navigateTo,
-    ...reportsState,
-    ...earthquakesState,
+
+    reports,
+    activeReports,
+    highSeverityReports,
+    latestReports,
+
+    loadingReports,
+    errorMessage,
+
+    openMap,
+    openReport,
+    openProfile,
   };
-};
+}

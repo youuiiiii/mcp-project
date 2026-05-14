@@ -14,8 +14,6 @@ type TabIconName =
   | "map-outline"
   | "add-circle"
   | "add-circle-outline"
-  | "stats-chart"
-  | "stats-chart-outline"
   | "person"
   | "person-outline";
 
@@ -112,21 +110,6 @@ export default function TabsLayout() {
       />
 
       <Tabs.Screen
-        name="analytics"
-        options={{
-          title: "Stats",
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon
-              focused={focused}
-              color={color}
-              activeIcon="stats-chart"
-              inactiveIcon="stats-chart-outline"
-            />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
@@ -142,6 +125,7 @@ export default function TabsLayout() {
       />
 
       <Tabs.Screen name="reports" options={{ href: null }} />
+      <Tabs.Screen name="analytics" options={{ href: null }} />
       <Tabs.Screen name="education" options={{ href: null }} />
       <Tabs.Screen name="detail" options={{ href: null }} />
     </Tabs>

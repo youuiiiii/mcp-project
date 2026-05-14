@@ -16,14 +16,16 @@ type IncidentThreadModalProps = {
   visible: boolean;
   incident: IncidentReport | null;
   onClose: () => void;
-  onOpenVerify: (incident: IncidentReport) => void;
-  onOpenResolve: (incident: IncidentReport) => void;
+  showActions?: boolean;
+  onOpenVerify?: (incident: IncidentReport) => void;
+  onOpenResolve?: (incident: IncidentReport) => void;
 };
 
 export default function IncidentThreadModal({
   visible,
   incident,
   onClose,
+  showActions = false,
   onOpenVerify,
   onOpenResolve,
 }: IncidentThreadModalProps) {
@@ -37,11 +39,21 @@ export default function IncidentThreadModal({
     return null;
   }
 
+  const canShowResolveAction =
+    showActions && incident.status === "active" && Boolean(onOpenResolve);
+
+  const canShowReopenAction = showActions && incident.status === "resolved";
+
+  const canShowVerifyAction = showActions && Boolean(onOpenVerify);
+
+  const shouldShowActions =
+    canShowVerifyAction || canShowResolveAction || canShowReopenAction;
+
   return (
     <IncidentModalShell
       visible={visible}
       title="Incident Thread"
-      subtitle="Kronologi laporan, bukti verifikasi, update kondisi, dan diskusi warga sekitar."
+      subtitle="Kronologi laporan, bukti, update kondisi, dan diskusi warga sekitar."
       onClose={thread.closeThread}
       submitting={thread.replySubmitting}
     >
@@ -49,51 +61,65 @@ export default function IncidentThreadModal({
 
       <IncidentThreadStats incident={incident} />
 
-      <View style={styles.actions}>
-        <AppButton
-          title={
-            thread.isOwnIncident
-              ? "Update Kondisi"
-              : thread.hasUserVerified
-                ? "Update Kondisi"
-                : "Verifikasi / Update"
-          }
-          variant="primary"
-          size="md"
-          onPress={() => onOpenVerify(incident)}
-          fullWidth
-          leftIcon={
-            <Ionicons
-              name="shield-checkmark"
-              size={18}
-              color={colors.textInverse}
+      {shouldShowActions ? (
+        <View style={styles.actions}>
+          {canShowVerifyAction ? (
+            <AppButton
+              title={
+                thread.isOwnIncident
+                  ? "Update Kondisi"
+                  : thread.hasUserVerified
+                    ? "Update Kondisi"
+                    : "Verifikasi / Update"
+              }
+              variant="primary"
+              size="md"
+              onPress={() => onOpenVerify?.(incident)}
+              fullWidth
+              leftIcon={
+                <Ionicons
+                  name="shield-checkmark"
+                  size={18}
+                  color={colors.textInverse}
+                />
+              }
+              style={styles.primaryAction}
             />
-          }
-          style={styles.primaryAction}
-        />
+          ) : null}
 
-        <AppButton
-          title={
-            incident.status === "active" ? "Tandai Selesai" : "Aktifkan Lagi"
-          }
-          variant="secondary"
-          size="md"
-          onPress={
-            incident.status === "active"
-              ? () => onOpenResolve(incident)
-              : thread.reopenIncident
-          }
-          fullWidth
-          leftIcon={
-            <Ionicons
-              name={incident.status === "active" ? "checkmark-done" : "refresh"}
-              size={18}
-              color={colors.text}
+          {canShowResolveAction ? (
+            <AppButton
+              title="Tandai Selesai"
+              variant="secondary"
+              size="md"
+              onPress={() => onOpenResolve?.(incident)}
+              fullWidth
+              leftIcon={
+                <Ionicons
+                  name="checkmark-done"
+                  size={18}
+                  color={colors.text}
+                />
+              }
+              style={styles.secondaryAction}
             />
-          }
-          style={styles.secondaryAction}
-        />
-      </View>
+          ) : null}
+
+          {canShowReopenAction ? (
+            <AppButton
+              title="Aktifkan Lagi"
+              variant="secondary"
+              size="md"
+              onPress={thread.reopenIncident}
+              fullWidth
+              leftIcon={
+                <Ionicons name="refresh" size={18} color={colors.text} />
+              }
+              style={styles.secondaryAction}
+            />
+          ) : null}
+        </View>
+      ) : null}
 
       <IncidentTimeline
         items={thread.timelineItems}

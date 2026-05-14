@@ -1,39 +1,29 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
+import { type Href, useRouter } from "expo-router";
 import { useRef, useState } from "react";
-import { Alert, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
 
 import FilterBar, { type MapFilterValue } from "../../components/FilterBar";
 import IncidentThreadModal from "../../components/IncidentThreadModal";
-import LocalIncidentBanner from "../../components/LocalIncidentBanner";
-import ReportIncidentModal from "../../components/ReportIncidentModal";
-import ResolveIncidentModal from "../../components/ResolveIncidentModal";
-import SOSButton from "../../components/SOSButton";
-import VerifyIncidentModal from "../../components/VerifyIncidentModal";
+import AppButton from "../../components/ui/AppButton";
 import LoadingState from "../../components/ui/LoadingState";
-import {
-  REPORT_ALLOWED_DISTANCE_METERS,
-  getFilterLabel,
-} from "../../constants/incident";
-import { useAuth } from "../../contexts/AuthContext";
+import { getFilterLabel } from "../../constants/incident";
+import { colors } from "../../theme/colors";
 import { mapStyles as styles } from "../../styles/mapStyles";
-import type { Coordinate } from "../../types/incident";
-import { formatDistance, getDistanceInMeters } from "../../utils/geo";
+import { formatDistance } from "../../utils/geo";
 import ClusterMarker from "./components/ClusterMarker";
-import DraftReportMarker from "./components/DraftReportMarker";
 import IncidentMapMarker from "./components/IncidentMapMarker";
 import UserLocationMarker from "./components/UserLocationMarker";
-import { useMapAlerts } from "./hooks/useMapAlerts";
 import { useMapIncidents } from "./hooks/useMapIncidents";
 import { useMapModalState } from "./hooks/useMapModalState";
-import { useSOSHandler } from "./hooks/useSOSHandler";
 import { useStableUserLocation } from "./hooks/useStableUserLocation";
 import { getReportDisplayMeta } from "./utils/reportDisplayMeta";
 
-export default function MapScreen() {
-  const { user } = useAuth();
+const REPORT_ROUTE = "/(tabs)/report" as Href;
 
+export default function MapScreen() {
+  const router = useRouter();
   const mapRef = useRef<MapView | null>(null);
 
   const [selectedFilter, setSelectedFilter] = useState<MapFilterValue>("all");
@@ -49,7 +39,6 @@ export default function MapScreen() {
   const {
     reports,
     filteredReports,
-    activeReports,
     clusters,
     nearestIncident,
     loadingReports,
@@ -63,55 +52,14 @@ export default function MapScreen() {
     reports,
   });
 
-  const actorKey = user?.email ?? user?.uid ?? null;
   const errorMessage = locationErrorMessage ?? reportsErrorMessage;
 
-  const {
-    nearbyIncidentNotification,
-    openNearbyIncidentNotification,
-    closeNearbyIncidentNotification,
-  } = useMapAlerts({
-    actorKey,
-    userLocation,
-    reports,
-    activeReports,
-    nearestIncident,
-    onOpenIncidentThread: modalState.openThreadModal,
-  });
-
-  const { sosLoading, handleSOSPress } = useSOSHandler({
-    userLocation,
-    activeReports,
-  });
-
   const nearestIncidentMeta = nearestIncident.incident
-  ? getReportDisplayMeta(nearestIncident.incident)
-  : null;
+    ? getReportDisplayMeta(nearestIncident.incident)
+    : null;
 
-  const handleLongPress = (coordinate: Coordinate) => {
-    if (!userLocation) {
-      Alert.alert(
-        "Lokasi Belum Tersedia",
-        "Aplikasi belum mendapatkan lokasi realtime Anda. Pastikan izin lokasi aktif dan tunggu beberapa saat."
-      );
-      return;
-    }
-
-    const distance = getDistanceInMeters(userLocation, coordinate);
-
-    if (distance > REPORT_ALLOWED_DISTANCE_METERS) {
-      Alert.alert(
-        "Lokasi Laporan Terlalu Jauh",
-        `Anda hanya dapat membuat laporan maksimal ${REPORT_ALLOWED_DISTANCE_METERS} meter dari lokasi realtime Anda.\n\nJarak titik yang dipilih saat ini sekitar ${formatDistance(
-          distance
-        )}. Silakan pilih titik yang lebih dekat dengan posisi Anda agar laporan tetap valid.`
-      );
-      return;
-    }
-
-    modalState.openReportModal(coordinate);
-
-    Haptics.selectionAsync().catch(() => {});
+  const handleOpenReport = () => {
+    router.push(REPORT_ROUTE);
   };
 
   if (loadingLocation && loadingReports) {
@@ -133,13 +81,8 @@ export default function MapScreen() {
         showsMyLocationButton={false}
         showsCompass
         showsScale
-        onLongPress={(event) => {
-          handleLongPress(event.nativeEvent.coordinate);
-        }}
       >
         <UserLocationMarker userLocation={userLocation} />
-
-        <DraftReportMarker coordinate={modalState.draftCoordinate} />
 
         {clusters.map((cluster) => {
           if (cluster.incidents.length === 1) {
@@ -168,8 +111,8 @@ export default function MapScreen() {
           </View>
 
           <Text style={styles.headerSubtitle}>
-            Pin menunjukkan lokasi laporan warga. Tap pin untuk detail. Long
-            press dekat posisi Anda untuk membuat laporan baru.
+            Pin menunjukkan lokasi laporan warga. Tap pin untuk melihat detail
+            kejadian.
           </Text>
         </View>
 
@@ -179,14 +122,6 @@ export default function MapScreen() {
           </View>
         ) : null}
 
-        <LocalIncidentBanner
-          visible={!!nearbyIncidentNotification}
-          incident={nearbyIncidentNotification?.incident ?? null}
-          distance={nearbyIncidentNotification?.distance ?? null}
-          onOpen={openNearbyIncidentNotification}
-          onClose={closeNearbyIncidentNotification}
-        />
-
         <View style={styles.filterWrapper}>
           <FilterBar
             selectedFilter={selectedFilter}
@@ -195,8 +130,17 @@ export default function MapScreen() {
         </View>
       </View>
 
-      <View style={styles.sosWrapper}>
-        <SOSButton onPress={handleSOSPress} disabled={sosLoading} />
+      <View style={styles.reportButtonWrapper}>
+        <AppButton
+          title="Report"
+          variant="danger"
+          size="md"
+          onPress={handleOpenReport}
+          leftIcon={
+            <Ionicons name="add-circle" size={19} color={colors.textInverse} />
+          }
+          style={styles.reportButton}
+        />
       </View>
 
       <View style={styles.bottomOverlay}>
@@ -210,8 +154,8 @@ export default function MapScreen() {
           </Text>
 
           <Text style={styles.infoDescription}>
-            Pin = laporan warga • Cluster = banyak laporan berdekatan • SOS =
-            catat posisi darurat
+            Pin = laporan warga • Cluster = banyak laporan berdekatan • Report =
+            buat laporan dari lokasi Anda
           </Text>
 
           {nearestIncident.incident &&
@@ -234,40 +178,18 @@ export default function MapScreen() {
               </View>
             </View>
           ) : null}
+
           <Text onPress={focusUserLocation} style={styles.focusLocationAction}>
             Fokus ke lokasi saya
           </Text>
         </View>
       </View>
 
-      <ReportIncidentModal
-        visible={modalState.isReportModalVisible}
-        coordinate={modalState.draftCoordinate}
-        onClose={modalState.closeReportModal}
-        onSuccess={modalState.handleReportSuccess}
-      />
-
       <IncidentThreadModal
         visible={modalState.isThreadModalVisible}
         incident={modalState.selectedIncident}
         onClose={modalState.closeThreadModal}
-        onOpenVerify={modalState.openVerifyModal}
-        onOpenResolve={modalState.openResolveModal}
-      />
-
-      <VerifyIncidentModal
-        visible={modalState.isVerifyModalVisible}
-        incident={modalState.selectedVerifyIncident}
-        userLocation={userLocation}
-        onClose={modalState.closeVerifyModal}
-        onSuccess={modalState.closeVerifyModal}
-      />
-
-      <ResolveIncidentModal
-        visible={modalState.isResolveModalVisible}
-        incident={modalState.selectedResolveIncident}
-        onClose={modalState.closeResolveModal}
-        onSuccess={modalState.closeResolveModal}
+        showActions={false}
       />
     </View>
   );
