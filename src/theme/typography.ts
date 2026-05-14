@@ -29,4 +29,9 @@ export const typography = {
     fontWeight: "900" as const,
     letterSpacing: 0.3,
   },
+  tiny: {
+    fontSize: 10,
+    fontWeight: "600" as const,
+    lineHeight: 16,
+  },
 } as const;
