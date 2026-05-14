@@ -31,6 +31,8 @@ export const colors = {
 
   danger: "#DC2626",
   dangerSoft: "#FEE2E2",
+
+  shadow: "#0F172A",
 } as const;
 
 export type AppColor = keyof typeof colors;

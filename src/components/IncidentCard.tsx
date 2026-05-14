@@ -1,22 +1,31 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image, StyleSheet, Text, View } from "react-native";
 
-import { getIncidentDisplayMeta, getIncidentMeta } from "../constants/incident";
+import { getIncidentDisplayMeta } from "../constants/incident";
 import { colors } from "../theme/colors";
 import { radius, spacing } from "../theme/layout";
 import { typography } from "../theme/typography";
-import { IncidentReport } from "../types/incident";
+import type { IncidentReport } from "../types/incident";
 import AppCard from "./ui/AppCard";
 import IconBadge from "./ui/IconBadge";
-import StatusBadge, { StatusBadgeVariant } from "./ui/StatusBadge";
-
-type AppIconName = keyof typeof Ionicons.glyphMap;
+import StatusBadge, { type StatusBadgeVariant } from "./ui/StatusBadge";
 
 type IncidentCardProps = {
   incident: IncidentReport;
   onPress?: (incident: IncidentReport) => void;
   showImage?: boolean;
 };
+
+const STATUS_LABEL = {
+  active: "Aktif",
+  resolved: "Selesai",
+} as const satisfies Record<IncidentReport["status"], string>;
+
+const SEVERITY_LABEL = {
+  low: "Rendah",
+  medium: "Sedang",
+  high: "Tinggi",
+} as const satisfies Record<IncidentReport["severity"], string>;
 
 export default function IncidentCard({
   incident,
@@ -27,7 +36,6 @@ export default function IncidentCard({
     category: incident.category,
     subcategory: incident.subcategory ?? incident.type,
   });
-  const incidentIcon = getIncidentIcon(incident);
 
   return (
     <AppCard
@@ -43,12 +51,12 @@ export default function IncidentCard({
             backgroundColor: meta.lightColor,
           }}
         >
-          <Ionicons name={incidentIcon} size={24} color={meta.color} />
+          <Ionicons name={meta.iconName} size={24} color={meta.color} />
         </IconBadge>
 
         <View style={styles.headerContent}>
           <Text style={styles.title} numberOfLines={1}>
-            {incident.title || "Untitled incident"}
+            {incident.title || "Laporan tanpa judul"}
           </Text>
 
           <Text style={styles.category} numberOfLines={1}>
@@ -57,7 +65,7 @@ export default function IncidentCard({
         </View>
 
         <StatusBadge
-          label={getStatusLabel(incident.status)}
+          label={STATUS_LABEL[incident.status]}
           variant={getStatusVariant(incident.status)}
           size="sm"
         />
@@ -73,7 +81,7 @@ export default function IncidentCard({
 
       <View style={styles.footer}>
         <StatusBadge
-          label={getSeverityLabel(incident.severity)}
+          label={SEVERITY_LABEL[incident.severity]}
           variant={getSeverityVariant(incident.severity)}
           size="sm"
         />
@@ -89,7 +97,7 @@ export default function IncidentCard({
   );
 }
 
-function formatDate(date?: Date) {
+function formatDate(date?: Date): string {
   if (!date) {
     return "Waktu tidak tersedia";
   }
@@ -103,19 +111,9 @@ function formatDate(date?: Date) {
   });
 }
 
-function getStatusLabel(status: IncidentReport["status"]) {
-  if (status === "active") {
-    return "Active";
-  }
-
-  if (status === "resolved") {
-    return "Resolved";
-  }
-
-  return String(status);
-}
-
-function getStatusVariant(status: IncidentReport["status"]): StatusBadgeVariant {
+function getStatusVariant(
+  status: IncidentReport["status"]
+): StatusBadgeVariant {
   if (status === "active") {
     return "active";
   }
@@ -125,18 +123,6 @@ function getStatusVariant(status: IncidentReport["status"]): StatusBadgeVariant 
   }
 
   return "neutral";
-}
-
-function getSeverityLabel(severity: IncidentReport["severity"]) {
-  if (severity === "high") {
-    return "High";
-  }
-
-  if (severity === "medium") {
-    return "Medium";
-  }
-
-  return "Low";
 }
 
 function getSeverityVariant(
@@ -151,71 +137,6 @@ function getSeverityVariant(
   }
 
   return "success";
-}
-
-function getIncidentIcon(report: IncidentReport): AppIconName {
-  const type = report.subcategory ?? report.type;
-
-  switch (type) {
-    case "flood":
-      return "water";
-
-    case "earthquake":
-      return "pulse";
-
-    case "landslide":
-    case "collapsed_building":
-      return "trail-sign";
-
-    case "volcanic_eruption":
-      return "flame";
-
-    case "strong_wind":
-      return "cloudy";
-
-    case "tsunami":
-      return "radio";
-
-    case "fire":
-    case "building_fire":
-    case "vehicle_fire":
-    case "land_fire":
-    case "electrical_fire":
-      return "flame";
-
-    case "traffic_accident":
-      return "car-sport";
-
-    case "fallen_tree":
-      return "leaf";
-
-    case "road_block":
-    case "damaged_road":
-      return "construct";
-
-    case "fallen_power_line":
-      return "flash";
-
-    case "crime":
-    case "theft":
-      return "shield";
-
-    case "brawl":
-    case "risky_crowd":
-    case "mob_violence":
-    case "public_disturbance":
-      return "people";
-
-    case "medical":
-    case "fainted_person":
-    case "work_accident":
-    case "drowning":
-    case "evacuation_needed":
-      return "medkit";
-
-    default:
-      return "alert-circle";
-  }
 }
 
 const styles = StyleSheet.create({
@@ -243,7 +164,7 @@ const styles = StyleSheet.create({
   description: {
     marginTop: spacing.md,
     ...typography.caption,
-    color: "#475569",
+    color: colors.textMuted,
   },
   image: {
     marginTop: spacing.md,

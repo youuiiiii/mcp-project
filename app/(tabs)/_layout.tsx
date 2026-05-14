@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Href, Redirect, Tabs } from "expo-router";
-import { ActivityIndicator, View } from "react-native";
+import { type Href, Redirect, Tabs } from "expo-router";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 
-import { HapticTab } from "@/components/haptic-tab";
 import { useAuth } from "../../src/contexts/AuthContext";
+import { colors } from "../../src/theme/colors";
 
 const LOGIN_ROUTE = "/login" as Href;
 
@@ -46,15 +46,8 @@ export default function TabsLayout() {
 
   if (loading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "#F8FAFC",
-        }}
-      >
-        <ActivityIndicator size="large" color="#DC2626" />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.danger} />
       </View>
     );
   }
@@ -67,30 +60,10 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarActiveTintColor: "#DC2626",
-        tabBarInactiveTintColor: "#94A3B8",
-        tabBarStyle: {
-          height: 72,
-          paddingBottom: 11,
-          paddingTop: 9,
-          borderTopWidth: 1,
-          borderTopColor: "#E2E8F0",
-          backgroundColor: "#FFFFFF",
-          elevation: 10,
-          shadowColor: "#0F172A",
-          shadowOpacity: 0.1,
-          shadowRadius: 14,
-          shadowOffset: {
-            width: 0,
-            height: -4,
-          },
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: "900",
-          marginTop: 2,
-        },
+        tabBarActiveTintColor: colors.danger,
+        tabBarInactiveTintColor: colors.textSoft,
+        tabBarStyle: styles.tabBar,
+        tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
       <Tabs.Screen
@@ -170,8 +143,37 @@ export default function TabsLayout() {
 
       <Tabs.Screen name="reports" options={{ href: null }} />
       <Tabs.Screen name="education" options={{ href: null }} />
-      <Tabs.Screen name="explore" options={{ href: null }} />
       <Tabs.Screen name="detail" options={{ href: null }} />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
+  },
+  tabBar: {
+    height: 72,
+    paddingBottom: 11,
+    paddingTop: 9,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.surface,
+    elevation: 10,
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.1,
+    shadowRadius: 14,
+    shadowOffset: {
+      width: 0,
+      height: -4,
+    },
+  },
+  tabBarLabel: {
+    fontSize: 11,
+    fontWeight: "900",
+    marginTop: 2,
+  },
+});

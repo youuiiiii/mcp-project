@@ -1,7 +1,6 @@
-import { INCIDENT_RADIUS } from "../constants/incident";
-import { Coordinate, IncidentReport } from "../types/incident";
+import type { Coordinate, IncidentReport } from "../types/incident";
 
-const EARTH_RADIUS_METERS = 6371000;
+const EARTH_RADIUS_METERS = 6_371_000;
 
 const toRadians = (value: number): number => {
   return (value * Math.PI) / 180;
@@ -19,7 +18,12 @@ export const isValidCoordinate = (
     return false;
   }
 
-  return latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
+  return (
+    latitude >= -90 &&
+    latitude <= 90 &&
+    longitude >= -180 &&
+    longitude <= 180
+  );
 };
 
 export const getDistanceInMeters = (
@@ -38,24 +42,17 @@ export const getDistanceInMeters = (
   const deltaLat = toRadians(pointB.latitude - pointA.latitude);
   const deltaLon = toRadians(pointB.longitude - pointA.longitude);
 
-  const a =
+  const haversineValue =
     Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
     Math.cos(lat1) *
       Math.cos(lat2) *
       Math.sin(deltaLon / 2) *
       Math.sin(deltaLon / 2);
 
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const centralAngle =
+    2 * Math.atan2(Math.sqrt(haversineValue), Math.sqrt(1 - haversineValue));
 
-  return EARTH_RADIUS_METERS * c;
-};
-
-export const clampIncidentRadius = (radius?: number): number => {
-  if (!radius || Number.isNaN(radius)) {
-    return INCIDENT_RADIUS.DEFAULT;
-  }
-
-  return Math.min(Math.max(radius, INCIDENT_RADIUS.MIN), INCIDENT_RADIUS.MAX);
+  return EARTH_RADIUS_METERS * centralAngle;
 };
 
 export const getNearestIncident = (
@@ -119,6 +116,10 @@ export const isUserNearIncident = (
 
 export const formatDistance = (distanceInMeters?: number | null): string => {
   if (distanceInMeters === null || distanceInMeters === undefined) {
+    return "-";
+  }
+
+  if (!Number.isFinite(distanceInMeters)) {
     return "-";
   }
 
