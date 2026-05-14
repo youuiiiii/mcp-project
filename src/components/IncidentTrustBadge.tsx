@@ -4,12 +4,10 @@ import { colors } from "../theme/colors";
 import { radius, spacing } from "../theme/layout";
 import { typography } from "../theme/typography";
 import { IncidentReport } from "../types/incident";
-import {
-  getIncidentTrustMeta,
-  getIncidentTrustSummary,
-} from "../utils/incidentTrust";
 
 type IncidentTrustBadgeVariant = "compact" | "full";
+
+type IncidentTrustLevel = "verified" | "disputed" | "pending";
 
 type IncidentTrustBadgeProps = {
   incident: IncidentReport;
@@ -24,7 +22,7 @@ export default function IncidentTrustBadge({
   style,
   textStyle,
 }: IncidentTrustBadgeProps) {
-  const trust = getIncidentTrustMeta(incident);
+  const trust = getTrustMeta(incident);
 
   if (variant === "full") {
     return (
@@ -32,7 +30,7 @@ export default function IncidentTrustBadge({
         style={[
           styles.fullContainer,
           {
-            backgroundColor: trust.lightColor,
+            backgroundColor: trust.backgroundColor,
             borderColor: trust.color,
           },
           style,
@@ -63,13 +61,9 @@ export default function IncidentTrustBadge({
             {trust.label}
           </Text>
 
-          <Text style={styles.fullDescription}>
-            {trust.description}
-          </Text>
+          <Text style={styles.fullDescription}>{trust.description}</Text>
 
-          <Text style={styles.fullMeta}>
-            {getIncidentTrustSummary(incident)}
-          </Text>
+          <Text style={styles.fullMeta}>{getTrustSummary(incident)}</Text>
         </View>
       </View>
     );
@@ -80,7 +74,7 @@ export default function IncidentTrustBadge({
       style={[
         styles.compactContainer,
         {
-          backgroundColor: trust.lightColor,
+          backgroundColor: trust.backgroundColor,
           borderColor: trust.color,
         },
         style,
@@ -100,6 +94,70 @@ export default function IncidentTrustBadge({
       </Text>
     </View>
   );
+}
+
+function getTrustMeta(incident: IncidentReport): {
+  level: IncidentTrustLevel;
+  label: string;
+  shortLabel: string;
+  description: string;
+  icon: string;
+  color: string;
+  backgroundColor: string;
+} {
+  const verificationCount = incident.verificationCount ?? 0;
+  const disputeCount = incident.disputeCount ?? 0;
+
+  if (
+    incident.verificationStatus === "verified" ||
+    (verificationCount >= 2 && verificationCount > disputeCount)
+  ) {
+    return {
+      level: "verified",
+      label: "Community Verified",
+      shortLabel: "Verified",
+      description:
+        "Laporan ini sudah mendapatkan dukungan verifikasi dari warga sekitar.",
+      icon: "✓",
+      color: colors.success,
+      backgroundColor: colors.successSoft,
+    };
+  }
+
+  if (
+    incident.verificationStatus === "disputed" ||
+    (disputeCount >= 2 && disputeCount >= verificationCount)
+  ) {
+    return {
+      level: "disputed",
+      label: "Needs Review",
+      shortLabel: "Disputed",
+      description:
+        "Ada bantahan atau laporan tidak sesuai dari warga. Perlu dicek lagi di timeline.",
+      icon: "!",
+      color: colors.danger,
+      backgroundColor: colors.dangerSoft,
+    };
+  }
+
+  return {
+    level: "pending",
+    label: "Pending Verification",
+    shortLabel: "Pending",
+    description:
+      "Laporan belum punya cukup verifikasi komunitas. Buka timeline untuk melihat bukti dan update.",
+    icon: "?",
+    color: colors.warningDark,
+    backgroundColor: colors.warningSoft,
+  };
+}
+
+function getTrustSummary(incident: IncidentReport) {
+  const verificationCount = incident.verificationCount ?? 0;
+  const disputeCount = incident.disputeCount ?? 0;
+  const evidenceCount = incident.evidenceCount ?? 0;
+
+  return `${verificationCount} verifikasi benar · ${disputeCount} bantahan · ${evidenceCount} bukti tambahan`;
 }
 
 const styles = StyleSheet.create({
@@ -132,6 +190,8 @@ const styles = StyleSheet.create({
   },
   fullIcon: {
     fontSize: 20,
+    fontWeight: "900",
+    color: colors.textInverse,
   },
   fullContent: {
     flex: 1,

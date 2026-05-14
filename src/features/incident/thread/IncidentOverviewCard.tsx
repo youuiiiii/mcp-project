@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image, StyleSheet, Text, View } from "react-native";
 
+import IncidentTrustBadge from "../../../components/IncidentTrustBadge";
 import AppCard from "../../../components/ui/AppCard";
 import IconBadge from "../../../components/ui/IconBadge";
 import StatusBadge from "../../../components/ui/StatusBadge";
@@ -10,12 +11,10 @@ import { radius, spacing } from "../../../theme/layout";
 import { typography } from "../../../theme/typography";
 import type { IncidentReport } from "../../../types/incident";
 import { getIncidentExpiryMessage } from "../../../utils/incidentExpiry";
-import IncidentTrustBadge from "../../../components/IncidentTrustBadge";
-import IncidentUrgencyBadge from "../../../components/IncidentUrgencyBadge";
 import {
-  formatIncidentDate,
-  getStatusLabel,
-  getStatusVariant,
+    formatIncidentDate,
+    getStatusLabel,
+    getStatusVariant,
 } from "./threadLabels";
 
 type IncidentOverviewCardProps = {
@@ -31,6 +30,20 @@ export default function IncidentOverviewCard({
   });
 
   const categoryMeta = getIncidentCategoryMeta(incident.category);
+
+  function getSeverityVariant(
+    severity: IncidentReport["severity"]
+    ): "success" | "warning" | "danger" {
+    if (severity === "high") {
+        return "danger";
+    }
+
+    if (severity === "medium") {
+        return "warning";
+    }
+
+    return "success";
+    }
 
   return (
     <AppCard style={styles.card}>
@@ -68,8 +81,12 @@ export default function IncidentOverviewCard({
 
       <View style={styles.compactBadgeRow}>
         <IncidentTrustBadge incident={incident} variant="compact" />
-        <IncidentUrgencyBadge incident={incident} variant="compact" />
-      </View>
+        <StatusBadge
+            label={incident.severity}
+            variant={getSeverityVariant(incident.severity)}
+            size="sm"
+        />
+        </View>
 
       <AppCard variant="muted" padding="sm" style={styles.expiryBox}>
         <View style={styles.expiryHeader}>
