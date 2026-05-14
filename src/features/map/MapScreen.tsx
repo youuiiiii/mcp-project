@@ -100,10 +100,9 @@ export default function MapScreen() {
             </View>
           </View>
 
-          <Text style={styles.headerSubtitle}>
-            Pin menunjukkan lokasi laporan warga. Tap pin untuk preview, lalu
-            tap preview untuk detail.
-          </Text>
+            <Text style={styles.headerSubtitle}>
+            Pin menunjukkan lokasi laporan warga. Tap pin untuk melihat detail kejadian.
+            </Text>
         </View>
 
         {errorMessage ? (

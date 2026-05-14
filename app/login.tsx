@@ -69,7 +69,7 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
-          <Text style={styles.logo}>🚨 SIGAP</Text>
+          <Text style={styles.logo}>SIGAP</Text>
           <Text style={styles.headerSubtitle}>
             Disaster Early Warning System
           </Text>
@@ -83,8 +83,8 @@ export default function LoginScreen() {
           <Text style={styles.title}>Masuk Akun</Text>
 
           <Text style={styles.subtitle}>
-            Login untuk melaporkan kejadian, memantau crisis map, dan memakai
-            fitur SOS.
+            Login untuk melaporkan kejadian, memantau crisis map, dan melihat update
+            laporan warga.
           </Text>
 
           <View style={styles.form}>
