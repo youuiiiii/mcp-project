@@ -6,37 +6,37 @@ import SectionHeader from "../../../components/ui/SectionHeader";
 import { SEVERITY_OPTIONS } from "../../../constants/incident";
 import { colors } from "../../../theme/colors";
 import { spacing } from "../../../theme/layout";
-import { typography } from "../../../theme/typography";
 import type { IncidentSeverity } from "../../../types/incident";
 
 type SeveritySelectorProps = {
-  value: IncidentSeverity;
-  onChange: (value: IncidentSeverity) => void;
+  selectedSeverity: IncidentSeverity;
+  disabled?: boolean;
+  onSelectSeverity: (severity: IncidentSeverity) => void;
 };
 
 export default function SeveritySelector({
-  value,
-  onChange,
+  selectedSeverity,
+  disabled = false,
+  onSelectSeverity,
 }: SeveritySelectorProps) {
   return (
     <View style={styles.section}>
       <SectionHeader
         title="3. Severity"
         subtitle="Pilih seberapa mendesak kondisi saat ini."
-        style={styles.sectionHeader}
       />
 
-      <View style={styles.severityRow}>
+      <View style={styles.row}>
         {SEVERITY_OPTIONS.map((item) => {
-          const active = value === item.value;
+          const active = selectedSeverity === item.value;
 
           return (
             <AppCard
               key={item.value}
-              onPress={() => onChange(item.value)}
+              onPress={disabled ? undefined : () => onSelectSeverity(item.value)}
               padding="sm"
               style={[
-                styles.severityCard,
+                styles.card,
                 active && {
                   borderColor: item.color,
                   backgroundColor: item.color,
@@ -49,19 +49,14 @@ export default function SeveritySelector({
                 color={active ? colors.textInverse : item.color}
               />
 
-              <Text
-                style={[
-                  styles.severityLabel,
-                  active && styles.severityLabelActive,
-                ]}
-              >
+              <Text style={[styles.label, active && styles.labelActive]}>
                 {item.label}
               </Text>
 
               <Text
                 style={[
-                  styles.severityDescription,
-                  active && styles.severityDescriptionActive,
+                  styles.description,
+                  active && styles.descriptionActive,
                 ]}
               >
                 {item.description}
@@ -78,34 +73,33 @@ const styles = StyleSheet.create({
   section: {
     gap: spacing.md,
   },
-  sectionHeader: {
-    marginBottom: 0,
-  },
-  severityRow: {
+  row: {
     flexDirection: "row",
     gap: spacing.sm,
   },
-  severityCard: {
+  card: {
     flex: 1,
-    minHeight: 112,
+    minHeight: 116,
     alignItems: "flex-start",
     justifyContent: "space-between",
   },
-  severityLabel: {
+  label: {
+    marginTop: spacing.sm,
     fontSize: 14,
     fontWeight: "900",
     color: colors.text,
-    marginTop: spacing.sm,
   },
-  severityLabelActive: {
+  labelActive: {
     color: colors.textInverse,
   },
-  severityDescription: {
-    ...typography.tiny,
-    color: colors.textMuted,
+  description: {
     marginTop: 4,
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.textMuted,
+    lineHeight: 14,
   },
-  severityDescriptionActive: {
+  descriptionActive: {
     color: colors.textInverse,
   },
 });

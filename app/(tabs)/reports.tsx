@@ -1,3 +1,7 @@
-import ReportsScreen from "../../src/features/reports/ReportsScreen";
+import { type Href, Redirect } from "expo-router";
 
-export default ReportsScreen;
+const MAP_ROUTE = "/(tabs)/map" as Href;
+
+export default function ReportsRoute() {
+  return <Redirect href={MAP_ROUTE} />;
+}

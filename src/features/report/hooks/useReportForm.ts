@@ -1,19 +1,19 @@
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { type Href, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Alert } from "react-native";
 
-import { INCIDENT_CATEGORY_OPTIONS } from "../../../constants/incident";
 import { useAuth } from "../../../contexts/AuthContext";
 import { uploadImageAsync } from "../../../services/cloudinaryService";
 import { createIncidentReport } from "../../../services/incidentService";
 import type {
-  IncidentCategory,
-  IncidentSeverity,
+    IncidentCategory,
+    IncidentSeverity,
 } from "../../../types/incident";
 
 const MAP_ROUTE = "/(tabs)/map" as Href;
+
 const LOCATION_MAX_ACCURACY_METERS = 80;
 
 export const useReportForm = () => {
@@ -27,70 +27,105 @@ export const useReportForm = () => {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const selectedCategoryMeta = useMemo(() => {
-    if (!category) {
-      return null;
-    }
-
-    return (
-      INCIDENT_CATEGORY_OPTIONS.find((item) => item.value === category) ?? null
-    );
-  }, [category]);
+  const cleanTitle = title.trim();
+  const cleanDescription = description.trim();
 
   const canSubmit = Boolean(
-    category &&
-      title.trim().length >= 5 &&
-      description.trim().length >= 10 &&
+    user &&
+      category &&
+      cleanTitle.length >= 5 &&
+      cleanDescription.length >= 10 &&
       photoUri &&
       !loading
   );
 
   const takePhoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-
-    if (status !== "granted") {
-      Alert.alert(
-        "Izin Kamera Dibutuhkan",
-        "Aktifkan izin kamera untuk mengambil foto bukti."
-      );
+    if (loading) {
       return;
     }
 
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.75,
-    });
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
 
-    const assetUri = result.assets?.[0]?.uri;
+      if (!permission.granted) {
+        Alert.alert(
+          "Izin Kamera Dibutuhkan",
+          "Aktifkan izin kamera untuk mengambil foto bukti."
+        );
+        return;
+      }
 
-    if (!result.canceled && assetUri) {
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.75,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const assetUri = result.assets?.[0]?.uri;
+
+      if (!assetUri) {
+        Alert.alert("Foto Tidak Valid", "Gagal membaca hasil foto.");
+        return;
+      }
+
       setPhotoUri(assetUri);
+    } catch (error) {
+      Alert.alert(
+        "Gagal Membuka Kamera",
+        error instanceof Error
+          ? error.message
+          : "Terjadi kesalahan saat membuka kamera."
+      );
     }
   };
 
   const pickFromGallery = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (status !== "granted") {
-      Alert.alert(
-        "Izin Galeri Dibutuhkan",
-        "Aktifkan izin galeri untuk memilih foto bukti."
-      );
+    if (loading) {
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.75,
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    });
+    try {
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    const assetUri = result.assets?.[0]?.uri;
+      if (!permission.granted) {
+        Alert.alert(
+          "Izin Galeri Dibutuhkan",
+          "Aktifkan izin galeri untuk memilih foto bukti."
+        );
+        return;
+      }
 
-    if (!result.canceled && assetUri) {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.75,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const assetUri = result.assets?.[0]?.uri;
+
+      if (!assetUri) {
+        Alert.alert("Foto Tidak Valid", "Gagal membaca gambar dari galeri.");
+        return;
+      }
+
       setPhotoUri(assetUri);
+    } catch (error) {
+      Alert.alert(
+        "Gagal Membuka Galeri",
+        error instanceof Error
+          ? error.message
+          : "Terjadi kesalahan saat membuka galeri."
+      );
     }
   };
 
@@ -102,31 +137,41 @@ export const useReportForm = () => {
     setPhotoUri(null);
   };
 
-  const handleSubmit = async () => {
-    if (!category) {
-      Alert.alert("Kategori Belum Dipilih", "Pilih kategori kejadian dulu.");
-      return;
+  const validateForm = () => {
+    if (!user) {
+      Alert.alert("Belum Login", "Silakan login terlebih dahulu.");
+      return false;
     }
 
-    const cleanTitle = title.trim();
-    const cleanDescription = description.trim();
+    if (!category) {
+      Alert.alert("Kategori Belum Dipilih", "Pilih kategori kejadian dulu.");
+      return false;
+    }
 
     if (cleanTitle.length < 5) {
       Alert.alert("Judul Terlalu Pendek", "Judul minimal 5 karakter.");
-      return;
+      return false;
     }
 
     if (cleanDescription.length < 10) {
       Alert.alert("Deskripsi Terlalu Pendek", "Deskripsi minimal 10 karakter.");
-      return;
+      return false;
     }
 
     if (!photoUri) {
       Alert.alert("Foto Wajib Ada", "Tambahkan foto bukti kejadian.");
-      return;
+      return false;
     }
 
+    return true;
+  };
+
+  const handleSubmit = async () => {
     try {
+      if (!validateForm() || !user || !category || !photoUri) {
+        return;
+      }
+
       setLoading(true);
 
       const permission = await Location.requestForegroundPermissionsAsync();
@@ -171,11 +216,11 @@ export const useReportForm = () => {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
         address: null,
-        reportedBy: user?.displayName || user?.email || "Anonymous",
-        reporterEmail: user?.email ?? null,
+        reportedBy: user.displayName || user.email || "Anonymous",
+        reporterEmail: user.email ?? null,
       });
 
-      Alert.alert("Laporan Terkirim", "Laporan berhasil dikirim.", [
+      Alert.alert("Laporan Terkirim", "Laporan berhasil dikirim ke Map.", [
         {
           text: "Lihat Map",
           onPress: () => {
@@ -205,17 +250,22 @@ export const useReportForm = () => {
   return {
     category,
     setCategory,
+
     severity,
     setSeverity,
+
     title,
     setTitle,
+
     description,
     setDescription,
+
     photoUri,
     setPhotoUri,
+
     loading,
-    selectedCategoryMeta,
     canSubmit,
+
     takePhoto,
     pickFromGallery,
     handleSubmit,

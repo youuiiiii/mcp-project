@@ -1,3 +1,7 @@
-import AnalyticsScreen from "../../src/features/analytics/AnalyticsScreen";
+import { type Href, Redirect } from "expo-router";
 
-export default AnalyticsScreen;
+const HOME_ROUTE = "/(tabs)" as Href;
+
+export default function AnalyticsRoute() {
+  return <Redirect href={HOME_ROUTE} />;
+}

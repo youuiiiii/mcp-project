@@ -1,41 +1,38 @@
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, TextInput, View } from "react-native";
 
 import SectionHeader from "../../../components/ui/SectionHeader";
 import StatusBadge from "../../../components/ui/StatusBadge";
 import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
-import { typography } from "../../../theme/typography";
 
 type ReportDetailsFieldsProps = {
   title: string;
   description: string;
-  disabled: boolean;
-  onTitleChange: (value: string) => void;
-  onDescriptionChange: (value: string) => void;
+  disabled?: boolean;
+  onChangeTitle: (value: string) => void;
+  onChangeDescription: (value: string) => void;
 };
 
 export default function ReportDetailsFields({
   title,
   description,
-  disabled,
-  onTitleChange,
-  onDescriptionChange,
+  disabled = false,
+  onChangeTitle,
+  onChangeDescription,
 }: ReportDetailsFieldsProps) {
-  const titleLength = title.trim().length;
-  const descriptionLength = description.trim().length;
+  const cleanTitleLength = title.trim().length;
+  const cleanDescriptionLength = description.trim().length;
 
   return (
     <View style={styles.section}>
       <SectionHeader
-        title="2. Detail Laporan"
+        title="2. Detail Kejadian"
         subtitle="Judul dan deskripsi adalah sumber detail utama laporan."
-        style={styles.sectionHeader}
       />
 
-      <Text style={styles.label}>Judul laporan</Text>
       <TextInput
         value={title}
-        onChangeText={onTitleChange}
+        onChangeText={onChangeTitle}
         editable={!disabled}
         placeholder="Contoh: Pohon tumbang menutup jalan utama"
         placeholderTextColor={colors.textSoft}
@@ -43,15 +40,14 @@ export default function ReportDetailsFields({
       />
 
       <StatusBadge
-        label={`${titleLength}/5 minimum karakter`}
-        variant={titleLength >= 5 ? "success" : "neutral"}
+        label={`${cleanTitleLength}/5 minimum karakter`}
+        variant={cleanTitleLength >= 5 ? "success" : "neutral"}
         size="sm"
       />
 
-      <Text style={styles.label}>Deskripsi</Text>
       <TextInput
         value={description}
-        onChangeText={onDescriptionChange}
+        onChangeText={onChangeDescription}
         editable={!disabled}
         placeholder="Jelaskan situasi, kondisi sekitar, dampak, dan hal penting yang perlu diketahui."
         placeholderTextColor={colors.textSoft}
@@ -61,8 +57,8 @@ export default function ReportDetailsFields({
       />
 
       <StatusBadge
-        label={`${descriptionLength}/10 minimum karakter`}
-        variant={descriptionLength >= 10 ? "success" : "neutral"}
+        label={`${cleanDescriptionLength}/10 minimum karakter`}
+        variant={cleanDescriptionLength >= 10 ? "success" : "neutral"}
         size="sm"
       />
     </View>
@@ -72,14 +68,6 @@ export default function ReportDetailsFields({
 const styles = StyleSheet.create({
   section: {
     gap: spacing.md,
-  },
-  sectionHeader: {
-    marginBottom: 0,
-  },
-  label: {
-    ...typography.label,
-    color: colors.text,
-    marginTop: spacing.xs,
   },
   input: {
     backgroundColor: colors.surface,
@@ -94,5 +82,6 @@ const styles = StyleSheet.create({
   },
   textArea: {
     minHeight: 120,
+    lineHeight: 20,
   },
 });

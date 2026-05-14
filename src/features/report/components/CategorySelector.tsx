@@ -11,36 +11,33 @@ import { typography } from "../../../theme/typography";
 import type { IncidentCategory } from "../../../types/incident";
 
 type CategorySelectorProps = {
-  value: IncidentCategory | null;
-  onChange: (value: IncidentCategory) => void;
+  selectedCategory: IncidentCategory | null;
+  disabled?: boolean;
+  onSelectCategory: (category: IncidentCategory) => void;
 };
 
 export default function CategorySelector({
-  value,
-  onChange,
+  selectedCategory,
+  disabled = false,
+  onSelectCategory,
 }: CategorySelectorProps) {
-  const selectedCategoryMeta =
-    INCIDENT_CATEGORY_OPTIONS.find((item) => item.value === value) ?? null;
-
   return (
     <View style={styles.section}>
       <SectionHeader
         title="1. Tema Kejadian"
         subtitle="Pilih kategori besar. Detail spesifik cukup ditulis di judul dan deskripsi."
-        style={styles.sectionHeader}
       />
 
-      <View style={styles.categoryList}>
+      <View style={styles.list}>
         {INCIDENT_CATEGORY_OPTIONS.map((item) => {
-          const active = value === item.value;
+          const active = selectedCategory === item.value;
 
           return (
             <AppCard
               key={item.value}
-              onPress={() => onChange(item.value)}
-              padding="md"
+              onPress={disabled ? undefined : () => onSelectCategory(item.value)}
               style={[
-                styles.categoryCard,
+                styles.card,
                 active && {
                   borderColor: item.color,
                   backgroundColor: item.lightColor,
@@ -62,10 +59,10 @@ export default function CategorySelector({
                 />
               </IconBadge>
 
-              <View style={styles.categoryContent}>
+              <View style={styles.content}>
                 <Text
                   style={[
-                    styles.categoryTitle,
+                    styles.title,
                     active && {
                       color: item.color,
                     },
@@ -74,9 +71,7 @@ export default function CategorySelector({
                   {item.label}
                 </Text>
 
-                <Text style={styles.categoryDescription}>
-                  {item.description}
-                </Text>
+                <Text style={styles.description}>{item.description}</Text>
               </View>
 
               {active ? (
@@ -90,35 +85,6 @@ export default function CategorySelector({
           );
         })}
       </View>
-
-      {selectedCategoryMeta ? (
-        <AppCard
-          variant="muted"
-          style={[
-            styles.categoryInfoCard,
-            {
-              backgroundColor: selectedCategoryMeta.lightColor,
-              borderColor: selectedCategoryMeta.color,
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.categoryInfoTitle,
-              {
-                color: selectedCategoryMeta.color,
-              },
-            ]}
-          >
-            {selectedCategoryMeta.label}
-          </Text>
-
-          <Text style={styles.categoryInfoText}>
-            Gunakan judul dan deskripsi untuk menjelaskan detail kejadian tanpa
-            memilih subkategori tambahan.
-          </Text>
-        </AppCard>
-      ) : null}
     </View>
   );
 }
@@ -127,38 +93,24 @@ const styles = StyleSheet.create({
   section: {
     gap: spacing.md,
   },
-  sectionHeader: {
-    marginBottom: 0,
-  },
-  categoryList: {
+  list: {
     gap: spacing.md,
   },
-  categoryCard: {
+  card: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
   },
-  categoryContent: {
+  content: {
     flex: 1,
   },
-  categoryTitle: {
+  title: {
     fontSize: 15,
     fontWeight: "900",
     color: colors.text,
   },
-  categoryDescription: {
+  description: {
     marginTop: 4,
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  categoryInfoCard: {
-    gap: spacing.xs,
-  },
-  categoryInfoTitle: {
-    fontSize: 14,
-    fontWeight: "900",
-  },
-  categoryInfoText: {
     ...typography.caption,
     color: colors.textMuted,
   },

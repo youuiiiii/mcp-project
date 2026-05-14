@@ -9,16 +9,17 @@ import { typography } from "../../../theme/typography";
 
 export default function ReportLocationNotice() {
   return (
-    <AppCard variant="muted" style={styles.locationCard}>
+    <AppCard variant="muted" style={styles.card}>
       <IconBadge variant="info" size="md" rounded={false}>
         <Ionicons name="location" size={22} color={colors.info} />
       </IconBadge>
 
-      <View style={styles.locationInfo}>
-        <Text style={styles.locationTitle}>Realtime location</Text>
-        <Text style={styles.locationText}>
-          Lokasi akan diambil otomatis saat laporan dikirim. Pastikan kamu
-          berada di sekitar lokasi kejadian.
+      <View style={styles.content}>
+        <Text style={styles.title}>Lokasi laporan otomatis</Text>
+
+        <Text style={styles.description}>
+          Saat laporan dikirim, aplikasi akan mengambil lokasi Anda saat ini.
+          Pastikan Anda berada di sekitar kejadian dan izin lokasi aktif.
         </Text>
       </View>
     </AppCard>
@@ -26,24 +27,24 @@ export default function ReportLocationNotice() {
 }
 
 const styles = StyleSheet.create({
-  locationCard: {
+  card: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: spacing.md,
     backgroundColor: colors.infoSoft,
-    borderColor: colors.info,
+    borderColor: "#BFDBFE",
   },
-  locationInfo: {
+  content: {
     flex: 1,
   },
-  locationTitle: {
+  title: {
     fontSize: 14,
     fontWeight: "900",
     color: colors.infoDark,
-    marginBottom: 4,
   },
-  locationText: {
+  description: {
+    marginTop: 4,
     ...typography.caption,
-    color: colors.info,
+    color: "#1E3A8A",
   },
 });

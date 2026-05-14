@@ -6,12 +6,12 @@ import AppCard from "../../../components/ui/AppCard";
 import IconBadge from "../../../components/ui/IconBadge";
 import SectionHeader from "../../../components/ui/SectionHeader";
 import { colors } from "../../../theme/colors";
-import { radius, spacing } from "../../../theme/layout";
+import { spacing } from "../../../theme/layout";
 import { typography } from "../../../theme/typography";
 
 type ReportEvidenceSectionProps = {
   photoUri: string | null;
-  disabled: boolean;
+  disabled?: boolean;
   onTakePhoto: () => void;
   onPickFromGallery: () => void;
   onRemovePhoto: () => void;
@@ -19,7 +19,7 @@ type ReportEvidenceSectionProps = {
 
 export default function ReportEvidenceSection({
   photoUri,
-  disabled,
+  disabled = false,
   onTakePhoto,
   onPickFromGallery,
   onRemovePhoto,
@@ -28,8 +28,7 @@ export default function ReportEvidenceSection({
     <View style={styles.section}>
       <SectionHeader
         title="4. Evidence"
-        subtitle="Foto wajib untuk membantu validasi laporan."
-        style={styles.sectionHeader}
+        subtitle="Foto wajib untuk membantu warga lain memahami kondisi."
       />
 
       <View style={styles.photoRow}>
@@ -71,6 +70,7 @@ export default function ReportEvidenceSection({
                 size={18}
                 color={colors.success}
               />
+
               <Text style={styles.previewText}>Foto bukti sudah dipilih</Text>
             </View>
 
@@ -92,9 +92,6 @@ export default function ReportEvidenceSection({
 const styles = StyleSheet.create({
   section: {
     gap: spacing.md,
-  },
-  sectionHeader: {
-    marginBottom: 0,
   },
   photoRow: {
     flexDirection: "row",
@@ -118,8 +115,8 @@ const styles = StyleSheet.create({
   previewImage: {
     width: "100%",
     height: 220,
-    borderRadius: radius.lg,
     resizeMode: "cover",
+    backgroundColor: colors.border,
   },
   previewFooter: {
     padding: spacing.md,

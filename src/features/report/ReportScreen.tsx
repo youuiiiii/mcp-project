@@ -18,34 +18,39 @@ export default function ReportScreen() {
   const form = useReportForm();
 
   return (
-    <AppScreen keyboardAvoiding contentContainerStyle={styles.screenContent}>
+    <AppScreen keyboardAvoiding contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <StatusBadge
-          label="Community Report"
-          variant="danger"
-          size="sm"
-          style={styles.headerBadge}
-        />
+        <StatusBadge label="Community Report" variant="danger" size="sm" />
 
         <Text style={styles.title}>Report Incident</Text>
 
         <Text style={styles.subtitle}>
-          Laporkan kejadian sekitar dengan lokasi realtime dan bukti foto agar
-          warga lain dapat ikut memantau.
+          Laporkan kejadian dari lokasi Anda saat ini. Setelah terkirim,
+          laporan akan muncul sebagai pin di Map.
         </Text>
       </View>
 
-      <CategorySelector value={form.category} onChange={form.setCategory} />
+      <ReportLocationNotice />
+
+      <CategorySelector
+        selectedCategory={form.category}
+        disabled={form.loading}
+        onSelectCategory={form.setCategory}
+      />
 
       <ReportDetailsFields
         title={form.title}
         description={form.description}
         disabled={form.loading}
-        onTitleChange={form.setTitle}
-        onDescriptionChange={form.setDescription}
+        onChangeTitle={form.setTitle}
+        onChangeDescription={form.setDescription}
       />
 
-      <SeveritySelector value={form.severity} onChange={form.setSeverity} />
+      <SeveritySelector
+        selectedSeverity={form.severity}
+        disabled={form.loading}
+        onSelectSeverity={form.setSeverity}
+      />
 
       <ReportEvidenceSection
         photoUri={form.photoUri}
@@ -55,10 +60,8 @@ export default function ReportScreen() {
         onRemovePhoto={() => form.setPhotoUri(null)}
       />
 
-      <ReportLocationNotice />
-
       <AppButton
-        title={form.loading ? "Uploading Report..." : "Submit Report"}
+        title="Submit Report"
         variant="danger"
         size="lg"
         fullWidth
@@ -75,14 +78,11 @@ export default function ReportScreen() {
 }
 
 const styles = StyleSheet.create({
-  screenContent: {
+  content: {
     gap: spacing["2xl"],
   },
   header: {
     gap: spacing.sm,
-  },
-  headerBadge: {
-    marginBottom: spacing.xs,
   },
   title: {
     ...typography.hero,
