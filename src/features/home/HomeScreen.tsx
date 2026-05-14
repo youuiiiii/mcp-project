@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import IncidentThreadModal from "../../components/IncidentThreadModal";
 import AppCard from "../../components/ui/AppCard";
 import AppScreen from "../../components/ui/AppScreen";
 import EmptyState from "../../components/ui/EmptyState";
@@ -19,6 +21,17 @@ import { useHomeScreen } from "./hooks/useHomeScreen";
 
 export default function HomeScreen() {
   const home = useHomeScreen();
+
+  const [selectedIncident, setSelectedIncident] =
+    useState<IncidentReport | null>(null);
+
+  const openIncidentThread = (incident: IncidentReport) => {
+    setSelectedIncident(incident);
+  };
+
+  const closeIncidentThread = () => {
+    setSelectedIncident(null);
+  };
 
   return (
     <AppScreen contentContainerStyle={styles.content}>
@@ -51,7 +64,7 @@ export default function HomeScreen() {
       <View style={styles.section}>
         <SectionHeader
           title="Latest Incidents"
-          subtitle="Laporan terbaru dari komunitas. Tap kartu untuk membuka Map."
+          subtitle="Laporan terbaru dari komunitas. Tap kartu untuk melihat detail."
         />
 
         {home.loadingReports ? (
@@ -74,12 +87,19 @@ export default function HomeScreen() {
               <LatestReportCard
                 key={report.id}
                 report={report}
-                onPress={home.openMap}
+                onPress={() => openIncidentThread(report)}
               />
             ))}
           </View>
         ) : null}
       </View>
+
+      <IncidentThreadModal
+        visible={!!selectedIncident}
+        incident={selectedIncident}
+        onClose={closeIncidentThread}
+        showActions={false}
+      />
     </AppScreen>
   );
 }

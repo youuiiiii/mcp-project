@@ -6,7 +6,6 @@ import { subscribeToIncidents } from "../../../services/incidentService";
 import type { IncidentReport } from "../../../types/incident";
 import { getNearestIncident, isValidCoordinate } from "../../../utils/geo";
 import type { UserMapPosition } from "../types";
-import { createClusters } from "../utils/createClusters";
 
 type UseMapIncidentsParams = {
   selectedFilter: MapFilterValue;
@@ -44,11 +43,13 @@ export const useMapIncidents = ({
     };
   }, []);
 
-  const filteredReports = useMemo(() => {
-    const validReports = reports.filter((report) => {
+  const validReports = useMemo(() => {
+    return reports.filter((report) => {
       return isValidCoordinate(report.latitude, report.longitude);
     });
+  }, [reports]);
 
+  const filteredReports = useMemo(() => {
     if (selectedFilter === "all") {
       return validReports;
     }
@@ -68,20 +69,13 @@ export const useMapIncidents = ({
     }
 
     return validReports;
-  }, [reports, selectedFilter]);
+  }, [validReports, selectedFilter]);
 
   const activeReports = useMemo(() => {
-    return reports.filter((report) => {
-      return (
-        report.status === "active" &&
-        isValidCoordinate(report.latitude, report.longitude)
-      );
+    return validReports.filter((report) => {
+      return report.status === "active";
     });
-  }, [reports]);
-
-  const clusters = useMemo(() => {
-    return createClusters(filteredReports);
-  }, [filteredReports]);
+  }, [validReports]);
 
   const nearestIncident = useMemo(() => {
     if (!userLocation) {
@@ -96,9 +90,9 @@ export const useMapIncidents = ({
 
   return {
     reports,
+    validReports,
     filteredReports,
     activeReports,
-    clusters,
     nearestIncident,
     loadingReports,
     reportsErrorMessage,

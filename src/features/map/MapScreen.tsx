@@ -9,16 +9,15 @@ import IncidentThreadModal from "../../components/IncidentThreadModal";
 import AppButton from "../../components/ui/AppButton";
 import LoadingState from "../../components/ui/LoadingState";
 import { getFilterLabel } from "../../constants/incident";
-import { colors } from "../../theme/colors";
 import { mapStyles as styles } from "../../styles/mapStyles";
+import { colors } from "../../theme/colors";
 import { formatDistance } from "../../utils/geo";
-import ClusterMarker from "./components/ClusterMarker";
 import IncidentMapMarker from "./components/IncidentMapMarker";
-import UserLocationMarker from "./components/UserLocationMarker";
 import { useMapIncidents } from "./hooks/useMapIncidents";
 import { useMapModalState } from "./hooks/useMapModalState";
 import { useStableUserLocation } from "./hooks/useStableUserLocation";
 import { getReportDisplayMeta } from "./utils/reportDisplayMeta";
+
 
 const REPORT_ROUTE = "/(tabs)/report" as Href;
 
@@ -39,7 +38,6 @@ export default function MapScreen() {
   const {
     reports,
     filteredReports,
-    clusters,
     nearestIncident,
     loadingReports,
     reportsErrorMessage,
@@ -72,32 +70,24 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <MapView
+        <MapView
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         initialRegion={region}
-        showsUserLocation={false}
+        showsUserLocation
         showsMyLocationButton={false}
         showsCompass
         showsScale
-      >
-        <UserLocationMarker userLocation={userLocation} />
-
-        {clusters.map((cluster) => {
-          if (cluster.incidents.length === 1) {
-            return (
-              <IncidentMapMarker
-                key={cluster.incidents[0].id}
-                incident={cluster.incidents[0]}
-                onPress={modalState.openThreadModal}
-              />
-            );
-          }
-
-          return <ClusterMarker key={cluster.id} cluster={cluster} />;
-        })}
-      </MapView>
+        >
+        {filteredReports.map((incident) => (
+            <IncidentMapMarker
+            key={incident.id}
+            incident={incident}
+            onPress={modalState.openThreadModal}
+            />
+        ))}
+        </MapView>
 
       <View style={styles.topOverlay}>
         <View style={styles.headerCard}>
@@ -111,8 +101,8 @@ export default function MapScreen() {
           </View>
 
           <Text style={styles.headerSubtitle}>
-            Pin menunjukkan lokasi laporan warga. Tap pin untuk melihat detail
-            kejadian.
+            Pin menunjukkan lokasi laporan warga. Tap pin untuk preview, lalu
+            tap preview untuk detail.
           </Text>
         </View>
 
@@ -154,8 +144,7 @@ export default function MapScreen() {
           </Text>
 
           <Text style={styles.infoDescription}>
-            Pin = laporan warga • Cluster = banyak laporan berdekatan • Report =
-            buat laporan dari lokasi Anda
+            Pin = laporan warga • Report = buat laporan dari lokasi Anda
           </Text>
 
           {nearestIncident.incident &&
