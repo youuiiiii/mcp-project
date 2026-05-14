@@ -1,111 +1,41 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import {
-  checkAndNotifyNearbyDisaster,
-  requestNotificationPermission,
-} from "../../services/notifications";
-import { colors } from "../../theme/colors";
-import { radius, spacing } from "../../theme/layout";
-import { typography } from "../../theme/typography";
-import AppButton from "../ui/AppButton";
-import AppCard from "../ui/AppCard";
-import IconBadge from "../ui/IconBadge";
-import LoadingState from "../ui/LoadingState";
-import SectionHeader from "../ui/SectionHeader";
-import StatusBadge, { StatusBadgeVariant } from "../ui/StatusBadge";
+import AppButton from "../../../components/ui/AppButton";
+import AppCard from "../../../components/ui/AppCard";
+import IconBadge from "../../../components/ui/IconBadge";
+import LoadingState from "../../../components/ui/LoadingState";
+import SectionHeader from "../../../components/ui/SectionHeader";
+import StatusBadge, {
+  type StatusBadgeVariant,
+} from "../../../components/ui/StatusBadge";
+import type { BmkgEarthquake } from "../../../services/bmkgService";
+import { colors } from "../../../theme/colors";
+import { radius, spacing } from "../../../theme/layout";
+import { typography } from "../../../theme/typography";
 
-type BmkgEarthquake = {
-  Tanggal?: string;
-  Jam?: string;
-  DateTime?: string;
-  Coordinates?: string;
-  Lintang?: string;
-  Bujur?: string;
-  Magnitude?: string;
-  Kedalaman?: string;
-  Wilayah?: string;
-  Potensi?: string;
-  Dirasakan?: string;
+type HomeEarthquakeSectionProps = {
+  mainEarthquake: BmkgEarthquake | null;
+  latestEarthquakes: BmkgEarthquake[];
+  loading: boolean;
+  errorMessage: string | null;
+  onRefresh: () => void;
+  onOpenEarthquake: (item: BmkgEarthquake) => void;
 };
 
-export default function BmkgEarthquakeSection() {
-  const router = useRouter();
-
-  const [earthquakes, setEarthquakes] = useState<BmkgEarthquake[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const latestEarthquakes = useMemo(() => {
-    return earthquakes.slice(0, 3);
-  }, [earthquakes]);
-
-  const mainEarthquake = latestEarthquakes[0];
-
-  useEffect(() => {
-    void requestNotificationPermission();
-    void fetchBMKGData();
-  }, []);
-
-  const fetchBMKGData = async () => {
-    try {
-      setLoading(true);
-      setErrorMessage(null);
-
-      const response = await fetch(
-        "https://data.bmkg.go.id/DataMKG/TEWS/gempaterkini.json"
-      );
-
-      if (!response.ok) {
-        throw new Error("Gagal mengambil data BMKG.");
-      }
-
-      const data = await response.json();
-
-      const gempaList: BmkgEarthquake[] = Array.isArray(
-        data?.Infogempa?.gempa
-      )
-        ? data.Infogempa.gempa
-        : [];
-
-      setEarthquakes(gempaList);
-      void checkAndNotifyNearbyDisaster(gempaList);
-    } catch (error) {
-      console.error("BMKG error:", error);
-
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Gagal memuat data gempa BMKG."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleOpenEarthquake = (item: BmkgEarthquake) => {
-    router.push({
-      pathname: "/(tabs)/detail",
-      params: {
-        magnitude: item.Magnitude ?? "-",
-        wilayah: item.Wilayah ?? "-",
-        jam: item.Jam ?? "-",
-        tanggal: item.Tanggal ?? "-",
-        kedalaman: item.Kedalaman ?? "-",
-        lintang: item.Lintang ?? "-",
-        bujur: item.Bujur ?? "-",
-        potensi: item.Potensi ?? "-",
-      },
-    });
-  };
-
+export default function HomeEarthquakeSection({
+  mainEarthquake,
+  latestEarthquakes,
+  loading,
+  errorMessage,
+  onRefresh,
+  onOpenEarthquake,
+}: HomeEarthquakeSectionProps) {
   return (
     <View style={styles.wrapper}>
       <SectionHeader
-        title="BMKG Earthquake"
-        subtitle="Official earthquake update"
+        title="Update Gempa BMKG"
+        subtitle="Data resmi gempa terkini"
         style={styles.sectionHeader}
         right={
           <AppButton
@@ -114,13 +44,9 @@ export default function BmkgEarthquakeSection() {
             size="sm"
             loading={loading}
             disabled={loading}
-            onPress={fetchBMKGData}
+            onPress={onRefresh}
             leftIcon={
-              <Ionicons
-                name="refresh"
-                size={15}
-                color={colors.text}
-              />
+              <Ionicons name="refresh" size={15} color={colors.text} />
             }
           />
         }
@@ -156,7 +82,7 @@ export default function BmkgEarthquakeSection() {
         <>
           <FeaturedEarthquakeCard
             earthquake={mainEarthquake}
-            onPress={() => handleOpenEarthquake(mainEarthquake)}
+            onPress={() => onOpenEarthquake(mainEarthquake)}
           />
 
           {latestEarthquakes.length > 1 ? (
@@ -165,7 +91,7 @@ export default function BmkgEarthquakeSection() {
                 <MiniEarthquakeCard
                   key={`${item.DateTime ?? index}-${item.Magnitude ?? ""}`}
                   earthquake={item}
-                  onPress={() => handleOpenEarthquake(item)}
+                  onPress={() => onOpenEarthquake(item)}
                 />
               ))}
             </View>
@@ -220,18 +146,18 @@ function FeaturedEarthquakeCard({
         <MetaItem
           label="Status"
           value={getMagnitudeLabel(earthquake.Magnitude)}
-          icon="pulse"
+          iconName="pulse"
         />
 
         <MetaItem
           label="Depth"
           value={earthquake.Kedalaman ?? "-"}
-          icon="navigate"
+          iconName="navigate"
         />
       </View>
 
       <AppCard variant="muted" padding="sm" style={styles.timeCard}>
-        <Ionicons name="time" size={17} color={colors.primaryDark} />
+        <Ionicons name="time" size={17} color={colors.danger} />
         <Text style={styles.timeText}>
           {earthquake.Jam ?? "-"}, {earthquake.Tanggal ?? "-"}
         </Text>
@@ -292,15 +218,15 @@ function MiniEarthquakeCard({
 function MetaItem({
   label,
   value,
-  icon,
+  iconName,
 }: {
   label: string;
   value: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  iconName: keyof typeof Ionicons.glyphMap;
 }) {
   return (
     <AppCard variant="muted" padding="sm" style={styles.metaItem}>
-      <Ionicons name={icon} size={18} color={colors.textMuted} />
+      <Ionicons name={iconName} size={18} color={colors.textMuted} />
       <Text style={styles.metaLabel}>{label}</Text>
       <Text style={styles.metaValue} numberOfLines={1}>
         {value}
@@ -309,27 +235,44 @@ function MetaItem({
   );
 }
 
-function getMagnitudeNumber(value?: string) {
+function getMagnitudeNumber(value?: string): number {
   const magnitude = Number(value);
+
   return Number.isNaN(magnitude) ? 0 : magnitude;
 }
 
-function getMagnitudeColor(value?: string) {
+function getMagnitudeColor(value?: string): string {
   const magnitude = getMagnitudeNumber(value);
 
-  if (magnitude >= 7) return "#7F1D1D";
-  if (magnitude >= 5) return colors.danger;
-  if (magnitude >= 3) return colors.warning;
+  if (magnitude >= 7) {
+    return colors.dangerDark;
+  }
+
+  if (magnitude >= 5) {
+    return colors.danger;
+  }
+
+  if (magnitude >= 3) {
+    return colors.warning;
+  }
 
   return colors.success;
 }
 
-function getMagnitudeLabel(value?: string) {
+function getMagnitudeLabel(value?: string): string {
   const magnitude = getMagnitudeNumber(value);
 
-  if (magnitude >= 7) return "Major";
-  if (magnitude >= 5) return "Strong";
-  if (magnitude >= 3) return "Moderate";
+  if (magnitude >= 7) {
+    return "Major";
+  }
+
+  if (magnitude >= 5) {
+    return "Strong";
+  }
+
+  if (magnitude >= 3) {
+    return "Moderate";
+  }
 
   return "Light";
 }
@@ -337,13 +280,18 @@ function getMagnitudeLabel(value?: string) {
 function getMagnitudeVariant(value?: string): StatusBadgeVariant {
   const magnitude = getMagnitudeNumber(value);
 
-  if (magnitude >= 5) return "danger";
-  if (magnitude >= 3) return "warning";
+  if (magnitude >= 5) {
+    return "danger";
+  }
+
+  if (magnitude >= 3) {
+    return "warning";
+  }
 
   return "success";
 }
 
-function withAlpha(hexColor: string, alpha: string) {
+function withAlpha(hexColor: string, alpha: string): string {
   if (!hexColor.startsWith("#") || hexColor.length !== 7) {
     return hexColor;
   }
@@ -366,8 +314,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: spacing.md,
-    backgroundColor: "#FEF2F2",
-    borderColor: "#FECACA",
+    backgroundColor: colors.dangerSoft,
+    borderColor: colors.danger,
   },
   errorContent: {
     flex: 1,
@@ -375,12 +323,12 @@ const styles = StyleSheet.create({
   errorTitle: {
     fontSize: 15,
     fontWeight: "900",
-    color: "#991B1B",
-    marginBottom: 5,
+    color: colors.danger,
+    marginBottom: spacing.xs,
   },
   errorText: {
     ...typography.caption,
-    color: colors.primaryDark,
+    color: colors.textMuted,
   },
   emptyCard: {
     alignItems: "center",
@@ -447,7 +395,7 @@ const styles = StyleSheet.create({
   },
   metaItem: {
     flex: 1,
-    gap: 4,
+    gap: spacing.xs,
   },
   metaLabel: {
     ...typography.label,
@@ -462,20 +410,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    backgroundColor: "#FEF2F2",
-    borderColor: "#FECACA",
+    backgroundColor: colors.dangerSoft,
+    borderColor: colors.danger,
     marginBottom: spacing.md,
   },
   timeText: {
     flex: 1,
     fontSize: 13,
     fontWeight: "800",
-    color: colors.primaryDark,
+    color: colors.danger,
   },
   openDetailRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 3,
+    gap: spacing.xs,
   },
   openDetailText: {
     fontSize: 13,
@@ -494,7 +442,7 @@ const styles = StyleSheet.create({
     minWidth: 62,
     borderRadius: radius.lg,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 9,
+    paddingVertical: spacing.sm,
     alignItems: "center",
   },
   miniMagnitudeText: {
@@ -511,7 +459,7 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   miniSubtitle: {
-    marginTop: 4,
+    marginTop: spacing.xs,
     ...typography.caption,
     color: colors.textMuted,
   },

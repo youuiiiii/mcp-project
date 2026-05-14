@@ -7,6 +7,7 @@ export const colors = {
   textMuted: "#64748B",
   textSoft: "#94A3B8",
   textInverse: "#FFFFFF",
+  textOnDarkMuted: "#CBD5E1",
 
   border: "#E2E8F0",
 
@@ -28,11 +29,14 @@ export const colors = {
 
   dark: "#0F172A",
   darkSoft: "#1E293B",
+  
 
   danger: "#DC2626",
   dangerSoft: "#FEE2E2",
+  dangerDark: "#7F1D1D",
 
   shadow: "#0F172A",
+  
 } as const;
 
 export type AppColor = keyof typeof colors;
