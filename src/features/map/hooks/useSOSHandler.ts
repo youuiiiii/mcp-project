@@ -57,11 +57,11 @@ export const useSOSHandler = ({
       });
 
       const nearbyMessage =
-        nearest.incident && nearest.distance !== null
-          ? `Incident terdekat: ${nearestMeta?.icon} ${
-              nearestMeta?.label
-            } sekitar ${formatDistance(nearest.distance)} dari lokasi Anda.`
-          : "Belum ada incident aktif yang terdeteksi di sekitar lokasi Anda.";
+        nearest.incident && nearest.distance !== null && nearestMeta
+          ? `Laporan terdekat: ${nearestMeta.label} sekitar ${formatDistance(
+              nearest.distance
+            )} dari lokasi Anda.`
+          : "Belum ada laporan aktif yang terdeteksi di sekitar lokasi Anda.";
 
       Alert.alert(
         "SOS Aktif",

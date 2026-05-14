@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRef, useState } from "react";
 import { Alert, Text, View } from "react-native";
@@ -82,6 +83,10 @@ export default function MapScreen() {
     userLocation,
     activeReports,
   });
+
+  const nearestIncidentMeta = nearestIncident.incident
+  ? getReportDisplayMeta(nearestIncident.incident)
+  : null;
 
   const handleLongPress = (coordinate: Coordinate) => {
     if (!userLocation) {
@@ -209,29 +214,27 @@ export default function MapScreen() {
             catat posisi darurat
           </Text>
 
-          {nearestIncident.incident && nearestIncident.distance !== null ? (
+          {nearestIncident.incident &&
+          nearestIncidentMeta &&
+          nearestIncident.distance !== null ? (
             <View style={styles.warningCard}>
               <Text style={styles.warningTitle}>Kejadian Terdekat</Text>
 
-              <Text style={styles.warningText}>
-                {getReportDisplayMeta(nearestIncident.incident).icon}{" "}
-                {getReportDisplayMeta(nearestIncident.incident).label} sekitar{" "}
-                {formatDistance(nearestIncident.distance)} dari posisi Anda.
-              </Text>
+              <View style={styles.warningContent}>
+                <Ionicons
+                  name={nearestIncidentMeta.iconName}
+                  size={18}
+                  color={nearestIncidentMeta.color}
+                />
+
+                <Text style={styles.warningText}>
+                  {nearestIncidentMeta.label} sekitar{" "}
+                  {formatDistance(nearestIncident.distance)} dari posisi Anda.
+                </Text>
+              </View>
             </View>
           ) : null}
-
-          <Text
-            onPress={focusUserLocation}
-            style={[
-              styles.infoDescription,
-              {
-                marginTop: 10,
-                color: "#0F766E",
-                fontWeight: "900",
-              },
-            ]}
-          >
+          <Text onPress={focusUserLocation} style={styles.focusLocationAction}>
             Fokus ke lokasi saya
           </Text>
         </View>

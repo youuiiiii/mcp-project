@@ -138,21 +138,21 @@ export const useMapAlerts = ({
 
     const meta = getReportDisplayMeta(candidate);
 
-    Alert.alert(
-      "Incident Perlu Verifikasi",
-      `${meta.icon} Ada laporan ${meta.label} di sekitar lokasi Anda.\n\nBuka thread untuk melihat detail dan mengirim foto verifikasi.`,
-      [
+   Alert.alert(
+    "Laporan Perlu Verifikasi",
+    `Ada laporan ${meta.label} di sekitar lokasi Anda.\n\nBuka thread untuk melihat detail dan mengirim foto verifikasi.`,
+    [
         {
-          text: "Nanti",
-          style: "cancel",
+        text: "Nanti",
+        style: "cancel",
         },
         {
-          text: "Buka Thread",
-          onPress: () => {
+        text: "Buka Thread",
+        onPress: () => {
             onOpenIncidentThread(candidate);
-          },
         },
-      ]
+        },
+    ]
     );
   }, [userLocation, activeReports, actorKey]);
 
@@ -243,12 +243,12 @@ export const useMapAlerts = ({
     Vibration.vibrate([0, 350, 180, 350]);
 
     Alert.alert(
-      "Peringatan Kejadian Terdekat",
-      `${meta.icon} ${meta.label} terdeteksi sekitar ${formatDistance(
-        nearestIncident.distance
-      )} dari lokasi Anda.\n\nTetap waspada dan hindari area kejadian.`,
-      [{ text: "Mengerti" }]
-    );
+        "Peringatan Kejadian Terdekat",
+        `${meta.label} terdeteksi sekitar ${formatDistance(
+            nearestIncident.distance
+        )} dari lokasi Anda.\n\nTetap waspada dan hindari area kejadian.`,
+        [{ text: "Mengerti" }]
+        );
   }, [userLocation, nearestIncident]);
 
   const openNearbyIncidentNotification = (incident: IncidentReport) => {

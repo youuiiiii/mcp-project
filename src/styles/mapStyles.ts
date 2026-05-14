@@ -146,8 +146,20 @@ export const mapStyles = StyleSheet.create({
   },
 
   warningText: {
-    marginTop: spacing.xs,
+    flex: 1,
     ...typography.caption,
-    color: colors.primaryDark,
+    color: colors.textMuted,
+  },
+
+    warningContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  focusLocationAction: {
+    marginTop: 10,
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: "900",
   },
 });

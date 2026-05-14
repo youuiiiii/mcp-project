@@ -5,45 +5,50 @@ import IncidentTrustBadge from "../../../components/IncidentTrustBadge";
 import AppCard from "../../../components/ui/AppCard";
 import IconBadge from "../../../components/ui/IconBadge";
 import StatusBadge from "../../../components/ui/StatusBadge";
-import { getIncidentCategoryMeta, getIncidentDisplayMeta } from "../../../constants/incident";
+import {
+  getIncidentCategoryMeta,
+  getIncidentDisplayMeta,
+} from "../../../constants/incident";
 import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
 import { typography } from "../../../theme/typography";
-import type { IncidentReport } from "../../../types/incident";
-import { getIncidentExpiryMessage } from "../../../utils/incidentExpiry";
+import type { IncidentReport, IncidentSeverity } from "../../../types/incident";
+import { getIncidentFreshnessMeta } from "../../../utils/incidentFreshness";
 import {
-    formatIncidentDate,
-    getStatusLabel,
-    getStatusVariant,
+  formatIncidentDate,
+  getStatusLabel,
+  getStatusVariant,
 } from "./threadLabels";
 
 type IncidentOverviewCardProps = {
   incident: IncidentReport;
 };
 
+type SeverityBadgeVariant = "success" | "warning" | "danger";
+
+const SEVERITY_LABEL_BY_VALUE = {
+  low: "Rendah",
+  medium: "Sedang",
+  high: "Tinggi",
+} as const satisfies Record<IncidentSeverity, string>;
+
+const SEVERITY_VARIANT_BY_VALUE = {
+  low: "success",
+  medium: "warning",
+  high: "danger",
+} as const satisfies Record<IncidentSeverity, SeverityBadgeVariant>;
+
 export default function IncidentOverviewCard({
   incident,
 }: IncidentOverviewCardProps) {
-  const meta = getIncidentDisplayMeta({
+  const displayMeta = getIncidentDisplayMeta({
     category: incident.category,
     subcategory: incident.subcategory ?? incident.type,
   });
 
   const categoryMeta = getIncidentCategoryMeta(incident.category);
-
-  function getSeverityVariant(
-    severity: IncidentReport["severity"]
-    ): "success" | "warning" | "danger" {
-    if (severity === "high") {
-        return "danger";
-    }
-
-    if (severity === "medium") {
-        return "warning";
-    }
-
-    return "success";
-    }
+  const freshness = getIncidentFreshnessMeta(incident);
+  const shouldShowFreshnessNotice = freshness.state === "stale";
 
   return (
     <AppCard style={styles.card}>
@@ -53,10 +58,14 @@ export default function IncidentOverviewCard({
           size="lg"
           rounded={false}
           style={{
-            backgroundColor: meta.lightColor,
+            backgroundColor: displayMeta.lightColor,
           }}
         >
-          <Ionicons name={meta.iconName} size={24} color={meta.color} />
+          <Ionicons
+            name={displayMeta.iconName}
+            size={24}
+            color={displayMeta.color}
+          />
         </IconBadge>
 
         <View style={styles.headerInfo}>
@@ -64,9 +73,11 @@ export default function IncidentOverviewCard({
             {incident.title}
           </Text>
 
-          <Text style={styles.type} numberOfLines={1}>
+          <Text style={styles.categoryText} numberOfLines={1}>
             {categoryMeta.label}
-            {meta.label !== categoryMeta.label ? ` • ${meta.label}` : ""}
+            {displayMeta.label !== categoryMeta.label
+              ? ` • ${displayMeta.label}`
+              : ""}
           </Text>
         </View>
 
@@ -81,23 +92,24 @@ export default function IncidentOverviewCard({
 
       <View style={styles.compactBadgeRow}>
         <IncidentTrustBadge incident={incident} variant="compact" />
+
         <StatusBadge
-            label={incident.severity}
-            variant={getSeverityVariant(incident.severity)}
-            size="sm"
+          label={SEVERITY_LABEL_BY_VALUE[incident.severity]}
+          variant={SEVERITY_VARIANT_BY_VALUE[incident.severity]}
+          size="sm"
         />
-        </View>
+      </View>
 
-      <AppCard variant="muted" padding="sm" style={styles.expiryBox}>
-        <View style={styles.expiryHeader}>
-          <Ionicons name="sync-circle" size={18} color={colors.info} />
-          <Text style={styles.expiryTitle}>Status Update Otomatis</Text>
-        </View>
+      {shouldShowFreshnessNotice ? (
+        <AppCard variant="muted" padding="sm" style={styles.freshnessBox}>
+          <View style={styles.freshnessHeader}>
+            <Ionicons name="alert-circle" size={18} color={colors.info} />
+            <Text style={styles.freshnessTitle}>Perlu Update Kondisi</Text>
+          </View>
 
-        <Text style={styles.expiryText}>
-          {getIncidentExpiryMessage(incident)}
-        </Text>
-      </AppCard>
+          <Text style={styles.freshnessText}>{freshness.message}</Text>
+        </AppCard>
+      ) : null}
 
       {incident.imageUri ? (
         <Image source={{ uri: incident.imageUri }} style={styles.image} />
@@ -151,33 +163,33 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: colors.text,
   },
-  type: {
+  categoryText: {
     marginTop: 3,
     ...typography.caption,
     color: colors.textMuted,
   },
   description: {
     ...typography.caption,
-    color: "#475569",
+    color: colors.textMuted,
   },
   compactBadgeRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm,
   },
-  expiryBox: {
+  freshnessBox: {
     gap: spacing.xs,
   },
-  expiryHeader: {
+  freshnessHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
   },
-  expiryTitle: {
+  freshnessTitle: {
     ...typography.label,
     color: colors.text,
   },
-  expiryText: {
+  freshnessText: {
     ...typography.caption,
     color: colors.textMuted,
   },

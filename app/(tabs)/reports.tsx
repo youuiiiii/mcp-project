@@ -16,7 +16,7 @@ import ResolveIncidentModal from "../../src/components/ResolveIncidentModal";
 import VerifyIncidentModal from "../../src/components/VerifyIncidentModal";
 import EmptyState from "../../src/components/ui/EmptyState";
 import LoadingState from "../../src/components/ui/LoadingState";
-import { getIncidentMeta } from "../../src/constants/incident";
+import { getIncidentDisplayMeta } from "../../src/constants/incident";
 import { subscribeToIncidents } from "../../src/services/incidentService";
 import { IncidentReport } from "../../src/types/incident";
 
@@ -117,7 +117,10 @@ export default function ReportsScreen() {
         return true;
       }
 
-      const meta = getIncidentMeta(report.subcategory ?? report.type);
+      const meta = getIncidentDisplayMeta({
+        category: report.category,
+        subcategory: report.subcategory ?? report.type,
+      });
 
       const searchableText = [
         report.title,
