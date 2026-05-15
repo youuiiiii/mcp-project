@@ -12,8 +12,9 @@ import {
   runTransaction,
   serverTimestamp,
   Timestamp,
-  updateDoc,
   UpdateData,
+  updateDoc,
+  where,
 } from "firebase/firestore";
 
 import {
@@ -23,12 +24,14 @@ import {
 } from "../constants/incident";
 import { db } from "../services/firebase";
 import {
+  CreateIncidentContentReportPayload,
   CreateIncidentPayload,
   CreateIncidentReplyPayload,
   CreateIncidentVerificationPayload,
   CreateSOSLogPayload,
   IncidentCategory,
   IncidentConditionStatus,
+  IncidentContentReport,
   IncidentReply,
   IncidentReport,
   IncidentSeverity,
@@ -36,16 +39,61 @@ import {
   IncidentSubcategory,
   IncidentType,
   IncidentVerification,
+  ModerationStatus,
   ResolveIncidentPayload,
   SOSLog,
+  TrustStatus,
   VerificationStatus,
   VerificationType,
 } from "../types/incident";
+
+
 
 const REPORTS_COLLECTION = "reports";
 const SOS_LOGS_COLLECTION = "sos_logs";
 const VERIFICATIONS_COLLECTION = "verifications";
 const REPLIES_COLLECTION = "replies";
+const INCIDENT_CONTENT_REPORTS_COLLECTION = "incident_content_reports";
+
+const normalizeModerationStatus = (value: unknown): ModerationStatus => {
+  if (
+    value === "visible" ||
+    value === "under_review" ||
+    value === "hidden"
+  ) {
+    return value;
+  }
+
+  return "visible";
+};
+
+const normalizeTrustStatus = (value: unknown): TrustStatus => {
+  if (
+    value === "unverified" ||
+    value === "community_confirmed" ||
+    value === "questioned"
+  ) {
+    return value;
+  }
+
+  return "unverified";
+};
+
+const normalizeCommunityUpdateType = (value: unknown) => {
+  if (
+    value === "still_happening" ||
+    value === "getting_worse" ||
+    value === "improving" ||
+    value === "safe_now" ||
+    value === "not_found" ||
+    value === "additional_info"
+  ) {
+    return value;
+  }
+
+  return "additional_info";
+};
+
 
 const toDate = (value: unknown): Date | undefined => {
   if (!value) {
@@ -318,6 +366,14 @@ const mapIncidentDocument = (
     resolutionNote: normalizeNullableString(data.resolutionNote),
     resolvedBy: normalizeNullableString(data.resolvedBy),
     resolvedAt: toDate(data.resolvedAt),
+
+    trustStatus: normalizeTrustStatus(data.trustStatus),
+    moderationStatus: normalizeModerationStatus(data.moderationStatus),
+    moderationReason:
+      typeof data.moderationReason === "string" ? data.moderationReason : null,
+    moderatedBy:
+      typeof data.moderatedBy === "string" ? data.moderatedBy : null,
+    moderatedAt: toDate(data.moderatedAt),
   };
 };
 
@@ -353,6 +409,8 @@ const mapReplyDocument = (
     id: snapshot.id,
     reportId,
     message: normalizeNullableString(data.message) ?? "",
+    updateType: normalizeCommunityUpdateType(data.updateType),
+    moderationStatus: normalizeModerationStatus(data.moderationStatus),
     userName: normalizeNullableString(data.userName),
     userEmail: normalizeNullableString(data.userEmail),
     actorKey: normalizeNullableString(data.actorKey) ?? "",
@@ -379,24 +437,63 @@ const mapSOSDocument = (
   };
 };
 
+const mapIncidentContentReportDocument = (
+  snapshot: QueryDocumentSnapshot<DocumentData>
+): IncidentContentReport => {
+  const data = snapshot.data();
+
+  return {
+    id: snapshot.id,
+    targetType:
+      data.targetType === "incident_reply"
+        ? "incident_reply"
+        : "incident_report",
+    targetId: normalizeNullableString(data.targetId) ?? "",
+    reportId: normalizeNullableString(data.reportId) ?? "",
+    reason:
+      data.reason === "false_information" ||
+      data.reason === "harmful_content" ||
+      data.reason === "spam" ||
+      data.reason === "privacy_issue" ||
+      data.reason === "inappropriate_image" ||
+      data.reason === "other"
+        ? data.reason
+        : "other",
+    note: normalizeNullableString(data.note),
+    status:
+      data.status === "reviewed" || data.status === "dismissed"
+        ? data.status
+        : "open",
+    actorKey: normalizeNullableString(data.actorKey) ?? "",
+    userName: normalizeNullableString(data.userName),
+    userEmail: normalizeNullableString(data.userEmail),
+    reviewedBy: normalizeNullableString(data.reviewedBy),
+    reviewedAt: toDate(data.reviewedAt),
+    createdAt: toDate(data.createdAt),
+  };
+};
+
 export const subscribeToIncidents = (
   onSuccess: (reports: IncidentReport[]) => void,
   onError?: (error: Error) => void
 ) => {
   const reportsQuery = query(
     collection(db, REPORTS_COLLECTION),
+    where("moderationStatus", "==", "visible"),
     orderBy("createdAt", "desc")
   );
 
   return onSnapshot(
     reportsQuery,
-    (snapshot) => {
-      const reports = snapshot.docs
-        .map(mapIncidentDocument)
-        .filter((report): report is IncidentReport => report !== null);
+      (snapshot) => {
+        const reports = snapshot.docs
+          .map(mapIncidentDocument)
+          .filter((report): report is IncidentReport => {
+            return report !== null && report.moderationStatus !== "hidden";
+          });
 
-      onSuccess(reports);
-    },
+        onSuccess(reports);
+      },
     (error) => {
       onError?.(error);
     }
@@ -435,15 +532,18 @@ export const subscribeToIncidentReplies = (
 ) => {
   const repliesQuery = query(
     collection(db, REPORTS_COLLECTION, reportId, REPLIES_COLLECTION),
+    where("moderationStatus", "==", "visible"),
     orderBy("createdAt", "asc")
   );
 
   return onSnapshot(
     repliesQuery,
     (snapshot) => {
-      const items = snapshot.docs.map((item) => {
-        return mapReplyDocument(item, reportId);
-      });
+      const items = snapshot.docs
+        .map((item) => {
+          return mapReplyDocument(item, reportId);
+        })
+        .filter((reply) => reply.moderationStatus !== "hidden");
 
       onSuccess(items);
     },
@@ -451,96 +551,6 @@ export const subscribeToIncidentReplies = (
       onError?.(error);
     }
   );
-};
-
-export const createIncidentReport = async (
-  payload: CreateIncidentPayload
-): Promise<string> => {
-  if (!payload.category || !isIncidentCategory(payload.category)) {
-    throw new Error("Kategori kejadian tidak valid.");
-  }
-
-  const title = payload.title.trim();
-  const description = payload.description.trim();
-  const imageUri = payload.imageUri.trim();
-
-  if (title.length < 5) {
-    throw new Error("Judul laporan minimal 5 karakter.");
-  }
-
-  if (description.length < 10) {
-    throw new Error("Deskripsi laporan minimal 10 karakter.");
-  }
-
-  if (!isIncidentSeverity(payload.severity)) {
-    throw new Error("Tingkat severity laporan tidak valid.");
-  }
-
-  const latitude = normalizeLatitude(payload.latitude);
-  const longitude = normalizeLongitude(payload.longitude);
-
-  if (latitude === null || longitude === null) {
-    throw new Error("Lokasi laporan tidak valid.");
-  }
-
-  if (!imageUri) {
-    throw new Error("Bukti foto laporan wajib diisi.");
-  }
-
-  const subcategory = normalizeSubcategory(payload.subcategory ?? null);
-
-  if (payload.subcategory && !subcategory) {
-    throw new Error("Subkategori laporan tidak valid.");
-  }
-
-  if (
-    subcategory &&
-    getCategoryBySubcategory(subcategory) !== payload.category
-  ) {
-    throw new Error("Subkategori tidak sesuai dengan kategori utama laporan.");
-  }
-
-  const docRef = await addDoc(collection(db, REPORTS_COLLECTION), {
-    category: payload.category,
-
-    /**
-     * Category-first write model.
-     * subcategory remains optional.
-     * type is deprecated and must not be written as a new taxonomy.
-     */
-    subcategory,
-    type: null,
-
-    title,
-    description,
-    latitude,
-    longitude,
-    status: "active",
-    severity: payload.severity,
-    imageUri,
-    address: normalizeNullableString(payload.address),
-    reportedBy: normalizeNullableString(payload.reportedBy) ?? "Anonymous",
-    reporterEmail: normalizeNullableString(payload.reporterEmail),
-
-    verificationStatus: "pending",
-    verificationCount: 0,
-    disputeCount: 0,
-    evidenceCount: 0,
-    replyCount: 0,
-    verifiedBy: [],
-    disputedBy: [],
-
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-    latestActivityAt: serverTimestamp(),
-
-    resolvedImageUri: null,
-    resolutionNote: null,
-    resolvedBy: null,
-    resolvedAt: null,
-  });
-
-  return docRef.id;
 };
 
 export const createIncidentVerification = async (
@@ -640,6 +650,102 @@ export const createIncidentVerification = async (
   return verificationRef.id;
 };
 
+export const createIncidentReport = async (
+  payload: CreateIncidentPayload
+): Promise<string> => {
+  if (!payload.category || !isIncidentCategory(payload.category)) {
+    throw new Error("Kategori kejadian tidak valid.");
+  }
+
+  const title = payload.title.trim();
+  const description = payload.description.trim();
+  const imageUri = payload.imageUri.trim();
+
+  if (title.length < 5) {
+    throw new Error("Judul laporan minimal 5 karakter.");
+  }
+
+  if (description.length < 10) {
+    throw new Error("Deskripsi laporan minimal 10 karakter.");
+  }
+
+  if (!isIncidentSeverity(payload.severity)) {
+    throw new Error("Tingkat severity laporan tidak valid.");
+  }
+
+  const latitude = normalizeLatitude(payload.latitude);
+  const longitude = normalizeLongitude(payload.longitude);
+
+  if (latitude === null || longitude === null) {
+    throw new Error("Lokasi laporan tidak valid.");
+  }
+
+  if (!imageUri) {
+    throw new Error("Bukti foto laporan wajib diisi.");
+  }
+
+  const subcategory = normalizeSubcategory(payload.subcategory ?? null);
+
+  if (payload.subcategory && !subcategory) {
+    throw new Error("Subkategori laporan tidak valid.");
+  }
+
+  if (
+    subcategory &&
+    getCategoryBySubcategory(subcategory) !== payload.category
+  ) {
+    throw new Error("Subkategori tidak sesuai dengan kategori utama laporan.");
+  }
+
+  const docRef = await addDoc(collection(db, REPORTS_COLLECTION), {
+    category: payload.category,
+
+    /**
+     * Category-first write model.
+     * subcategory remains optional.
+     * type is deprecated and must not be written as a new taxonomy.
+     */
+    subcategory,
+    type: null,
+
+    title,
+    description,
+    latitude,
+    longitude,
+    status: "active",
+    severity: payload.severity,
+    imageUri,
+    address: normalizeNullableString(payload.address),
+    reportedBy: normalizeNullableString(payload.reportedBy) ?? "Anonymous",
+    reporterEmail: normalizeNullableString(payload.reporterEmail),
+
+    verificationStatus: "pending",
+    verificationCount: 0,
+    disputeCount: 0,
+    evidenceCount: 0,
+    replyCount: 0,
+    verifiedBy: [],
+    disputedBy: [],
+
+    trustStatus: "unverified",
+    moderationStatus: "visible",
+    moderationReason: null,
+    moderatedBy: null,
+    moderatedAt: null,
+
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    latestActivityAt: serverTimestamp(),
+
+    resolvedImageUri: null,
+    resolutionNote: null,
+    resolvedBy: null,
+    resolvedAt: null,
+  });
+
+  return docRef.id;
+};
+
 export const createIncidentReply = async (
   payload: CreateIncidentReplyPayload
 ): Promise<string> => {
@@ -664,6 +770,8 @@ export const createIncidentReply = async (
 
   const docRef = await addDoc(repliesRef, {
     message: payload.message.trim(),
+    updateType: payload.updateType ?? "additional_info",
+    moderationStatus: "visible",
     userName: normalizeNullableString(payload.userName) ?? "Anonymous",
     userEmail: normalizeNullableString(payload.userEmail),
     actorKey: payload.actorKey,
@@ -679,6 +787,123 @@ export const createIncidentReply = async (
   });
 
   return docRef.id;
+};
+
+export const createIncidentContentReport = async (
+  payload: CreateIncidentContentReportPayload
+) => {
+  if (!payload.reportId.trim()) {
+    throw new Error("Report ID tidak valid.");
+  }
+
+  if (!payload.targetId.trim()) {
+    throw new Error("Target konten tidak valid.");
+  }
+
+  if (!payload.actorKey.trim()) {
+    throw new Error("Identitas pelapor konten tidak valid.");
+  }
+
+  await addDoc(collection(db, INCIDENT_CONTENT_REPORTS_COLLECTION), {
+    targetType: payload.targetType,
+    targetId: payload.targetId,
+    reportId: payload.reportId,
+    reason: payload.reason,
+    note: payload.note?.trim() || null,
+    actorKey: payload.actorKey,
+    userName: normalizeNullableString(payload.userName),
+    userEmail: normalizeNullableString(payload.userEmail),
+    status: "open",
+    reviewedBy: null,
+    reviewedAt: null,
+    createdAt: serverTimestamp(),
+  });
+};
+
+export const subscribeToOpenContentReports = (
+  onSuccess: (reports: IncidentContentReport[]) => void,
+  onError?: (error: Error) => void
+) => {
+  const reportsQuery = query(
+    collection(db, INCIDENT_CONTENT_REPORTS_COLLECTION),
+    where("status", "==", "open"),
+    orderBy("createdAt", "desc")
+  );
+
+  return onSnapshot(
+    reportsQuery,
+    (snapshot) => {
+      const reports = snapshot.docs.map(mapIncidentContentReportDocument);
+      onSuccess(reports);
+    },
+    (error) => {
+      onError?.(error);
+    }
+  );
+};
+
+export const hideIncidentReport = async ({
+  reportId,
+  reason,
+  moderatedBy,
+}: {
+  reportId: string;
+  reason: string;
+  moderatedBy: string;
+}) => {
+  if (!reportId.trim()) {
+    throw new Error("Report ID tidak valid.");
+  }
+
+  await updateDoc(doc(db, REPORTS_COLLECTION, reportId), {
+    moderationStatus: "hidden",
+    moderationReason: reason.trim() || null,
+    moderatedBy,
+    moderatedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const dismissIncidentContentReport = async ({
+  contentReportId,
+  reviewedBy,
+}: {
+  contentReportId: string;
+  reviewedBy: string;
+}) => {
+  if (!contentReportId.trim()) {
+    throw new Error("Content report ID tidak valid.");
+  }
+
+  await updateDoc(
+    doc(db, INCIDENT_CONTENT_REPORTS_COLLECTION, contentReportId),
+    {
+      status: "dismissed",
+      reviewedBy,
+      reviewedAt: serverTimestamp(),
+    }
+  );
+};
+
+export const markIncidentContentReportReviewed = async ({
+  contentReportId,
+  reviewedBy,
+}: {
+  contentReportId: string;
+  reviewedBy: string;
+}) => {
+  if (!contentReportId.trim()) {
+    throw new Error("Content report ID tidak valid.");
+  }
+
+  await updateDoc(
+    doc(db, INCIDENT_CONTENT_REPORTS_COLLECTION, contentReportId),
+    {
+      status: "reviewed",
+      reviewedBy,
+      reviewedAt: serverTimestamp(),
+    }
+  );
 };
 
 export const resolveIncidentReport = async (

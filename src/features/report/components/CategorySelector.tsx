@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import AppCard from "../../../components/ui/AppCard";
 import SectionHeader from "../../../components/ui/SectionHeader";
 import { INCIDENT_CATEGORY_OPTIONS } from "../../../constants/incident";
 import { colors } from "../../../theme/colors";
@@ -23,53 +22,66 @@ export default function CategorySelector({
     <View style={styles.section}>
       <SectionHeader
         title="1. Kategori"
-        subtitle="Pilih jenis kejadian utama. Detailnya cukup dijelaskan di judul dan deskripsi."
+        subtitle="Pilih jenis kejadian utama."
       />
 
-      <View style={styles.grid}>
+      <View style={styles.list}>
         {INCIDENT_CATEGORY_OPTIONS.map((item) => {
           const active = selectedCategory === item.value;
 
           return (
-            <AppCard
+            <Pressable
               key={item.value}
-              padding="sm"
-              onPress={disabled ? undefined : () => onSelectCategory(item.value)}
-              style={[
-                styles.card,
+              disabled={disabled}
+              onPress={() => onSelectCategory(item.value)}
+              style={({ pressed }) => [
+                styles.row,
                 active && {
-                  backgroundColor: item.lightColor,
                   borderColor: item.color,
+                  backgroundColor: item.lightColor,
                 },
+                pressed && styles.pressed,
               ]}
             >
               <View
                 style={[
                   styles.iconBox,
-                  active && {
-                    backgroundColor: item.color,
+                  {
+                    backgroundColor: active ? item.color : colors.surfaceMuted,
                   },
                 ]}
               >
                 <Ionicons
                   name={item.iconName}
-                  size={22}
+                  size={21}
                   color={active ? colors.textInverse : item.color}
                 />
               </View>
 
-              <Text
-                numberOfLines={2}
-                style={[
-                  styles.label,
-                  active && {
-                    color: item.color,
-                  },
-                ]}
-              >
-                {item.label}
-              </Text>
-            </AppCard>
+              <View style={styles.textGroup}>
+                <Text
+                  style={[
+                    styles.label,
+                    active && {
+                      color: item.color,
+                    },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {item.label}
+                </Text>
+
+                <Text style={styles.description} numberOfLines={1}>
+                  {item.shortLabel || item.label}
+                </Text>
+              </View>
+
+              <Ionicons
+                name={active ? "checkmark-circle" : "ellipse-outline"}
+                size={21}
+                color={active ? item.color : colors.textSoft}
+              />
+            </Pressable>
           );
         })}
       </View>
@@ -81,29 +93,44 @@ const styles = StyleSheet.create({
   section: {
     gap: spacing.md,
   },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  list: {
     gap: spacing.sm,
   },
-  card: {
-    width: "48.7%",
-    minHeight: 112,
-    justifyContent: "space-between",
+  row: {
+    minHeight: 68,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  pressed: {
+    opacity: 0.86,
+    transform: [{ scale: 0.99 }],
   },
   iconBox: {
     width: 42,
     height: 42,
     borderRadius: radius.lg,
-    backgroundColor: colors.surfaceMuted,
     alignItems: "center",
     justifyContent: "center",
   },
+  textGroup: {
+    flex: 1,
+  },
   label: {
-    marginTop: spacing.md,
-    fontSize: 13,
-    lineHeight: 17,
+    fontSize: 14,
     fontWeight: "800",
     color: colors.text,
+  },
+  description: {
+    marginTop: 2,
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.textMuted,
   },
 });

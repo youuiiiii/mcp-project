@@ -1,11 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
-import AppCard from "../../../components/ui/AppCard";
 import LoadingState from "../../../components/ui/LoadingState";
-import SectionHeader from "../../../components/ui/SectionHeader";
 import { colors } from "../../../theme/colors";
-import { spacing } from "../../../theme/layout";
+import { radius, spacing } from "../../../theme/layout";
 import { typography } from "../../../theme/typography";
 import type { IncidentReply } from "../../../types/incident";
 import { formatIncidentDate } from "./threadLabels";
@@ -21,19 +19,17 @@ export default function IncidentDiscussionList({
 }: IncidentDiscussionListProps) {
   return (
     <View style={styles.section}>
-      <SectionHeader
-        title="Discussion"
-        subtitle="Update dan informasi tambahan dari warga."
-      />
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Update Warga</Text>
+        <Text style={styles.sectionSubtitle}>
+          {replies.length} update tersedia
+        </Text>
+      </View>
 
-      {loading ? (
-        <AppCard style={styles.loadingCard}>
-          <LoadingState message="Memuat diskusi..." />
-        </AppCard>
-      ) : null}
+      {loading ? <LoadingState message="Memuat update..." /> : null}
 
       {!loading && replies.length === 0 ? (
-        <AppCard variant="muted" style={styles.emptyCard}>
+        <View style={styles.emptyState}>
           <Ionicons
             name="chatbubble-ellipses-outline"
             size={22}
@@ -41,42 +37,22 @@ export default function IncidentDiscussionList({
           />
 
           <View style={styles.emptyTextGroup}>
-            <Text style={styles.emptyTitle}>Belum ada diskusi</Text>
+            <Text style={styles.emptyTitle}>Belum ada update</Text>
             <Text style={styles.emptyText}>
-              Reply pertama akan muncul di sini.
+              Jadilah yang pertama menambahkan informasi.
             </Text>
           </View>
-        </AppCard>
+        </View>
       ) : null}
 
       {!loading && replies.length > 0 ? (
-        <View style={styles.list}>
-          {replies.map((reply) => (
-            <AppCard key={reply.id} style={styles.replyCard}>
-              <View style={styles.replyHeader}>
-                <View style={styles.replyAuthor}>
-                  <View style={styles.avatar}>
-                    <Ionicons
-                      name="person"
-                      size={15}
-                      color={colors.textInverse}
-                    />
-                  </View>
-
-                  <View style={styles.authorTextGroup}>
-                    <Text style={styles.authorName} numberOfLines={1}>
-                      {reply.userName || reply.userEmail || "Anonymous"}
-                    </Text>
-
-                    <Text style={styles.replyDate} numberOfLines={1}>
-                      {formatIncidentDate(reply.createdAt)}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              <Text style={styles.replyMessage}>{reply.message}</Text>
-            </AppCard>
+        <View style={styles.thread}>
+          {replies.map((reply, index) => (
+            <ReplyItem
+              key={reply.id}
+              reply={reply}
+              isLast={index === replies.length - 1}
+            />
           ))}
         </View>
       ) : null}
@@ -84,19 +60,66 @@ export default function IncidentDiscussionList({
   );
 }
 
+function ReplyItem({
+  reply,
+  isLast,
+}: {
+  reply: IncidentReply;
+  isLast: boolean;
+}) {
+  const author = reply.userName || reply.userEmail || "Anonymous";
+
+  return (
+    <View style={styles.replyRow}>
+      <View style={styles.replyRail}>
+        <View style={styles.replyAvatar}>
+          <Ionicons name="person" size={13} color={colors.textInverse} />
+        </View>
+
+        {!isLast ? <View style={styles.replyLine} /> : null}
+      </View>
+
+      <View style={styles.replyBody}>
+        <View style={styles.replyHeader}>
+          <Text style={styles.replyAuthor} numberOfLines={1}>
+            {author}
+          </Text>
+
+          <Text style={styles.replyDot}>·</Text>
+
+          <Text style={styles.replyTime} numberOfLines={1}>
+            {formatIncidentDate(reply.createdAt)}
+          </Text>
+        </View>
+
+        <Text style={styles.replyMessage}>{reply.message}</Text>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   section: {
     marginTop: spacing["2xl"],
-    gap: spacing.md,
   },
-  loadingCard: {
-    minHeight: 90,
-    justifyContent: "center",
+  sectionHeader: {
+    marginBottom: spacing.md,
   },
-  emptyCard: {
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: colors.text,
+  },
+  sectionSubtitle: {
+    marginTop: 2,
+    ...typography.caption,
+    color: colors.textMuted,
+  },
+  emptyState: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
+    paddingVertical: spacing.lg,
   },
   emptyTextGroup: {
     flex: 1,
@@ -111,46 +134,60 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textMuted,
   },
-  list: {
-    gap: spacing.sm,
+  thread: {
+    gap: 0,
   },
-  replyCard: {
-    gap: spacing.sm,
-  },
-  replyHeader: {
+  replyRow: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    gap: spacing.md,
   },
-  replyAuthor: {
-    flex: 1,
-    flexDirection: "row",
+  replyRail: {
+    width: 34,
     alignItems: "center",
-    gap: spacing.sm,
   },
-  avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 999,
+  replyAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
     backgroundColor: colors.info,
     alignItems: "center",
     justifyContent: "center",
   },
-  authorTextGroup: {
+  replyLine: {
     flex: 1,
+    width: 2,
+    marginVertical: 5,
+    backgroundColor: colors.border,
   },
-  authorName: {
+  replyBody: {
+    flex: 1,
+    paddingBottom: spacing.lg,
+  },
+  replyHeader: {
+    minHeight: 32,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  replyAuthor: {
+    maxWidth: "46%",
     fontSize: 13,
     fontWeight: "800",
     color: colors.text,
   },
-  replyDate: {
-    marginTop: 1,
+  replyDot: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.textMuted,
+  },
+  replyTime: {
+    flex: 1,
     fontSize: 11,
     fontWeight: "600",
     color: colors.textMuted,
   },
   replyMessage: {
+    marginTop: 2,
     fontSize: 14,
     lineHeight: 21,
     fontWeight: "500",

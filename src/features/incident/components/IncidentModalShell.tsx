@@ -1,26 +1,26 @@
-import { ReactNode } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import {
   KeyboardAvoidingView,
   Modal,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 
-import AppButton from "../../../components/ui/AppButton";
 import { colors } from "../../../theme/colors";
-import { radius, spacing } from "../../../theme/layout";
+import { radius, shadow, spacing } from "../../../theme/layout";
 import { typography } from "../../../theme/typography";
 
 type IncidentModalShellProps = {
   visible: boolean;
   title: string;
-  subtitle: string;
-  children: ReactNode;
-  footer?: ReactNode;
+  subtitle?: string;
   submitting?: boolean;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
   onClose: () => void;
 };
 
@@ -28,28 +28,29 @@ export default function IncidentModalShell({
   visible,
   title,
   subtitle,
+  submitting = false,
   children,
   footer,
-  submitting = false,
   onClose,
 }: IncidentModalShellProps) {
-  const handleClose = () => {
-    if (!submitting) {
-      onClose();
-    }
-  };
-
   return (
     <Modal
       visible={visible}
       transparent
       animationType="slide"
-      onRequestClose={handleClose}
+      statusBarTranslucent
+      onRequestClose={onClose}
     >
       <View style={styles.backdrop}>
+        <Pressable
+          style={styles.backdropPressArea}
+          disabled={submitting}
+          onPress={onClose}
+        />
+
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={styles.keyboardView}
+          style={styles.sheetWrapper}
         >
           <View style={styles.sheet}>
             <View style={styles.handle} />
@@ -57,24 +58,31 @@ export default function IncidentModalShell({
             <View style={styles.header}>
               <View style={styles.headerText}>
                 <Text style={styles.title}>{title}</Text>
-                <Text style={styles.subtitle}>{subtitle}</Text>
+
+                {subtitle ? (
+                  <Text style={styles.subtitle}>{subtitle}</Text>
+                ) : null}
               </View>
 
-              <AppButton
-                title="×"
-                variant="secondary"
-                size="sm"
+              <Pressable
                 disabled={submitting}
-                onPress={handleClose}
-                style={styles.closeButton}
-                textStyle={styles.closeText}
-              />
+                onPress={onClose}
+                style={({ pressed }) => [
+                  styles.closeButton,
+                  pressed && styles.closeButtonPressed,
+                ]}
+              >
+                <Ionicons name="close" size={22} color={colors.text} />
+              </Pressable>
             </View>
 
             <ScrollView
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={styles.content}
+              contentContainerStyle={[
+                styles.content,
+                footer ? styles.contentWithFooter : null,
+              ]}
             >
               {children}
             </ScrollView>
@@ -90,35 +98,37 @@ export default function IncidentModalShell({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.45)",
     justifyContent: "flex-end",
+    backgroundColor: "rgba(15, 23, 42, 0.35)",
   },
-  keyboardView: {
+  backdropPressArea: {
     flex: 1,
+  },
+  sheetWrapper: {
     justifyContent: "flex-end",
   },
   sheet: {
-    maxHeight: "92%",
+    maxHeight: "90%",
     backgroundColor: colors.background,
     borderTopLeftRadius: radius["3xl"],
     borderTopRightRadius: radius["3xl"],
-    overflow: "hidden",
+    paddingTop: spacing.sm,
+    ...shadow.floating,
   },
   handle: {
+    alignSelf: "center",
     width: 44,
     height: 5,
     borderRadius: radius.full,
-    backgroundColor: "#CBD5E1",
-    alignSelf: "center",
-    marginTop: spacing.md,
+    backgroundColor: colors.border,
     marginBottom: spacing.md,
   },
   header: {
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
     flexDirection: "row",
-    justifyContent: "space-between",
-    gap: spacing.lg,
+    alignItems: "center",
+    gap: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
@@ -126,36 +136,42 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 22,
-    fontWeight: "900",
+    fontSize: 18,
+    fontWeight: "800",
     color: colors.text,
   },
   subtitle: {
-    marginTop: 4,
+    marginTop: 2,
     ...typography.caption,
     color: colors.textMuted,
   },
   closeButton: {
     width: 38,
     height: 38,
-    minHeight: 38,
-    paddingHorizontal: 0,
     borderRadius: radius.full,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  closeText: {
-    fontSize: 22,
-    lineHeight: 24,
+  closeButtonPressed: {
+    opacity: 0.75,
+    transform: [{ scale: 0.96 }],
   },
   content: {
-    padding: spacing.xl,
-    paddingBottom: spacing["2xl"],
+    padding: spacing.lg,
+    paddingBottom: spacing["3xl"],
+  },
+  contentWithFooter: {
+    paddingBottom: spacing.lg,
   },
   footer: {
-    padding: spacing.lg,
-    flexDirection: "row",
-    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
   },
 });

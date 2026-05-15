@@ -58,6 +58,38 @@ export type IncidentConditionStatus =
   | "resolved_but_not_closed"
   | "not_found";
 
+export type ModerationStatus = "visible" | "under_review" | "hidden";
+
+export type TrustStatus =
+  | "unverified"
+  | "community_confirmed"
+  | "questioned";
+
+export type CommunityUpdateType =
+  | "still_happening"
+  | "getting_worse"
+  | "improving"
+  | "safe_now"
+  | "not_found"
+  | "additional_info";
+
+export type IncidentContentReportReason =
+  | "false_information"
+  | "harmful_content"
+  | "spam"
+  | "privacy_issue"
+  | "inappropriate_image"
+  | "other";
+
+export type IncidentContentReportStatus =
+  | "open"
+  | "reviewed"
+  | "dismissed";
+
+export type IncidentContentReportTargetType =
+  | "incident_report"
+  | "incident_reply";
+
 export type Coordinate = {
   latitude: number;
   longitude: number;
@@ -105,6 +137,12 @@ export type IncidentReport = {
   verifiedBy?: string[];
   disputedBy?: string[];
 
+  trustStatus?: TrustStatus;
+  moderationStatus?: ModerationStatus;
+  moderationReason?: string | null;
+  moderatedBy?: string | null;
+  moderatedAt?: Date | null;
+
   createdAt?: Date;
   updatedAt?: Date;
   latestActivityAt?: Date;
@@ -134,9 +172,27 @@ export type IncidentReply = {
   id: string;
   reportId: string;
   message: string;
+  updateType?: CommunityUpdateType;
+  moderationStatus?: ModerationStatus;
   userName?: string | null;
   userEmail?: string | null;
   actorKey: string;
+  createdAt?: Date;
+};
+
+export type IncidentContentReport = {
+  id: string;
+  targetType: IncidentContentReportTargetType;
+  targetId: string;
+  reportId: string;
+  reason: IncidentContentReportReason;
+  note?: string | null;
+  status: IncidentContentReportStatus;
+  actorKey: string;
+  userName?: string | null;
+  userEmail?: string | null;
+  reviewedBy?: string | null;
+  reviewedAt?: Date;
   createdAt?: Date;
 };
 
@@ -182,9 +238,21 @@ export type CreateIncidentVerificationPayload = {
 export type CreateIncidentReplyPayload = {
   reportId: string;
   message: string;
+  updateType?: CommunityUpdateType;
   userName?: string | null;
   userEmail?: string | null;
   actorKey: string;
+};
+
+export type CreateIncidentContentReportPayload = {
+  targetType: IncidentContentReportTargetType;
+  targetId: string;
+  reportId: string;
+  reason: IncidentContentReportReason;
+  note?: string | null;
+  actorKey: string;
+  userName?: string | null;
+  userEmail?: string | null;
 };
 
 export type ResolveIncidentPayload = {

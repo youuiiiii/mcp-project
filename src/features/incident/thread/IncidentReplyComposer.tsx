@@ -1,9 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
-import AppButton from "../../../components/ui/AppButton";
-import AppCard from "../../../components/ui/AppCard";
-import SectionHeader from "../../../components/ui/SectionHeader";
 import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
 
@@ -24,65 +21,70 @@ export default function IncidentReplyComposer({
   onSubmitReply,
 }: IncidentReplyComposerProps) {
   return (
-    <View style={styles.section}>
-      <SectionHeader
-        title="Add Reply"
-        subtitle="Tambahkan informasi singkat jika ada update kondisi."
+    <View style={styles.wrapper}>
+      <TextInput
+        value={replyText}
+        onChangeText={onChangeReplyText}
+        editable={!replySubmitting}
+        placeholder="Tulis update..."
+        placeholderTextColor={colors.textSoft}
+        multiline
+        maxLength={280}
+        style={styles.input}
       />
 
-      <AppCard style={styles.card}>
-        <TextInput
-          value={replyText}
-          onChangeText={onChangeReplyText}
-          editable={!replySubmitting}
-          placeholder="Tulis update singkat..."
-          placeholderTextColor={colors.textSoft}
-          multiline
-          textAlignVertical="top"
-          style={styles.input}
-        />
-
-        <AppButton
-          title="Kirim"
-          variant="primary"
-          size="md"
-          loading={replySubmitting}
-          disabled={!replyIsValid || replySubmitting}
-          onPress={onSubmitReply}
-          leftIcon={
-            <Ionicons name="send" size={16} color={colors.textInverse} />
-          }
-          style={styles.submitButton}
-        />
-      </AppCard>
+      <Pressable
+        disabled={!replyIsValid || replySubmitting}
+        onPress={onSubmitReply}
+        style={({ pressed }) => [
+          styles.sendButton,
+          (!replyIsValid || replySubmitting) && styles.sendButtonDisabled,
+          pressed && replyIsValid && !replySubmitting && styles.sendButtonPressed,
+        ]}
+      >
+        <Ionicons name="send" size={17} color={colors.textInverse} />
+      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  section: {
+  wrapper: {
     marginTop: spacing["2xl"],
-    gap: spacing.md,
-  },
-  card: {
-    gap: spacing.md,
-  },
-  input: {
-    minHeight: 86,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: spacing.sm,
+    padding: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.xl,
+    borderRadius: radius["2xl"],
+    backgroundColor: colors.surface,
+  },
+  input: {
+    flex: 1,
+    maxHeight: 96,
+    minHeight: 42,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingVertical: 10,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: "500",
     color: colors.text,
     textAlignVertical: "top",
-    backgroundColor: colors.surface,
   },
-  submitButton: {
-    alignSelf: "flex-end",
-    minWidth: 128,
+  sendButton: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sendButtonDisabled: {
+    opacity: 0.45,
+  },
+  sendButtonPressed: {
+    opacity: 0.86,
+    transform: [{ scale: 0.96 }],
   },
 });

@@ -1,11 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
+import { type Href, useRouter } from "expo-router";
 import AppButton from "../../components/ui/AppButton";
 import AppCard from "../../components/ui/AppCard";
 import AppScreen from "../../components/ui/AppScreen";
 import LoadingState from "../../components/ui/LoadingState";
 import SectionHeader from "../../components/ui/SectionHeader";
+import { isModeratorEmail } from "../../constants/moderators";
 import { colors } from "../../theme/colors";
 import { radius, shadow, spacing } from "../../theme/layout";
 import { typography } from "../../theme/typography";
@@ -22,6 +24,13 @@ export default function ProfileScreen() {
     stats,
     handleLogout,
   } = useProfileScreen();
+
+  const router = useRouter();
+  const isModerator = isModeratorEmail(userEmail);
+
+  const openModeration = () => {
+    router.push("/moderation" as Href);
+  };
 
   if (loading) {
     return (
@@ -96,6 +105,35 @@ export default function ProfileScreen() {
           />
         </AppCard>
       </View>
+
+      {isModerator ? (
+      <View style={styles.section}>
+        <SectionHeader
+          title="Moderator"
+          subtitle="Tinjau laporan konten dari warga."
+        />
+
+        <AppCard style={styles.moderatorCard}>
+          <View style={styles.moderatorIcon}>
+            <Ionicons name="shield-checkmark" size={22} color={colors.info} />
+          </View>
+
+          <View style={styles.moderatorText}>
+            <Text style={styles.moderatorTitle}>Moderation Queue</Text>
+            <Text style={styles.moderatorDescription}>
+              Review konten yang dilaporkan dan sembunyikan laporan bermasalah.
+            </Text>
+          </View>
+
+          <AppButton
+            title="Open"
+            variant="secondary"
+            size="sm"
+            onPress={openModeration}
+          />
+        </AppCard>
+      </View>
+    ) : null}
 
       <AppButton
         title="Logout"
@@ -185,6 +223,36 @@ function AccountRow({
 }
 
 const styles = StyleSheet.create({
+
+  moderatorCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  moderatorIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.lg,
+    backgroundColor: colors.infoSoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  moderatorText: {
+    flex: 1,
+  },
+  moderatorTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: colors.text,
+  },
+  moderatorDescription: {
+    marginTop: 2,
+    ...typography.caption,
+    color: colors.textMuted,
+  },
+
+
+  
   loadingContainer: {
     justifyContent: "center",
   },

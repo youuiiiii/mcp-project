@@ -1,15 +1,18 @@
-import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, View } from "react-native";
+import { useState } from "react";
+import { Alert } from "react-native";
 
 import IncidentModalShell from "../features/incident/components/IncidentModalShell";
 import IncidentDiscussionList from "../features/incident/thread/IncidentDiscussionList";
 import IncidentOverviewCard from "../features/incident/thread/IncidentOverviewCard";
 import IncidentReplyComposer from "../features/incident/thread/IncidentReplyComposer";
+import ReportContentModal from "../features/incident/thread/ReportContentModal";
 import { useIncidentThread } from "../features/incident/thread/useIncidentThread";
-import { colors } from "../theme/colors";
-import { spacing } from "../theme/layout";
-import type { IncidentReport } from "../types/incident";
-import AppButton from "./ui/AppButton";
+import { useAuth } from "../contexts/AuthContext";
+import { createIncidentContentReport } from "../services/incidentService";
+import type {
+  IncidentContentReportReason,
+  IncidentReport,
+} from "../types/incident";
 
 type IncidentThreadModalProps = {
   visible: boolean;
@@ -24,127 +27,135 @@ export default function IncidentThreadModal({
   visible,
   incident,
   onClose,
-  showActions = false,
-  onOpenVerify,
-  onOpenResolve,
 }: IncidentThreadModalProps) {
+  const { user } = useAuth();
+
   const thread = useIncidentThread({
     visible,
     incident,
     onClose,
   });
 
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [selectedReason, setSelectedReason] =
+    useState<IncidentContentReportReason | null>(null);
+  const [reportNote, setReportNote] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+
   if (!incident) {
     return null;
   }
 
-  const canShowResolveAction =
-    showActions && incident.status === "active" && Boolean(onOpenResolve);
+  const openReportContentModal = () => {
+    setSelectedReason(null);
+    setReportNote("");
+    setReportModalVisible(true);
+  };
 
-  const canShowReopenAction = showActions && incident.status === "resolved";
+  const closeReportContentModal = () => {
+    if (reportSubmitting) {
+      return;
+    }
 
-  const canShowVerifyAction = showActions && Boolean(onOpenVerify);
+    setReportModalVisible(false);
+    setSelectedReason(null);
+    setReportNote("");
+  };
 
-  const shouldShowActions =
-    canShowVerifyAction || canShowResolveAction || canShowReopenAction;
+  const submitContentReport = async () => {
+    try {
+      if (!user) {
+        Alert.alert(
+          "Belum Login",
+          "Silakan login untuk melaporkan konten."
+        );
+        return;
+      }
+
+      if (!selectedReason) {
+        Alert.alert("Alasan Belum Dipilih", "Pilih alasan laporan konten.");
+        return;
+      }
+
+      const actorKey = user.uid || user.email;
+
+      if (!actorKey) {
+        Alert.alert("Identitas Tidak Valid", "Akun Anda tidak valid.");
+        return;
+      }
+
+      setReportSubmitting(true);
+
+    await createIncidentContentReport({
+      targetType: "incident_report",
+      targetId: incident.id,
+      reportId: incident.id,
+      reason: selectedReason,
+      note: reportNote,
+      actorKey,
+      userName: user.displayName ?? user.email ?? "Anonymous",
+      userEmail: user.email ?? null,
+    });
+
+      setReportModalVisible(false);
+      setSelectedReason(null);
+      setReportNote("");
+
+      Alert.alert(
+        "Konten Dilaporkan",
+        "Terima kasih. Laporan ini akan ditinjau."
+      );
+    } catch (error) {
+      Alert.alert(
+        "Gagal Melaporkan Konten",
+        error instanceof Error
+          ? error.message
+          : "Terjadi kesalahan saat mengirim laporan konten."
+      );
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
 
   return (
-    <IncidentModalShell
-      visible={visible}
-      title="Incident Detail"
-      subtitle="Detail laporan dan diskusi warga."
-      onClose={thread.closeThread}
-      submitting={thread.replySubmitting}
-    >
-      <IncidentOverviewCard incident={incident} />
+    <>
+      <IncidentModalShell
+        visible={visible}
+        title="Detail Laporan"
+        subtitle="Informasi kejadian dan update warga."
+        onClose={thread.closeThread}
+        submitting={thread.replySubmitting}
+      >
+        <IncidentOverviewCard
+          incident={incident}
+          onReportContent={openReportContentModal}
+        />
 
-      {shouldShowActions ? (
-        <View style={styles.actions}>
-          {canShowVerifyAction ? (
-            <AppButton
-              title={
-                thread.isOwnIncident
-                  ? "Update Kondisi"
-                  : thread.hasUserVerified
-                    ? "Update Kondisi"
-                    : "Verifikasi"
-              }
-              variant="primary"
-              size="md"
-              onPress={() => onOpenVerify?.(incident)}
-              fullWidth
-              leftIcon={
-                <Ionicons
-                  name="shield-checkmark"
-                  size={18}
-                  color={colors.textInverse}
-                />
-              }
-              style={styles.primaryAction}
-            />
-          ) : null}
+        <IncidentDiscussionList
+          replies={thread.replies}
+          loading={thread.loadingThread}
+        />
 
-          {canShowResolveAction ? (
-            <AppButton
-              title="Selesai"
-              variant="secondary"
-              size="md"
-              onPress={() => onOpenResolve?.(incident)}
-              fullWidth
-              leftIcon={
-                <Ionicons
-                  name="checkmark-done"
-                  size={18}
-                  color={colors.text}
-                />
-              }
-              style={styles.secondaryAction}
-            />
-          ) : null}
+        <IncidentReplyComposer
+          replyText={thread.replyText}
+          replySubmitting={thread.replySubmitting}
+          replyIsValid={thread.replyIsValid}
+          repliesCount={thread.replies.length}
+          onChangeReplyText={thread.setReplyText}
+          onSubmitReply={thread.submitReply}
+        />
+      </IncidentModalShell>
 
-          {canShowReopenAction ? (
-            <AppButton
-              title="Aktifkan Lagi"
-              variant="secondary"
-              size="md"
-              onPress={thread.reopenIncident}
-              fullWidth
-              leftIcon={
-                <Ionicons name="refresh" size={18} color={colors.text} />
-              }
-              style={styles.secondaryAction}
-            />
-          ) : null}
-        </View>
-      ) : null}
-
-      <IncidentDiscussionList
-        replies={thread.replies}
-        loading={thread.loadingThread}
+      <ReportContentModal
+        visible={reportModalVisible}
+        selectedReason={selectedReason}
+        note={reportNote}
+        submitting={reportSubmitting}
+        onSelectReason={setSelectedReason}
+        onChangeNote={setReportNote}
+        onSubmit={submitContentReport}
+        onClose={closeReportContentModal}
       />
-
-      <IncidentReplyComposer
-        replyText={thread.replyText}
-        replySubmitting={thread.replySubmitting}
-        replyIsValid={thread.replyIsValid}
-        repliesCount={thread.replies.length}
-        onChangeReplyText={thread.setReplyText}
-        onSubmitReply={thread.submitReply}
-      />
-    </IncidentModalShell>
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  actions: {
-    marginTop: spacing.md,
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  primaryAction: {
-    flex: 1.4,
-  },
-  secondaryAction: {
-    flex: 1,
-  },
-});
