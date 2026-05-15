@@ -45,6 +45,9 @@ import {
   TrustStatus,
   VerificationStatus,
   VerificationType,
+  CreateIncidentAccuracyVotePayload,
+  IncidentAccuracyVote,
+  ProximityStatus,
 } from "../types/incident";
 
 
@@ -54,6 +57,39 @@ const SOS_LOGS_COLLECTION = "sos_logs";
 const VERIFICATIONS_COLLECTION = "verifications";
 const REPLIES_COLLECTION = "replies";
 const INCIDENT_CONTENT_REPORTS_COLLECTION = "incident_content_reports";
+const ACCURACY_VOTES_COLLECTION = "accuracy_votes";
+
+const normalizeProximityStatus = (value: unknown): ProximityStatus => {
+  if (
+    value === "near_incident" ||
+    value === "not_near_incident" ||
+    value === "unknown"
+  ) {
+    return value;
+  }
+
+  return "unknown";
+};
+
+const normalizeNullableNumber = (value: unknown): number | null => {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return null;
+  }
+
+  return value;
+};
+
+const normalizeAccuracyVoteType = (
+  value: unknown
+): IncidentAccuracyVote["voteType"] => {
+  if (value === "accurate" || value === "inaccurate") {
+    return value;
+  }
+
+  return "accurate";
+};
+
+
 
 const normalizeModerationStatus = (value: unknown): ModerationStatus => {
   if (
@@ -998,4 +1034,100 @@ export const subscribeToSOSLogs = (
       onError?.(error);
     }
   );
+};
+
+const mapAccuracyVoteDocument = (
+  snapshot: QueryDocumentSnapshot<DocumentData>,
+  reportId: string
+): IncidentAccuracyVote => {
+  const data = snapshot.data();
+
+  return {
+    id: snapshot.id,
+    reportId,
+    voteType: normalizeAccuracyVoteType(data.voteType),
+    proximityStatus: normalizeProximityStatus(data.proximityStatus),
+    distanceFromIncidentMeters:
+      normalizeNullableNumber(data.distanceFromIncidentMeters) ?? 0,
+    locationAccuracyMeters:
+      normalizeNullableNumber(data.locationAccuracyMeters) ?? 0,
+    actorKey: normalizeNullableString(data.actorKey) ?? "",
+    createdAt: toDate(data.createdAt),
+    updatedAt: toDate(data.updatedAt),
+  };
+};
+
+export const subscribeToIncidentAccuracyVotes = (
+  reportId: string,
+  onSuccess: (items: IncidentAccuracyVote[]) => void,
+  onError?: (error: Error) => void
+) => {
+  const votesQuery = query(
+    collection(db, REPORTS_COLLECTION, reportId, ACCURACY_VOTES_COLLECTION),
+    orderBy("updatedAt", "desc")
+  );
+
+  return onSnapshot(
+    votesQuery,
+    (snapshot) => {
+      const items = snapshot.docs.map((item) => {
+        return mapAccuracyVoteDocument(item, reportId);
+      });
+
+      onSuccess(items);
+    },
+    (error) => {
+      onError?.(error);
+    }
+  );
+};
+
+export const submitIncidentAccuracyVote = async (
+  payload: CreateIncidentAccuracyVotePayload
+): Promise<void> => {
+  if (!payload.reportId.trim()) {
+    throw new Error("Report ID tidak valid.");
+  }
+
+  if (!payload.actorKey.trim()) {
+    throw new Error("User tidak valid.");
+  }
+
+  if (payload.proximityStatus !== "near_incident") {
+    throw new Error("Anda perlu berada cukup dekat untuk menilai akurasi.");
+  }
+
+  const voteRef = doc(
+    db,
+    REPORTS_COLLECTION,
+    payload.reportId,
+    ACCURACY_VOTES_COLLECTION,
+    payload.actorKey
+  );
+
+  await runTransaction(db, async (transaction) => {
+    const voteSnapshot = await transaction.get(voteRef);
+
+    if (voteSnapshot.exists()) {
+      transaction.update(voteRef, {
+        voteType: payload.voteType,
+        proximityStatus: payload.proximityStatus,
+        distanceFromIncidentMeters: payload.distanceFromIncidentMeters,
+        locationAccuracyMeters: payload.locationAccuracyMeters,
+        updatedAt: serverTimestamp(),
+      });
+
+      return;
+    }
+
+    transaction.set(voteRef, {
+      voteType: payload.voteType,
+      proximityStatus: payload.proximityStatus,
+      distanceFromIncidentMeters: payload.distanceFromIncidentMeters,
+      locationAccuracyMeters: payload.locationAccuracyMeters,
+      actorKey: payload.actorKey,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  });
 };

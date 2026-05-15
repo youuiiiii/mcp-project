@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Alert } from "react-native";
-
+import IncidentAccuracyPanel from "../features/incident/thread/IncidentAccuracyPanel";
 import IncidentModalShell from "../features/incident/components/IncidentModalShell";
 import IncidentDiscussionList from "../features/incident/thread/IncidentDiscussionList";
 import IncidentOverviewCard from "../features/incident/thread/IncidentOverviewCard";
@@ -9,6 +9,7 @@ import ReportContentModal from "../features/incident/thread/ReportContentModal";
 import { useIncidentThread } from "../features/incident/thread/useIncidentThread";
 import { useAuth } from "../contexts/AuthContext";
 import { createIncidentContentReport } from "../services/incidentService";
+import IncidentVoteFeedbackModal from "../features/incident/thread/IncidentVoteFeedbackModal";
 import type {
   IncidentContentReportReason,
   IncidentReport,
@@ -131,6 +132,16 @@ export default function IncidentThreadModal({
           onReportContent={openReportContentModal}
         />
 
+        <IncidentAccuracyPanel
+          accurateCount={thread.accuracySummary.accurateCount}
+          inaccurateCount={thread.accuracySummary.inaccurateCount}
+          currentUserVote={thread.accuracySummary.currentUserVote}
+          label={thread.accuracySummary.label}
+          tone={thread.accuracySummary.tone}
+          submitting={thread.accuracySubmitting}
+          onVote={thread.submitAccuracy}
+        />
+
         <IncidentDiscussionList
           replies={thread.replies}
           loading={thread.loadingThread}
@@ -155,6 +166,14 @@ export default function IncidentThreadModal({
         onChangeNote={setReportNote}
         onSubmit={submitContentReport}
         onClose={closeReportContentModal}
+      />
+
+      <IncidentVoteFeedbackModal
+        visible={thread.voteFeedbackStatus !== "idle"}
+        status={thread.voteFeedbackStatus}
+        message={thread.voteFeedbackMessage}
+        onClose={thread.closeVoteFeedback}
+        onOpenSettings={thread.openLocationSettings}
       />
     </>
   );

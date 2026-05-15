@@ -95,6 +95,34 @@ export type Coordinate = {
   longitude: number;
 };
 
+export type ProximityStatus =
+  | "near_incident"
+  | "not_near_incident"
+  | "unknown";
+
+export type IncidentAccuracyVoteType = "accurate" | "inaccurate";
+
+export type IncidentAccuracyVote = {
+  id: string;
+  reportId: string;
+  voteType: IncidentAccuracyVoteType;
+  proximityStatus: ProximityStatus;
+  distanceFromIncidentMeters: number;
+  locationAccuracyMeters: number;
+  actorKey: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+};
+
+export type CreateIncidentAccuracyVotePayload = {
+  reportId: string;
+  voteType: IncidentAccuracyVoteType;
+  proximityStatus: ProximityStatus;
+  distanceFromIncidentMeters: number;
+  locationAccuracyMeters: number;
+  actorKey: string;
+};
+
 export type IncidentReport = {
   id: string;
 
