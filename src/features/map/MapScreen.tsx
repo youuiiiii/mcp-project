@@ -3,6 +3,7 @@ import { type Href, useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
 import { Pressable, Text, View } from "react-native";
+import SosInfoModal from "../sos/SosInfoModal";
 
 import FilterBar, { type MapFilterValue } from "../../components/FilterBar";
 import IncidentThreadModal from "../../components/IncidentThreadModal";
@@ -23,6 +24,7 @@ const REPORT_ROUTE = "/(tabs)/report" as Href;
 export default function MapScreen() {
   const router = useRouter();
   const mapRef = useRef<MapView | null>(null);
+  const [sosVisible, setSosVisible] = useState(false);
 
   const [selectedFilter, setSelectedFilter] = useState<MapFilterValue>("all");
 
@@ -119,6 +121,17 @@ export default function MapScreen() {
       </View>
 
       <View style={styles.mapActions}>
+
+        <Pressable
+          onPress={() => setSosVisible(true)}
+          style={({ pressed }) => [
+            styles.sosButton,
+            pressed && styles.sosButtonPressed,
+          ]}
+        >
+          <Ionicons name="alert" size={22} color={colors.textInverse} />
+          <Text style={styles.sosButtonText}>SOS</Text>
+        </Pressable>
         <Pressable
           onPress={focusUserLocation}
           style={({ pressed }) => [
@@ -175,6 +188,7 @@ export default function MapScreen() {
           ) : null}
         </View>
       </View>
+      
 
       <IncidentThreadModal
         visible={modalState.isThreadModalVisible}
@@ -182,6 +196,10 @@ export default function MapScreen() {
         onClose={modalState.closeThreadModal}
         showActions={false}
       />
+
+      <SosInfoModal visible={sosVisible} onClose={() => setSosVisible(false)} />
     </View>
+    
   );
+  
 }

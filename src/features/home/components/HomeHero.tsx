@@ -16,6 +16,10 @@ type HomeHeroProps = {
   onOpenProfile: () => void;
   onOpenMap: () => void;
   onOpenReport: () => void;
+  onOpenReports: () => void;
+  onOpenAnalytics: () => void;
+  onOpenEarthquake: () => void;
+  onOpenEducation: () => void;
 };
 
 export default function HomeHero({
@@ -26,6 +30,10 @@ export default function HomeHero({
   onOpenProfile,
   onOpenMap,
   onOpenReport,
+  onOpenReports,
+  onOpenAnalytics,
+  onOpenEarthquake,
+  onOpenEducation,
 }: HomeHeroProps) {
   return (
     <AppCard style={styles.card}>
@@ -75,7 +83,7 @@ export default function HomeHero({
         />
       </View>
 
-      <View style={styles.actionRow}>
+      <View style={styles.actionGrid}>
         <AppButton
           title="Report"
           variant="danger"
@@ -84,7 +92,7 @@ export default function HomeHero({
           leftIcon={
             <Ionicons name="add-circle" size={18} color={colors.textInverse} />
           }
-          style={styles.primaryAction}
+          style={styles.gridAction}
         />
 
         <AppButton
@@ -93,7 +101,45 @@ export default function HomeHero({
           size="md"
           onPress={onOpenMap}
           leftIcon={<Ionicons name="map" size={18} color={colors.text} />}
-          style={styles.secondaryAction}
+          style={styles.gridAction}
+        />
+
+        <AppButton
+          title="Reports"
+          variant="secondary"
+          size="md"
+          onPress={onOpenReports}
+          leftIcon={
+            <Ionicons name="list-circle" size={18} color={colors.text} />
+          }
+          style={styles.gridAction}
+        />
+
+        <AppButton
+          title="Analytics"
+          variant="secondary"
+          size="md"
+          onPress={onOpenAnalytics}
+          leftIcon={<Ionicons name="stats-chart" size={18} color={colors.text} />}
+          style={styles.gridAction}
+        />
+
+        <AppButton
+          title="BMKG"
+          variant="secondary"
+          size="md"
+          onPress={onOpenEarthquake}
+          leftIcon={<Ionicons name="earth" size={18} color={colors.text} />}
+          style={styles.gridAction}
+        />
+
+        <AppButton
+          title="Education"
+          variant="secondary"
+          size="md"
+          onPress={onOpenEducation}
+          leftIcon={<Ionicons name="book" size={18} color={colors.text} />}
+          style={styles.gridAction}
         />
       </View>
     </AppCard>
@@ -215,14 +261,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.textMuted,
   },
-  actionRow: {
+  actionGrid: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.sm,
   },
-  primaryAction: {
-    flex: 1.1,
-  },
-  secondaryAction: {
-    flex: 0.9,
+  gridAction: {
+    width: "48.5%",
   },
 });

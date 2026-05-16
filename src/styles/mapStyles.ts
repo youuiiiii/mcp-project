@@ -193,4 +193,31 @@ export const mapStyles = StyleSheet.create({
     fontWeight: "800",
     color: colors.textMuted,
   },
+
+  sosButton: {
+  minWidth: 74,
+  height: 52,
+  borderRadius: radius.full,
+  backgroundColor: colors.danger,
+  alignItems: "center",
+  justifyContent: "center",
+  flexDirection: "row",
+  gap: 6,
+  paddingHorizontal: spacing.md,
+  borderWidth: 3,
+  borderColor: colors.dangerSoft,
+  ...shadow.floating,
+  shadowColor: colors.dangerDark,
+},
+
+sosButtonPressed: {
+  opacity: 0.88,
+  transform: [{ scale: 0.96 }],
+},
+
+sosButtonText: {
+  fontSize: 12,
+  fontWeight: "900",
+  color: colors.textInverse,
+},
 });

@@ -7,7 +7,11 @@ import type { IncidentReport } from "../../../types/incident";
 
 const MAP_ROUTE = "/(tabs)/map" as Href;
 const REPORT_ROUTE = "/(tabs)/report" as Href;
+const REPORTS_ROUTE = "/(tabs)/reports" as Href;
+const ANALYTICS_ROUTE = "/(tabs)/analytics" as Href;
 const PROFILE_ROUTE = "/(tabs)/profile" as Href;
+const EDUCATION_ROUTE = "/(tabs)/education" as Href;
+const EARTHQUAKE_ROUTE = "/(tabs)/detail" as Href;
 
 export function useHomeScreen() {
   const router = useRouter();
@@ -78,8 +82,24 @@ export function useHomeScreen() {
     router.push(REPORT_ROUTE);
   };
 
+  const openReports = () => {
+    router.push(REPORTS_ROUTE);
+  };
+
+  const openAnalytics = () => {
+    router.push(ANALYTICS_ROUTE);
+  };
+
   const openProfile = () => {
     router.push(PROFILE_ROUTE);
+  };
+
+  const openEducation = () => {
+    router.push(EDUCATION_ROUTE);
+  };
+
+  const openEarthquake = () => {
+    router.push(EARTHQUAKE_ROUTE);
   };
 
   return {
@@ -96,6 +116,10 @@ export function useHomeScreen() {
 
     openMap,
     openReport,
+    openReports,
+    openAnalytics,
     openProfile,
+    openEducation,
+    openEarthquake,
   };
 }

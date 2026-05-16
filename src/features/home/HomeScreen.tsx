@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import HomeEarthquakeSection from "./components/HomeEarthquakeSection";
+import { useBmkgEarthquakes } from "./hooks/useBmkgEarthquakes";
 
 import IncidentThreadModal from "../../components/IncidentThreadModal";
 import AppCard from "../../components/ui/AppCard";
@@ -20,6 +22,7 @@ import { useHomeScreen } from "./hooks/useHomeScreen";
 
 export default function HomeScreen() {
   const home = useHomeScreen();
+  const earthquake = useBmkgEarthquakes();
 
   const [selectedIncident, setSelectedIncident] =
     useState<IncidentReport | null>(null);
@@ -42,6 +45,19 @@ export default function HomeScreen() {
         onOpenProfile={home.openProfile}
         onOpenMap={home.openMap}
         onOpenReport={home.openReport}
+        onOpenReports={home.openReports}
+        onOpenAnalytics={home.openAnalytics}
+        onOpenEarthquake={home.openEarthquake}
+        onOpenEducation={home.openEducation}
+      />
+
+      <HomeEarthquakeSection
+        mainEarthquake={earthquake.mainEarthquake}
+        latestEarthquakes={earthquake.latestEarthquakes}
+        loading={earthquake.loadingEarthquakes}
+        errorMessage={earthquake.earthquakeErrorMessage}
+        onRefresh={earthquake.refreshEarthquakes}
+        onOpenEarthquake={home.openEarthquake}
       />
 
       {home.errorMessage ? (

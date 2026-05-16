@@ -1,7 +1,5 @@
-import { type Href, Redirect } from "expo-router";
+import EarthquakeDetailScreen from "../../src/features/earthquake/EarthquakeDetailScreen";
 
-const HOME_ROUTE = "/(tabs)" as Href;
-
-export default function DetailRoute() {
-  return <Redirect href={HOME_ROUTE} />;
+export default function EarthquakeDetailRoute() {
+  return <EarthquakeDetailScreen />;
 }
