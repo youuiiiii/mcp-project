@@ -1,16 +1,14 @@
 import * as Haptics from "expo-haptics";
+import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Alert } from "react-native";
-import { Linking } from "react-native";
-import type { VoteFeedbackStatus } from "./IncidentVoteFeedbackModal";
-import { Platform } from "react-native";
+import { Linking, Platform } from "react-native";
 
 import { getIncidentDisplayMeta } from "../../../constants/incident";
 import { useAuth } from "../../../contexts/AuthContext";
+import { uploadImageAsync } from "../../../services/cloudinaryService";
 import {
   createIncidentReply,
-  reopenIncidentReport,
   submitIncidentAccuracyVote,
   subscribeToIncidentAccuracyVotes,
   subscribeToIncidentReplies,
@@ -24,6 +22,7 @@ import type {
   IncidentVerification,
 } from "../../../types/incident";
 import { getIncidentProximity } from "../../../utils/proximity";
+import type { VoteFeedbackStatus } from "./IncidentVoteFeedbackModal";
 
 type UseIncidentThreadParams = {
   visible: boolean;
@@ -45,28 +44,24 @@ export function useIncidentThread({
   const [accuracyVotes, setAccuracyVotes] = useState<IncidentAccuracyVote[]>(
     []
   );
+
   const [replyText, setReplyText] = useState("");
+  const [replyImageUri, setReplyImageUri] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<IncidentReply | null>(null);
+
   const [replySubmitting, setReplySubmitting] = useState(false);
   const [accuracySubmitting, setAccuracySubmitting] = useState(false);
   const [loadingThread, setLoadingThread] = useState(false);
-  const lastAccuracyActionAtRef = useRef(0);
 
   const [voteFeedbackStatus, setVoteFeedbackStatus] =
-  useState<VoteFeedbackStatus>("idle");
-  const [voteFeedbackMessage, setVoteFeedbackMessage] = useState<string | undefined>();
+    useState<VoteFeedbackStatus>("idle");
+  const [voteFeedbackMessage, setVoteFeedbackMessage] = useState<
+    string | undefined
+  >();
 
   const voteCooldownRef = useRef(0);
 
-  const proximityCacheRef = useRef<{
-    incidentId: string;
-    createdAtMs: number;
-    proximityStatus: "near_incident" | "not_near_incident" | "unknown";
-    distanceFromIncidentMeters: number;
-    locationAccuracyMeters: number;
-  } | null>(null);
-
   const actorKey = user?.uid ?? null;
-  
 
   const meta = useMemo(() => {
     if (!incident) {
@@ -85,6 +80,8 @@ export function useIncidentThread({
       setReplies([]);
       setAccuracyVotes([]);
       setReplyText("");
+      setReplyImageUri(null);
+      setReplyingTo(null);
       setLoadingThread(false);
       return;
     }
@@ -196,7 +193,50 @@ export function useIncidentThread({
 
   const closeThread = () => {
     setReplyText("");
+    setReplyImageUri(null);
+    setReplyingTo(null);
     onClose();
+  };
+
+  const pickReplyImage = async () => {
+    if (replySubmitting) {
+      return;
+    }
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.75,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    });
+
+    if (result.canceled) {
+      return;
+    }
+
+    const assetUri = result.assets?.[0]?.uri;
+
+    if (assetUri) {
+      setReplyImageUri(assetUri);
+    }
+  };
+
+  const removeReplyImage = () => {
+    setReplyImageUri(null);
+  };
+
+  const startReplyTo = (reply: IncidentReply) => {
+    setReplyingTo(reply);
+  };
+
+  const cancelReplyTo = () => {
+    setReplyingTo(null);
   };
 
   const submitAccuracy = async (voteType: IncidentAccuracyVoteType) => {
@@ -309,6 +349,7 @@ export function useIncidentThread({
       setAccuracySubmitting(false);
     }
   };
+
   const submitReply = async () => {
     try {
       if (!incident) {
@@ -316,22 +357,31 @@ export function useIncidentThread({
       }
 
       if (!user?.uid) {
-        Alert.alert("Belum Login", "Silakan login untuk ikut komentar.");
         return;
       }
 
       const cleanReply = replyText.trim();
 
       if (cleanReply.length < 3) {
-        Alert.alert("Komentar Terlalu Pendek", "Komentar minimal 3 karakter.");
         return;
       }
 
       setReplySubmitting(true);
 
+      const uploadedImageUrl = replyImageUri
+        ? await uploadImageAsync(replyImageUri, "incident-images")
+        : null;
+
+      const parentReplyId = replyingTo?.parentReplyId
+        ? replyingTo.parentReplyId
+        : replyingTo?.id ?? null;
+
       await createIncidentReply({
         reportId: incident.id,
         message: cleanReply,
+        imageUri: uploadedImageUrl,
+        parentReplyId,
+        replyToUserName: replyingTo?.userName ?? replyingTo?.userEmail ?? null,
         updateType: "additional_info",
         userName: user.displayName ?? user.email ?? "Anonymous",
         userEmail: user.email ?? null,
@@ -339,32 +389,14 @@ export function useIncidentThread({
       });
 
       setReplyText("");
+      setReplyImageUri(null);
+      setReplyingTo(null);
+
       Haptics.selectionAsync().catch(() => {});
     } catch (error) {
-      Alert.alert(
-        "Gagal Mengirim Komentar",
-        error instanceof Error ? error.message : "Gagal menyimpan komentar."
-      );
+      console.error("Submit reply error:", error);
     } finally {
       setReplySubmitting(false);
-    }
-  };
-
-  const reopenIncident = async () => {
-    if (!incident) {
-      return;
-    }
-
-    try {
-      await reopenIncidentReport(incident.id);
-      Alert.alert("Incident Aktif Lagi", "Status incident berhasil diaktifkan.");
-    } catch (error) {
-      Alert.alert(
-        "Gagal Update",
-        error instanceof Error
-          ? error.message
-          : "Gagal mengaktifkan ulang incident."
-      );
     }
   };
 
@@ -390,20 +422,31 @@ export function useIncidentThread({
     replies,
     accuracyVotes,
     accuracySummary,
+
     replyText,
     setReplyText,
+    replyImageUri,
+    replyingTo,
     replySubmitting,
     replyIsValid,
+
     accuracySubmitting,
     loadingThread,
     isOwnIncident,
     hasUserVerified,
+
+    voteFeedbackStatus,
+    voteFeedbackMessage,
+
     closeThread,
     submitReply,
     submitAccuracy,
-    reopenIncident,
-    voteFeedbackStatus,
-    voteFeedbackMessage,
+
+    pickReplyImage,
+    removeReplyImage,
+    startReplyTo,
+    cancelReplyTo,
+
     closeVoteFeedback,
     openLocationSettings,
   };

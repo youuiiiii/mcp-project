@@ -8,13 +8,14 @@ import { useAuth } from "../../../contexts/AuthContext";
 import { uploadImageAsync } from "../../../services/cloudinaryService";
 import { createIncidentReport } from "../../../services/incidentService";
 import type {
-    IncidentCategory,
-    IncidentSeverity,
+  IncidentCategory,
+  IncidentSeverity,
 } from "../../../types/incident";
 
 const MAP_ROUTE = "/(tabs)/map" as Href;
 
 const LOCATION_MAX_ACCURACY_METERS = 80;
+const MAX_REPORT_PHOTOS = 4;
 
 export const useReportForm = () => {
   const router = useRouter();
@@ -24,23 +25,35 @@ export const useReportForm = () => {
   const [severity, setSeverity] = useState<IncidentSeverity>("medium");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoUris, setPhotoUris] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   const cleanTitle = title.trim();
   const cleanDescription = description.trim();
 
   const canSubmit = Boolean(
-    user &&
-      category &&
-      cleanTitle.length >= 5 &&
-      cleanDescription.length >= 10 &&
-      photoUri &&
-      !loading
+  user &&
+    category &&
+    cleanTitle.length >= 5 &&
+    cleanDescription.length >= 10 &&
+    photoUris.length >= 1 &&
+    photoUris.length <= MAX_REPORT_PHOTOS &&
+    !loading
   );
+  const appendPhotos = (uris: string[]) => {
+    setPhotoUris((current) => {
+      const merged = Array.from(new Set([...current, ...uris]));
+      return merged.slice(0, MAX_REPORT_PHOTOS);
+    });
+  };
 
   const takePhoto = async () => {
     if (loading) {
+      return;
+    }
+
+    if (photoUris.length >= MAX_REPORT_PHOTOS) {
+      Alert.alert("Maksimal Foto", "Maksimal 4 foto untuk satu laporan.");
       return;
     }
 
@@ -56,9 +69,9 @@ export const useReportForm = () => {
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        aspect: [4, 3],
+        allowsEditing: false,
         quality: 0.75,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
       });
 
       if (result.canceled) {
@@ -72,7 +85,7 @@ export const useReportForm = () => {
         return;
       }
 
-      setPhotoUri(assetUri);
+      appendPhotos([assetUri]);
     } catch (error) {
       Alert.alert(
         "Gagal Membuka Kamera",
@@ -88,6 +101,11 @@ export const useReportForm = () => {
       return;
     }
 
+    if (photoUris.length >= MAX_REPORT_PHOTOS) {
+      Alert.alert("Maksimal Foto", "Maksimal 4 foto untuk satu laporan.");
+      return;
+    }
+
     try {
       const permission =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -100,9 +118,12 @@ export const useReportForm = () => {
         return;
       }
 
+      const remainingSlots = MAX_REPORT_PHOTOS - photoUris.length;
+
       const result = await ImagePicker.launchImageLibraryAsync({
-        allowsEditing: true,
-        aspect: [4, 3],
+        allowsEditing: false,
+        allowsMultipleSelection: true,
+        selectionLimit: remainingSlots,
         quality: 0.75,
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
       });
@@ -111,14 +132,16 @@ export const useReportForm = () => {
         return;
       }
 
-      const assetUri = result.assets?.[0]?.uri;
+      const uris = result.assets
+        .map((asset) => asset.uri)
+        .filter((uri): uri is string => Boolean(uri));
 
-      if (!assetUri) {
+      if (uris.length === 0) {
         Alert.alert("Foto Tidak Valid", "Gagal membaca gambar dari galeri.");
         return;
       }
 
-      setPhotoUri(assetUri);
+      appendPhotos(uris);
     } catch (error) {
       Alert.alert(
         "Gagal Membuka Galeri",
@@ -129,12 +152,16 @@ export const useReportForm = () => {
     }
   };
 
+  const removePhoto = (photoUri: string) => {
+    setPhotoUris((current) => current.filter((item) => item !== photoUri));
+  };
+
   const resetForm = () => {
     setCategory(null);
     setSeverity("medium");
     setTitle("");
     setDescription("");
-    setPhotoUri(null);
+    setPhotoUris([]);
   };
 
   const validateForm = () => {
@@ -158,8 +185,13 @@ export const useReportForm = () => {
       return false;
     }
 
-    if (!photoUri) {
-      Alert.alert("Foto Wajib Ada", "Tambahkan foto bukti kejadian.");
+    if (photoUris.length < 1) {
+      Alert.alert("Foto Wajib Ada", "Tambahkan minimal 1 foto kejadian.");
+      return false;
+    }
+
+    if (photoUris.length > MAX_REPORT_PHOTOS) {
+      Alert.alert("Maksimal Foto", "Maksimal 4 foto untuk satu laporan.");
       return false;
     }
 
@@ -168,7 +200,7 @@ export const useReportForm = () => {
 
   const handleSubmit = async () => {
     try {
-      if (!validateForm() || !user || !category || !photoUri) {
+      if (!validateForm() || !user || !category) {
         return;
       }
 
@@ -200,10 +232,17 @@ export const useReportForm = () => {
         return;
       }
 
-      const uploadedImageUrl = await uploadImageAsync(
-        photoUri,
-        "incident-images"
+      const uploadedImageUrls = await Promise.all(
+        photoUris.map((photoUri) => uploadImageAsync(photoUri, "incident-images"))
       );
+
+      if (uploadedImageUrls.length < 1) {
+        Alert.alert(
+          "Upload Gagal",
+          "Minimal 1 foto bukti wajib berhasil diunggah."
+        );
+        return;
+      }
 
       await createIncidentReport({
         category,
@@ -212,14 +251,14 @@ export const useReportForm = () => {
         title: cleanTitle,
         description: cleanDescription,
         severity,
-        imageUri: uploadedImageUrl,
+        imageUri: uploadedImageUrls[0],
+        imageUris: uploadedImageUrls,
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
         address: null,
         reportedBy: user.displayName || user.email || "Anonymous",
         reporterEmail: user.email ?? null,
       });
-
       Alert.alert("Laporan Terkirim", "Laporan berhasil dikirim ke Map.", [
         {
           text: "Lihat Map",
@@ -260,14 +299,15 @@ export const useReportForm = () => {
     description,
     setDescription,
 
-    photoUri,
-    setPhotoUri,
+    photoUris,
+    setPhotoUris,
 
     loading,
     canSubmit,
 
     takePhoto,
     pickFromGallery,
+    removePhoto,
     handleSubmit,
   };
 };

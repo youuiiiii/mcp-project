@@ -53,25 +53,27 @@ export default function ReportScreen() {
       />
 
       <ReportEvidenceSection
-        photoUri={form.photoUri}
+        photoUris={form.photoUris}
         disabled={form.loading}
         onTakePhoto={form.takePhoto}
         onPickFromGallery={form.pickFromGallery}
-        onRemovePhoto={() => form.setPhotoUri(null)}
+        onRemovePhoto={form.removePhoto}
       />
 
       <AppButton
-        title="Submit Report"
+        title={form.loading ? "Mengirim..." : "Submit Report"}
         variant="danger"
         size="lg"
         fullWidth
         loading={form.loading}
-        disabled={!form.canSubmit}
+        disabled={form.loading}
         onPress={form.handleSubmit}
-        leftIcon={
-          <Ionicons name="send" size={18} color={colors.textInverse} />
-        }
         style={styles.submitButton}
+        leftIcon={
+          form.loading ? null : (
+            <Ionicons name="send" size={18} color={colors.textInverse} />
+          )
+        }
       />
     </AppScreen>
   );

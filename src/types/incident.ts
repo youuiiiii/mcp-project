@@ -126,22 +126,12 @@ export type CreateIncidentAccuracyVotePayload = {
 export type IncidentReport = {
   id: string;
 
-  /**
-   * Main taxonomy.
-   * Ini yang dipakai flow baru.
-   */
   category: IncidentCategory;
 
-  /**
-   * Optional detail taxonomy.
-   * Tidak wajib diisi dari report form.
-   * Boleh dipakai nanti untuk admin review / AI classification / legacy data.
-   */
   subcategory?: IncidentSubcategory | null;
 
   /**
    * Deprecated legacy field.
-   * Jangan dipakai untuk report baru.
    */
   type?: IncidentType | null;
 
@@ -152,7 +142,17 @@ export type IncidentReport = {
   status: IncidentStatus;
   severity: IncidentSeverity;
 
+  /**
+   * Cover image / first evidence image.
+   */
   imageUri?: string | null;
+
+  /**
+   * All evidence images for the report.
+   * The first item should always be the same as imageUri.
+   */
+  imageUris?: string[];
+
   address?: string | null;
   reportedBy?: string | null;
   reporterEmail?: string | null;
@@ -200,6 +200,9 @@ export type IncidentReply = {
   id: string;
   reportId: string;
   message: string;
+  imageUri?: string | null;
+  parentReplyId?: string | null;
+  replyToUserName?: string | null;
   updateType?: CommunityUpdateType;
   moderationStatus?: ModerationStatus;
   userName?: string | null;
@@ -226,16 +229,7 @@ export type IncidentContentReport = {
 
 export type CreateIncidentPayload = {
   category: IncidentCategory;
-
-  /**
-   * Optional only.
-   * Jangan wajibkan user memilih ini.
-   */
   subcategory?: IncidentSubcategory | null;
-
-  /**
-   * Deprecated legacy compatibility only.
-   */
   type?: IncidentType | null;
 
   title: string;
@@ -245,6 +239,8 @@ export type CreateIncidentPayload = {
   severity: IncidentSeverity;
 
   imageUri: string;
+  imageUris?: string[];
+
   address?: string | null;
   reportedBy?: string | null;
   reporterEmail?: string | null;
@@ -266,6 +262,9 @@ export type CreateIncidentVerificationPayload = {
 export type CreateIncidentReplyPayload = {
   reportId: string;
   message: string;
+  imageUri?: string | null;
+  parentReplyId?: string | null;
+  replyToUserName?: string | null;
   updateType?: CommunityUpdateType;
   userName?: string | null;
   userEmail?: string | null;

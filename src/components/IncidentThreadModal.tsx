@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { Alert } from "react-native";
-import IncidentAccuracyPanel from "../features/incident/thread/IncidentAccuracyPanel";
+import { useAuth } from "../contexts/AuthContext";
 import IncidentModalShell from "../features/incident/components/IncidentModalShell";
+import IncidentAccuracyPanel from "../features/incident/thread/IncidentAccuracyPanel";
 import IncidentDiscussionList from "../features/incident/thread/IncidentDiscussionList";
 import IncidentOverviewCard from "../features/incident/thread/IncidentOverviewCard";
 import IncidentReplyComposer from "../features/incident/thread/IncidentReplyComposer";
+import IncidentVoteFeedbackModal from "../features/incident/thread/IncidentVoteFeedbackModal";
 import ReportContentModal from "../features/incident/thread/ReportContentModal";
 import { useIncidentThread } from "../features/incident/thread/useIncidentThread";
-import { useAuth } from "../contexts/AuthContext";
 import { createIncidentContentReport } from "../services/incidentService";
-import IncidentVoteFeedbackModal from "../features/incident/thread/IncidentVoteFeedbackModal";
 import type {
   IncidentContentReportReason,
   IncidentReport,
@@ -145,14 +145,20 @@ export default function IncidentThreadModal({
         <IncidentDiscussionList
           replies={thread.replies}
           loading={thread.loadingThread}
+          onReplyTo={thread.startReplyTo}
         />
 
         <IncidentReplyComposer
           replyText={thread.replyText}
+          replyImageUri={thread.replyImageUri}
+          replyingTo={thread.replyingTo}
           replySubmitting={thread.replySubmitting}
           replyIsValid={thread.replyIsValid}
           repliesCount={thread.replies.length}
           onChangeReplyText={thread.setReplyText}
+          onPickImage={thread.pickReplyImage}
+          onRemoveImage={thread.removeReplyImage}
+          onCancelReplyTo={thread.cancelReplyTo}
           onSubmitReply={thread.submitReply}
         />
       </IncidentModalShell>

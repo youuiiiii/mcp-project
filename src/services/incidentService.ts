@@ -24,11 +24,13 @@ import {
 } from "../constants/incident";
 import { db } from "../services/firebase";
 import {
+  CreateIncidentAccuracyVotePayload,
   CreateIncidentContentReportPayload,
   CreateIncidentPayload,
   CreateIncidentReplyPayload,
   CreateIncidentVerificationPayload,
   CreateSOSLogPayload,
+  IncidentAccuracyVote,
   IncidentCategory,
   IncidentConditionStatus,
   IncidentContentReport,
@@ -40,17 +42,13 @@ import {
   IncidentType,
   IncidentVerification,
   ModerationStatus,
+  ProximityStatus,
   ResolveIncidentPayload,
   SOSLog,
   TrustStatus,
   VerificationStatus,
   VerificationType,
-  CreateIncidentAccuracyVotePayload,
-  IncidentAccuracyVote,
-  ProximityStatus,
 } from "../types/incident";
-
-
 
 const REPORTS_COLLECTION = "reports";
 const SOS_LOGS_COLLECTION = "sos_logs";
@@ -58,6 +56,8 @@ const VERIFICATIONS_COLLECTION = "verifications";
 const REPLIES_COLLECTION = "replies";
 const INCIDENT_CONTENT_REPORTS_COLLECTION = "incident_content_reports";
 const ACCURACY_VOTES_COLLECTION = "accuracy_votes";
+
+const MAX_REPORT_IMAGES = 4;
 
 const normalizeProximityStatus = (value: unknown): ProximityStatus => {
   if (
@@ -88,8 +88,6 @@ const normalizeAccuracyVoteType = (
 
   return "accurate";
 };
-
-
 
 const normalizeModerationStatus = (value: unknown): ModerationStatus => {
   if (
@@ -129,7 +127,6 @@ const normalizeCommunityUpdateType = (value: unknown) => {
 
   return "additional_info";
 };
-
 
 const toDate = (value: unknown): Date | undefined => {
   if (!value) {
@@ -268,7 +265,11 @@ const normalizeStringArray = (value: unknown): string[] => {
     return [];
   }
 
-  return value.filter((item): item is string => typeof item === "string");
+  return value
+    .map((item) => {
+      return typeof item === "string" ? item.trim() : "";
+    })
+    .filter((item) => item.length > 0);
 };
 
 const normalizeCount = (value: unknown): number => {
@@ -367,6 +368,9 @@ const mapIncidentDocument = (
     ? rawType
     : null;
 
+  const coverImageUri = normalizeNullableString(data.imageUri);
+  const storedImageUris = normalizeStringArray(data.imageUris);
+
   return {
     id: snapshot.id,
 
@@ -381,7 +385,14 @@ const mapIncidentDocument = (
     status: normalizeStatus(data.status),
     severity: normalizeSeverity(data.severity),
 
-    imageUri: normalizeNullableString(data.imageUri),
+    imageUri: coverImageUri,
+    imageUris:
+      storedImageUris.length > 0
+        ? storedImageUris
+        : coverImageUri
+          ? [coverImageUri]
+          : [],
+
     address: normalizeNullableString(data.address),
     reportedBy: normalizeNullableString(data.reportedBy),
     reporterEmail: normalizeNullableString(data.reporterEmail),
@@ -405,10 +416,8 @@ const mapIncidentDocument = (
 
     trustStatus: normalizeTrustStatus(data.trustStatus),
     moderationStatus: normalizeModerationStatus(data.moderationStatus),
-    moderationReason:
-      typeof data.moderationReason === "string" ? data.moderationReason : null,
-    moderatedBy:
-      typeof data.moderatedBy === "string" ? data.moderatedBy : null,
+    moderationReason: normalizeNullableString(data.moderationReason),
+    moderatedBy: normalizeNullableString(data.moderatedBy),
     moderatedAt: toDate(data.moderatedAt),
   };
 };
@@ -445,6 +454,9 @@ const mapReplyDocument = (
     id: snapshot.id,
     reportId,
     message: normalizeNullableString(data.message) ?? "",
+    imageUri: normalizeNullableString(data.imageUri),
+    parentReplyId: normalizeNullableString(data.parentReplyId),
+    replyToUserName: normalizeNullableString(data.replyToUserName),
     updateType: normalizeCommunityUpdateType(data.updateType),
     moderationStatus: normalizeModerationStatus(data.moderationStatus),
     userName: normalizeNullableString(data.userName),
@@ -453,7 +465,6 @@ const mapReplyDocument = (
     createdAt: toDate(data.createdAt),
   };
 };
-
 const mapSOSDocument = (
   snapshot: QueryDocumentSnapshot<DocumentData>
 ): SOSLog => {
@@ -509,6 +520,27 @@ const mapIncidentContentReportDocument = (
   };
 };
 
+const mapAccuracyVoteDocument = (
+  snapshot: QueryDocumentSnapshot<DocumentData>,
+  reportId: string
+): IncidentAccuracyVote => {
+  const data = snapshot.data();
+
+  return {
+    id: snapshot.id,
+    reportId,
+    voteType: normalizeAccuracyVoteType(data.voteType),
+    proximityStatus: normalizeProximityStatus(data.proximityStatus),
+    distanceFromIncidentMeters:
+      normalizeNullableNumber(data.distanceFromIncidentMeters) ?? 0,
+    locationAccuracyMeters:
+      normalizeNullableNumber(data.locationAccuracyMeters) ?? 0,
+    actorKey: normalizeNullableString(data.actorKey) ?? "",
+    createdAt: toDate(data.createdAt),
+    updatedAt: toDate(data.updatedAt),
+  };
+};
+
 export const subscribeToIncidents = (
   onSuccess: (reports: IncidentReport[]) => void,
   onError?: (error: Error) => void
@@ -521,15 +553,15 @@ export const subscribeToIncidents = (
 
   return onSnapshot(
     reportsQuery,
-      (snapshot) => {
-        const reports = snapshot.docs
-          .map(mapIncidentDocument)
-          .filter((report): report is IncidentReport => {
-            return report !== null && report.moderationStatus !== "hidden";
-          });
+    (snapshot) => {
+      const reports = snapshot.docs
+        .map(mapIncidentDocument)
+        .filter((report): report is IncidentReport => {
+          return report !== null && report.moderationStatus !== "hidden";
+        });
 
-        onSuccess(reports);
-      },
+      onSuccess(reports);
+    },
     (error) => {
       onError?.(error);
     }
@@ -589,6 +621,31 @@ export const subscribeToIncidentReplies = (
   );
 };
 
+export const subscribeToIncidentAccuracyVotes = (
+  reportId: string,
+  onSuccess: (items: IncidentAccuracyVote[]) => void,
+  onError?: (error: Error) => void
+) => {
+  const votesQuery = query(
+    collection(db, REPORTS_COLLECTION, reportId, ACCURACY_VOTES_COLLECTION),
+    orderBy("updatedAt", "desc")
+  );
+
+  return onSnapshot(
+    votesQuery,
+    (snapshot) => {
+      const items = snapshot.docs.map((item) => {
+        return mapAccuracyVoteDocument(item, reportId);
+      });
+
+      onSuccess(items);
+    },
+    (error) => {
+      onError?.(error);
+    }
+  );
+};
+
 export const createIncidentVerification = async (
   payload: CreateIncidentVerificationPayload
 ): Promise<string> => {
@@ -631,7 +688,6 @@ export const createIncidentVerification = async (
     const currentVerificationCount = normalizeCount(
       reportData.verificationCount
     );
-
     const currentDisputeCount = normalizeCount(reportData.disputeCount);
     const currentEvidenceCount = normalizeCount(reportData.evidenceCount);
 
@@ -695,7 +751,19 @@ export const createIncidentReport = async (
 
   const title = payload.title.trim();
   const description = payload.description.trim();
-  const imageUri = payload.imageUri.trim();
+
+  const imageUris = Array.from(
+    new Set(
+      (payload.imageUris && payload.imageUris.length > 0
+        ? payload.imageUris
+        : [payload.imageUri]
+      )
+        .map((item) => item.trim())
+        .filter(Boolean)
+    )
+  ).slice(0, MAX_REPORT_IMAGES);
+
+  const imageUri = imageUris[0] ?? "";
 
   if (title.length < 5) {
     throw new Error("Judul laporan minimal 5 karakter.");
@@ -718,6 +786,10 @@ export const createIncidentReport = async (
 
   if (!imageUri) {
     throw new Error("Bukti foto laporan wajib diisi.");
+  }
+
+  if (imageUris.length > MAX_REPORT_IMAGES) {
+    throw new Error("Maksimal 4 foto untuk satu laporan.");
   }
 
   const subcategory = normalizeSubcategory(payload.subcategory ?? null);
@@ -750,7 +822,10 @@ export const createIncidentReport = async (
     longitude,
     status: "active",
     severity: payload.severity,
+
     imageUri,
+    imageUris,
+
     address: normalizeNullableString(payload.address),
     reportedBy: normalizeNullableString(payload.reportedBy) ?? "Anonymous",
     reporterEmail: normalizeNullableString(payload.reporterEmail),
@@ -806,6 +881,9 @@ export const createIncidentReply = async (
 
   const docRef = await addDoc(repliesRef, {
     message: payload.message.trim(),
+    imageUri: normalizeNullableString(payload.imageUri),
+    parentReplyId: normalizeNullableString(payload.parentReplyId),
+    replyToUserName: normalizeNullableString(payload.replyToUserName),
     updateType: payload.updateType ?? "additional_info",
     moderationStatus: "visible",
     userName: normalizeNullableString(payload.userName) ?? "Anonymous",
@@ -1029,52 +1107,6 @@ export const subscribeToSOSLogs = (
     (snapshot) => {
       const logs = snapshot.docs.map(mapSOSDocument);
       onSuccess(logs);
-    },
-    (error) => {
-      onError?.(error);
-    }
-  );
-};
-
-const mapAccuracyVoteDocument = (
-  snapshot: QueryDocumentSnapshot<DocumentData>,
-  reportId: string
-): IncidentAccuracyVote => {
-  const data = snapshot.data();
-
-  return {
-    id: snapshot.id,
-    reportId,
-    voteType: normalizeAccuracyVoteType(data.voteType),
-    proximityStatus: normalizeProximityStatus(data.proximityStatus),
-    distanceFromIncidentMeters:
-      normalizeNullableNumber(data.distanceFromIncidentMeters) ?? 0,
-    locationAccuracyMeters:
-      normalizeNullableNumber(data.locationAccuracyMeters) ?? 0,
-    actorKey: normalizeNullableString(data.actorKey) ?? "",
-    createdAt: toDate(data.createdAt),
-    updatedAt: toDate(data.updatedAt),
-  };
-};
-
-export const subscribeToIncidentAccuracyVotes = (
-  reportId: string,
-  onSuccess: (items: IncidentAccuracyVote[]) => void,
-  onError?: (error: Error) => void
-) => {
-  const votesQuery = query(
-    collection(db, REPORTS_COLLECTION, reportId, ACCURACY_VOTES_COLLECTION),
-    orderBy("updatedAt", "desc")
-  );
-
-  return onSnapshot(
-    votesQuery,
-    (snapshot) => {
-      const items = snapshot.docs.map((item) => {
-        return mapAccuracyVoteDocument(item, reportId);
-      });
-
-      onSuccess(items);
     },
     (error) => {
       onError?.(error);
