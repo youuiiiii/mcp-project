@@ -1,101 +1,85 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
-import { getIncidentMeta } from "../constants/incident";
-import { IncidentReport } from "../types/incident";
+import { Ionicons } from "@expo/vector-icons";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
+import { getIncidentDisplayMeta } from "../constants/incident";
+import { colors } from "../theme/colors";
+import { radius, spacing } from "../theme/layout";
+import { typography } from "../theme/typography";
+import type { IncidentReport } from "../types/incident";
+import { shareIncident } from "../utils/shareIncident";
+import AppCard from "./ui/AppCard";
+import IconBadge from "./ui/IconBadge";
+import StatusBadge, { type StatusBadgeVariant } from "./ui/StatusBadge";
 type IncidentCardProps = {
   incident: IncidentReport;
   onPress?: (incident: IncidentReport) => void;
   showImage?: boolean;
 };
 
-const formatDate = (date?: Date) => {
-  if (!date) {
-    return "Waktu tidak tersedia";
-  }
+const STATUS_LABEL = {
+  active: "Aktif",
+  resolved: "Selesai",
+} as const satisfies Record<IncidentReport["status"], string>;
 
-  return date.toLocaleString("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-const getSeverityLabel = (severity: IncidentReport["severity"]) => {
-  if (severity === "high") {
-    return "High";
-  }
-
-  if (severity === "medium") {
-    return "Medium";
-  }
-
-  return "Low";
-};
-
-const getSeverityColor = (severity: IncidentReport["severity"]) => {
-  if (severity === "high") {
-    return "#DC2626";
-  }
-
-  if (severity === "medium") {
-    return "#F59E0B";
-  }
-
-  return "#16A34A";
-};
+const SEVERITY_LABEL = {
+  low: "Rendah",
+  medium: "Sedang",
+  high: "Tinggi",
+} as const satisfies Record<IncidentReport["severity"], string>;
 
 export default function IncidentCard({
   incident,
   onPress,
   showImage = true,
 }: IncidentCardProps) {
-  const meta = getIncidentMeta(incident.type);
-  const severityColor = getSeverityColor(incident.severity);
+  const meta = getIncidentDisplayMeta({
+    category: incident.category,
+    subcategory: incident.subcategory ?? incident.type,
+  });
+
+  const handleShare = () => {
+    shareIncident({
+      type: incident.title || meta.label,
+      description: incident.description,
+      location: {
+        lat: incident.latitude,
+        lng: incident.longitude,
+      },
+      createdAt: incident.createdAt,
+    });
+  };
 
   return (
-    <Pressable
-      onPress={() => onPress?.(incident)}
-      style={({ pressed }) => [
-        styles.card,
-        pressed && onPress ? styles.cardPressed : null,
-      ]}
+    <AppCard
+      onPress={onPress ? () => onPress(incident) : undefined}
+      style={styles.card}
     >
       <View style={styles.header}>
-        <View style={[styles.iconBox, { backgroundColor: meta.lightColor }]}>
-          <Text style={styles.icon}>{meta.icon}</Text>
-        </View>
+        <IconBadge
+          variant="neutral"
+          size="lg"
+          rounded={false}
+          style={{
+            backgroundColor: meta.lightColor,
+          }}
+        >
+          <Ionicons name={meta.iconName} size={24} color={meta.color} />
+        </IconBadge>
 
         <View style={styles.headerContent}>
           <Text style={styles.title} numberOfLines={1}>
-            {incident.title}
+            {incident.title || "Laporan tanpa judul"}
           </Text>
 
           <Text style={styles.category} numberOfLines={1}>
             {meta.label}
           </Text>
         </View>
-
-        <View
-          style={[
-            styles.statusPill,
-            incident.status === "active"
-              ? styles.activePill
-              : styles.resolvedPill,
-          ]}
-        >
-          <Text
-            style={[
-              styles.statusText,
-              incident.status === "active"
-                ? styles.activeText
-                : styles.resolvedText,
-            ]}
-          >
-            {incident.status === "active" ? "Active" : "Resolved"}
-          </Text>
-        </View>
+        <StatusBadge
+          label={STATUS_LABEL[incident.status]}
+          variant={getStatusVariant(incident.status)}
+          size="sm"
+        />
       </View>
 
       <Text style={styles.description} numberOfLines={2}>
@@ -107,52 +91,77 @@ export default function IncidentCard({
       ) : null}
 
       <View style={styles.footer}>
-        <View style={[styles.severityBadge, { backgroundColor: severityColor }]}>
-          <Text style={styles.severityText}>
-            {getSeverityLabel(incident.severity)}
+        <StatusBadge
+          label={SEVERITY_LABEL[incident.severity]}
+          variant={getSeverityVariant(incident.severity)}
+          size="sm"
+        />
+
+        <View style={styles.dateWrap}>
+          <Ionicons name="time-outline" size={14} color={colors.textSoft} />
+          <Text style={styles.date} numberOfLines={1}>
+            {formatDate(incident.createdAt)}
           </Text>
         </View>
 
-        <Text style={styles.date}>{formatDate(incident.createdAt)}</Text>
+        <TouchableOpacity onPress={handleShare} style={styles.shareBtn}>
+          <Ionicons name="share-social-outline" size={18} color={colors.textMuted} />
+        </TouchableOpacity>
       </View>
-    </Pressable>
+    </AppCard>
   );
+}
+
+function formatDate(date?: Date): string {
+  if (!date) {
+    return "Waktu tidak tersedia";
+  }
+
+  return date.toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getStatusVariant(
+  status: IncidentReport["status"]
+): StatusBadgeVariant {
+  if (status === "active") {
+    return "active";
+  }
+
+  if (status === "resolved") {
+    return "resolved";
+  }
+
+  return "neutral";
+}
+
+function getSeverityVariant(
+  severity: IncidentReport["severity"]
+): StatusBadgeVariant {
+  if (severity === "high") {
+    return "danger";
+  }
+
+  if (severity === "medium") {
+    return "warning";
+  }
+
+  return "success";
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#0F172A",
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 2,
-  },
-  cardPressed: {
-    opacity: 0.88,
-    transform: [{ scale: 0.99 }],
+    borderRadius: radius["2xl"],
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-  },
-  iconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  icon: {
-    fontSize: 24,
+    gap: spacing.md,
   },
   headerContent: {
     flex: 1,
@@ -160,68 +169,46 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 15,
     fontWeight: "900",
-    color: "#0F172A",
+    color: colors.text,
   },
   category: {
     marginTop: 3,
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#64748B",
-  },
-  statusPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  activePill: {
-    backgroundColor: "#FEE2E2",
-  },
-  resolvedPill: {
-    backgroundColor: "#DCFCE7",
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: "900",
-  },
-  activeText: {
-    color: "#DC2626",
-  },
-  resolvedText: {
-    color: "#16A34A",
+    ...typography.caption,
+    color: colors.textMuted,
   },
   description: {
-    marginTop: 12,
-    fontSize: 13,
-    fontWeight: "500",
-    color: "#475569",
-    lineHeight: 20,
+    marginTop: spacing.md,
+    ...typography.caption,
+    color: colors.textMuted,
   },
   image: {
-    marginTop: 12,
+    marginTop: spacing.md,
     width: "100%",
     height: 150,
-    borderRadius: 18,
-    backgroundColor: "#E2E8F0",
+    borderRadius: radius.lg,
+    backgroundColor: colors.border,
   },
   footer: {
-    marginTop: 14,
+    marginTop: spacing.md,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: spacing.md,
   },
-  severityBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  severityText: {
-    fontSize: 10,
-    fontWeight: "900",
-    color: "#FFFFFF",
+  dateWrap: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    gap: 5,
   },
   date: {
+    flexShrink: 1,
     fontSize: 11,
     fontWeight: "700",
-    color: "#94A3B8",
+    color: colors.textSoft,
+  },
+  shareBtn: {
+    padding: 4,
   },
 });

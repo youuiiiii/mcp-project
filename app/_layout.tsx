@@ -7,21 +7,7 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <ThemeProvider value={DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="login" />
-          <Stack.Screen name="register" />
-          <Stack.Screen name="(tabs)" />
-
-          <Stack.Screen
-            name="modal"
-            options={{
-              presentation: "modal",
-              headerShown: true,
-              title: "Informasi",
-            }}
-          />
-        </Stack>
-
+        <Stack screenOptions={{ headerShown: false }} />
         <StatusBar style="auto" />
       </ThemeProvider>
     </AuthProvider>

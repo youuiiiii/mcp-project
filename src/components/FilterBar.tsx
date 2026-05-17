@@ -1,83 +1,64 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
 import {
   INCIDENT_CATEGORY_OPTIONS,
-  getCategoryBySubcategory,
-  getIncidentCategoryMeta,
-  getSubcategoriesByCategory,
   isIncidentCategory,
-  isIncidentType,
 } from "../constants/incident";
-import {
-  IncidentCategory,
-  IncidentSubcategory,
-  IncidentType,
-} from "../types/incident";
+import { colors } from "../theme/colors";
+import { radius, spacing } from "../theme/layout";
+import type { IncidentCategory } from "../types/incident";
 
-export type MapFilterValue =
-  | "all"
-  | "active"
-  | "resolved"
-  | IncidentCategory
-  | IncidentType;
+export type MapFilterValue = "all" | "active" | "resolved" | IncidentCategory;
+
+type AppIconName = keyof typeof Ionicons.glyphMap;
 
 type FilterBarProps = {
   selectedFilter: MapFilterValue;
   onChange: (value: MapFilterValue) => void;
 };
 
-const STATIC_FILTERS: {
+type FilterItem = {
   value: MapFilterValue;
   label: string;
-  icon: string;
+  iconName: AppIconName;
   color: string;
-  lightColor: string;
-}[] = [
-  {
-    value: "all",
-    label: "Semua",
-    icon: "🌐",
-    color: "#0F766E",
-    lightColor: "#CCFBF1",
-  },
-  {
-    value: "active",
-    label: "Aktif",
-    icon: "🚨",
-    color: "#DC2626",
-    lightColor: "#FEE2E2",
-  },
-  {
-    value: "resolved",
-    label: "Selesai",
-    icon: "✅",
-    color: "#16A34A",
-    lightColor: "#DCFCE7",
-  },
-];
-
-const getActiveCategory = (
-  selectedFilter: MapFilterValue
-): IncidentCategory | null => {
-  if (isIncidentCategory(selectedFilter)) {
-    return selectedFilter;
-  }
-
-  if (isIncidentType(selectedFilter)) {
-    return getCategoryBySubcategory(selectedFilter as IncidentSubcategory);
-  }
-
-  return null;
 };
 
-export default function FilterBar({ selectedFilter, onChange }: FilterBarProps) {
-  const activeCategory = getActiveCategory(selectedFilter);
+const STATIC_FILTERS: FilterItem[] = [
+  { value: "all", label: "All", iconName: "globe", color: colors.dark },
+  { value: "active", label: "Active", iconName: "radio", color: colors.danger },
+  { value: "resolved", label: "Resolved", iconName: "checkmark-circle", color: colors.success },
+];
 
-  const subcategoryOptions = activeCategory
-    ? getSubcategoriesByCategory(activeCategory)
-    : [];
+export default function FilterBar({ selectedFilter, onChange }: FilterBarProps) {
+  const [dropdownVisible, setDropdownVisible] = useState(false);
+
+  const selectedCategory = isIncidentCategory(selectedFilter)
+    ? INCIDENT_CATEGORY_OPTIONS.find((c) => c.value === selectedFilter)
+    : null;
+
+  const handleSelectCategory = (value: IncidentCategory) => {
+    onChange(value);
+    setDropdownVisible(false);
+  };
+
+  const handleClearCategory = () => {
+    onChange("all");
+    setDropdownVisible(false);
+  };
 
   return (
-    <View style={styles.wrapper}>
+    <View>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -85,243 +66,168 @@ export default function FilterBar({ selectedFilter, onChange }: FilterBarProps) 
       >
         {STATIC_FILTERS.map((item) => {
           const active = selectedFilter === item.value;
-
           return (
             <Pressable
               key={item.value}
               onPress={() => onChange(item.value)}
               style={({ pressed }) => [
-                styles.button,
-                active && {
-                  backgroundColor: item.lightColor,
-                  borderColor: item.color,
-                },
-                pressed && styles.buttonPressed,
+                styles.chip,
+                active && { backgroundColor: item.color, borderColor: item.color },
+                pressed && styles.pressed,
               ]}
             >
-              <View
-                style={[
-                  styles.iconCircle,
-                  active && {
-                    backgroundColor: item.color,
-                  },
-                ]}
-              >
-                <Text style={styles.icon}>{item.icon}</Text>
-              </View>
-
-              <Text
-                numberOfLines={1}
-                style={[
-                  styles.label,
-                  active && {
-                    color: item.color,
-                    fontWeight: "900",
-                  },
-                ]}
-              >
+              <Ionicons
+                name={item.iconName}
+                size={15}
+                color={active ? colors.textInverse : item.color}
+              />
+              <Text style={[styles.label, active && { color: colors.textInverse }]}>
                 {item.label}
               </Text>
             </Pressable>
           );
         })}
 
-        {INCIDENT_CATEGORY_OPTIONS.map((item) => {
-          const active =
-            selectedFilter === item.value || activeCategory === item.value;
-
-          return (
-            <Pressable
-              key={item.value}
-              onPress={() => onChange(item.value)}
-              style={({ pressed }) => [
-                styles.button,
-                active && {
-                  backgroundColor: item.lightColor,
-                  borderColor: item.color,
-                },
-                pressed && styles.buttonPressed,
-              ]}
-            >
-              <View
-                style={[
-                  styles.iconCircle,
-                  active && {
-                    backgroundColor: item.color,
-                  },
-                ]}
-              >
-                <Text style={styles.icon}>{item.icon}</Text>
-              </View>
-
-              <Text
-                numberOfLines={2}
-                style={[
-                  styles.label,
-                  active && {
-                    color: item.color,
-                    fontWeight: "900",
-                  },
-                ]}
-              >
-                {item.label}
-              </Text>
-            </Pressable>
-          );
-        })}
+        {/* Dropdown trigger */}
+        <Pressable
+          onPress={() => setDropdownVisible(true)}
+          style={({ pressed }) => [
+            styles.chip,
+            selectedCategory && {
+              backgroundColor: selectedCategory.color,
+              borderColor: selectedCategory.color,
+            },
+            pressed && styles.pressed,
+          ]}
+        >
+          <Ionicons
+            name={selectedCategory ? selectedCategory.iconName : "filter"}
+            size={15}
+            color={selectedCategory ? colors.textInverse : colors.text}
+          />
+          <Text style={[styles.label, selectedCategory && { color: colors.textInverse }]}>
+            {selectedCategory ? selectedCategory.shortLabel : "Category"}
+          </Text>
+          <Ionicons
+            name="chevron-down"
+            size={13}
+            color={selectedCategory ? colors.textInverse : colors.text}
+          />
+        </Pressable>
       </ScrollView>
 
-      {activeCategory ? (
-        <View style={styles.subcategorySection}>
-          <Text style={styles.subcategoryTitle}>
-            Subkategori {getIncidentCategoryMeta(activeCategory).label}
-          </Text>
+      {/* Dropdown Modal */}
+      <Modal
+        visible={dropdownVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDropdownVisible(false)}
+      >
+        <Pressable style={styles.backdrop} onPress={() => setDropdownVisible(false)}>
+          <View style={styles.dropdown}>
+            <Text style={styles.dropdownTitle}>Filter by Category</Text>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.subcategoryContainer}
-          >
-            <Pressable
-              onPress={() => onChange(activeCategory)}
-              style={({ pressed }) => [
-                styles.subcategoryButton,
-                selectedFilter === activeCategory && {
-                  backgroundColor: getIncidentCategoryMeta(activeCategory).color,
-                  borderColor: getIncidentCategoryMeta(activeCategory).color,
-                },
-                pressed && styles.buttonPressed,
-              ]}
+            <TouchableOpacity
+              style={[styles.dropdownItem, !selectedCategory && styles.dropdownItemActive]}
+              onPress={handleClearCategory}
             >
-              <Text
-                style={[
-                  styles.subcategoryText,
-                  selectedFilter === activeCategory &&
-                    styles.subcategoryTextActive,
-                ]}
-              >
-                Semua
-              </Text>
-            </Pressable>
+              <Ionicons name="globe" size={18} color={colors.dark} />
+              <Text style={styles.dropdownItemLabel}>All Categories</Text>
+              {!selectedCategory && (
+                <Ionicons name="checkmark" size={16} color={colors.dark} />
+              )}
+            </TouchableOpacity>
 
-            {subcategoryOptions.map((item) => {
+            {INCIDENT_CATEGORY_OPTIONS.map((item) => {
               const active = selectedFilter === item.value;
-
               return (
-                <Pressable
+                <TouchableOpacity
                   key={item.value}
-                  onPress={() => onChange(item.value)}
-                  style={({ pressed }) => [
-                    styles.subcategoryButton,
-                    active && {
-                      backgroundColor: item.color,
-                      borderColor: item.color,
-                    },
-                    pressed && styles.buttonPressed,
-                  ]}
+                  style={[styles.dropdownItem, active && { backgroundColor: item.lightColor }]}
+                  onPress={() => handleSelectCategory(item.value)}
                 >
-                  <Text style={styles.subcategoryIcon}>{item.icon}</Text>
-
-                  <Text
-                    numberOfLines={1}
-                    style={[
-                      styles.subcategoryText,
-                      active && styles.subcategoryTextActive,
-                    ]}
-                  >
+                  <Ionicons name={item.iconName} size={18} color={item.color} />
+                  <Text style={[styles.dropdownItemLabel, active && { color: item.color }]}>
                     {item.label}
                   </Text>
-                </Pressable>
+                  {active && (
+                    <Ionicons name="checkmark" size={16} color={item.color} />
+                  )}
+                </TouchableOpacity>
               );
             })}
-          </ScrollView>
-        </View>
-      ) : null}
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    gap: 10,
-  },
   container: {
-    gap: 10,
-    paddingHorizontal: 2,
-    paddingVertical: 2,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs,
   },
-  button: {
-    minWidth: 92,
-    maxWidth: 130,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  buttonPressed: {
-    opacity: 0.82,
-    transform: [{ scale: 0.98 }],
-  },
-  iconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "#F1F5F9",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 6,
-  },
-  icon: {
-    fontSize: 20,
-  },
-  label: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: "#475569",
-    textAlign: "center",
-    lineHeight: 14,
-  },
-  subcategorySection: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 20,
-    padding: 10,
-  },
-  subcategoryTitle: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: "#0F172A",
-    marginBottom: 8,
-  },
-  subcategoryContainer: {
-    gap: 8,
-  },
-  subcategoryButton: {
+  chip: {
+    minHeight: 36,
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    backgroundColor: "#F8FAFC",
+    gap: 7,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.full,
+    backgroundColor: "rgba(255,255,255,0.94)",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
+    borderColor: colors.border,
   },
-  subcategoryIcon: {
-    fontSize: 15,
+  pressed: {
+    opacity: 0.84,
+    transform: [{ scale: 0.98 }],
   },
-  subcategoryText: {
+  label: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#475569",
-    maxWidth: 150,
+    color: colors.text,
   },
-  subcategoryTextActive: {
-    color: "#FFFFFF",
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    justifyContent: "flex-start",
+    paddingTop: 160,
+    paddingHorizontal: spacing.lg,
+  },
+  dropdown: {
+    backgroundColor: colors.background,
+    borderRadius: radius["2xl"],
+    padding: spacing.md,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  dropdownTitle: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.sm,
+  },
+  dropdownItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.lg,
+  },
+  dropdownItemActive: {
+    backgroundColor: colors.surfaceMuted,
+  },
+  dropdownItemLabel: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.text,
   },
 });

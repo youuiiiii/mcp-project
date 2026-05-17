@@ -74,11 +74,15 @@ export async function requestNotificationPermission() {
 }
 
 function parseBmkgCoordinate(value?: string) {
-  if (!value) return null;
+  if (!value) {
+    return null;
+  }
 
   const number = Number.parseFloat(value);
 
-  if (Number.isNaN(number)) return null;
+  if (Number.isNaN(number)) {
+    return null;
+  }
 
   const upperValue = value.toUpperCase();
 
@@ -111,14 +115,15 @@ function getDistanceKm(
 }
 
 export async function checkAndNotifyNearbyDisaster(
-  gempaList: BmkgEarthquake[]
+  earthquakeList: BmkgEarthquake[]
 ) {
   try {
-    if (!Array.isArray(gempaList) || gempaList.length === 0) {
+    if (!Array.isArray(earthquakeList) || earthquakeList.length === 0) {
       return;
     }
 
-    const locationPermission = await Location.requestForegroundPermissionsAsync();
+    const locationPermission =
+      await Location.requestForegroundPermissionsAsync();
 
     if (locationPermission.status !== "granted") {
       return;
@@ -131,21 +136,28 @@ export async function checkAndNotifyNearbyDisaster(
     const userLat = location.coords.latitude;
     const userLon = location.coords.longitude;
 
-    for (const gempa of gempaList) {
-      const gempaLat = parseBmkgCoordinate(gempa.Lintang);
-      const gempaLon = parseBmkgCoordinate(gempa.Bujur);
+    for (const earthquake of earthquakeList) {
+      const earthquakeLat = parseBmkgCoordinate(earthquake.Lintang);
+      const earthquakeLon = parseBmkgCoordinate(earthquake.Bujur);
 
-      if (gempaLat === null || gempaLon === null) {
+      if (earthquakeLat === null || earthquakeLon === null) {
         continue;
       }
 
-      const distance = getDistanceKm(userLat, userLon, gempaLat, gempaLon);
+      const distance = getDistanceKm(
+        userLat,
+        userLon,
+        earthquakeLat,
+        earthquakeLon
+      );
 
       if (distance <= NOTIFICATION_DISTANCE_KM) {
-        const title = `⚠️ Gempa M${gempa.Magnitude ?? "-"} Terdeteksi`;
-        const body = `${gempa.Wilayah ?? "Lokasi tidak diketahui"} - ${
-          gempa.Jam ?? "-"
-        }. Jarak sekitar ${Math.round(distance)} km dari kamu.`;
+        const magnitude = earthquake.Magnitude ?? "-";
+
+        const title = `Gempa M${magnitude} Terdeteksi`;
+        const body = `${earthquake.Wilayah ?? "Lokasi tidak diketahui"} - ${
+          earthquake.Jam ?? "-"
+        }. Jarak sekitar ${Math.round(distance)} km dari lokasi Anda.`;
 
         const Notifications = await getNotificationsModule();
 
@@ -161,7 +173,7 @@ export async function checkAndNotifyNearbyDisaster(
             sound: true,
             data: {
               type: "nearby_earthquake",
-              earthquake: gempa,
+              earthquake,
               distanceKm: Math.round(distance),
             },
           },

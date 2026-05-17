@@ -1,85 +1,73 @@
-import { IncidentReport } from "../types/incident";
-import { getIncidentNeedsUpdate } from "./incidentExpiry";
+import type { IncidentReport } from "../types/incident";
 
-export type IncidentTrustLevel =
-  | "pending"
-  | "verified"
-  | "disputed"
-  | "needs_update"
-  | "resolved";
+export type IncidentTrustLevel = "pending" | "verified" | "disputed" | "resolved";
 
 export type IncidentTrustMeta = {
   level: IncidentTrustLevel;
   label: string;
   shortLabel: string;
   description: string;
-  icon: string;
-  shortIcon: string;
-  color: string;
-  lightColor: string;
+};
+
+export type IncidentTrustSummary = {
+  verificationCount: number;
+  disputeCount: number;
+  evidenceCount: number;
+  replyCount: number;
 };
 
 const VERIFIED_THRESHOLD = 2;
 const DISPUTED_THRESHOLD = 2;
 
-export const INCIDENT_TRUST_META: Record<IncidentTrustLevel, IncidentTrustMeta> =
-  {
-    pending: {
-      level: "pending",
-      label: "Menunggu Verifikasi",
-      shortLabel: "Pending",
-      description:
-        "Laporan baru dibuat dan masih membutuhkan bukti/verifikasi dari user sekitar.",
-      icon: "🕒",
-      shortIcon: "?",
-      color: "#F59E0B",
-      lightColor: "#FEF3C7",
-    },
-    verified: {
-      level: "verified",
-      label: "Terverifikasi Komunitas",
-      shortLabel: "Verified",
-      description:
-        "Incident sudah mendapat cukup bukti valid dari user lain di sekitar lokasi.",
-      icon: "✅",
-      shortIcon: "✓",
-      color: "#16A34A",
-      lightColor: "#DCFCE7",
-    },
-    disputed: {
-      level: "disputed",
-      label: "Dipertanyakan",
-      shortLabel: "Disputed",
-      description:
-        "Ada beberapa verifikasi yang menyatakan laporan tidak sesuai atau tidak ditemukan.",
-      icon: "⚠️",
-      shortIcon: "!",
-      color: "#DC2626",
-      lightColor: "#FEE2E2",
-    },
-    needs_update: {
-      level: "needs_update",
-      label: "Perlu Update",
-      shortLabel: "Update",
-      description:
-        "Laporan aktif sudah melewati batas waktu update. User sekitar disarankan mengirim kondisi terbaru.",
-      icon: "🔄",
-      shortIcon: "↻",
-      color: "#9333EA",
-      lightColor: "#F3E8FF",
-    },
-    resolved: {
-      level: "resolved",
-      label: "Selesai",
-      shortLabel: "Resolved",
-      description:
-        "Incident sudah ditandai selesai dengan bukti foto dan catatan penyelesaian.",
-      icon: "🏁",
-      shortIcon: "✓",
-      color: "#64748B",
-      lightColor: "#F1F5F9",
-    },
+export const INCIDENT_TRUST_META = {
+  pending: {
+    level: "pending",
+    label: "Menunggu Verifikasi",
+    shortLabel: "Pending",
+    description:
+      "Laporan masih membutuhkan verifikasi atau bukti tambahan dari warga sekitar.",
+  },
+  verified: {
+    level: "verified",
+    label: "Terverifikasi Komunitas",
+    shortLabel: "Verified",
+    description:
+      "Laporan sudah mendapat verifikasi valid yang cukup dari warga sekitar.",
+  },
+  disputed: {
+    level: "disputed",
+    label: "Dipertanyakan",
+    shortLabel: "Disputed",
+    description:
+      "Ada cukup laporan balik yang menyatakan kondisi tidak sesuai atau tidak ditemukan.",
+  },
+  resolved: {
+    level: "resolved",
+    label: "Selesai",
+    shortLabel: "Resolved",
+    description:
+      "Laporan sudah ditandai selesai dengan bukti dan catatan penyelesaian.",
+  },
+} as const satisfies Record<IncidentTrustLevel, IncidentTrustMeta>;
+
+const getSafeCount = (value?: number): number => {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return 0;
+  }
+
+  return Math.max(0, value);
+};
+
+export const getIncidentTrustSummaryData = (
+  incident: IncidentReport
+): IncidentTrustSummary => {
+  return {
+    verificationCount: getSafeCount(incident.verificationCount),
+    disputeCount: getSafeCount(incident.disputeCount),
+    evidenceCount: getSafeCount(incident.evidenceCount),
+    replyCount: getSafeCount(incident.replyCount),
   };
+};
 
 export const getIncidentTrustLevel = (
   incident: IncidentReport
@@ -88,24 +76,28 @@ export const getIncidentTrustLevel = (
     return "resolved";
   }
 
-  const verificationCount = incident.verificationCount ?? 0;
-  const disputeCount = incident.disputeCount ?? 0;
+  const { verificationCount, disputeCount } =
+    getIncidentTrustSummaryData(incident);
 
-  if (
-    disputeCount >= DISPUTED_THRESHOLD &&
-    disputeCount >= verificationCount
-  ) {
+  if (incident.verificationStatus === "disputed") {
     return "disputed";
   }
 
-  if (getIncidentNeedsUpdate(incident)) {
-    return "needs_update";
+  if (incident.verificationStatus === "verified") {
+    return "verified";
   }
 
-  if (
-    verificationCount >= VERIFIED_THRESHOLD &&
-    verificationCount > disputeCount
-  ) {
+  const hasEnoughDisputes =
+    disputeCount >= DISPUTED_THRESHOLD && disputeCount >= verificationCount;
+
+  if (hasEnoughDisputes) {
+    return "disputed";
+  }
+
+  const hasEnoughVerifications =
+    verificationCount >= VERIFIED_THRESHOLD && verificationCount > disputeCount;
+
+  if (hasEnoughVerifications) {
     return "verified";
   }
 
@@ -115,16 +107,20 @@ export const getIncidentTrustLevel = (
 export const getIncidentTrustMeta = (
   incident: IncidentReport
 ): IncidentTrustMeta => {
-  const level = getIncidentTrustLevel(incident);
+  return INCIDENT_TRUST_META[getIncidentTrustLevel(incident)];
+};
 
-  return INCIDENT_TRUST_META[level];
+export const formatIncidentTrustSummary = (
+  summary: IncidentTrustSummary
+): string => {
+  return [
+    `Verifikasi valid: ${summary.verificationCount}`,
+    `Tidak sesuai: ${summary.disputeCount}`,
+    `Bukti foto: ${summary.evidenceCount}`,
+    `Diskusi: ${summary.replyCount}`,
+  ].join("\n");
 };
 
 export const getIncidentTrustSummary = (incident: IncidentReport): string => {
-  const verificationCount = incident.verificationCount ?? 0;
-  const disputeCount = incident.disputeCount ?? 0;
-  const evidenceCount = incident.evidenceCount ?? 0;
-  const replyCount = incident.replyCount ?? 0;
-
-  return `Valid: ${verificationCount}\nTidak sesuai: ${disputeCount}\nBukti foto: ${evidenceCount}\nDiskusi: ${replyCount}`;
+  return formatIncidentTrustSummary(getIncidentTrustSummaryData(incident));
 };

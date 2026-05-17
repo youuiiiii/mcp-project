@@ -69,7 +69,7 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
-          <Text style={styles.logo}>🚨 SIGAP</Text>
+          <Text style={styles.logo}>SIGAP</Text>
           <Text style={styles.headerSubtitle}>
             Disaster Early Warning System
           </Text>

@@ -1,19 +1,30 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
+
+import { colors } from "../../theme/colors";
+import { radius, spacing } from "../../theme/layout";
+import { typography } from "../../theme/typography";
+import IconBadge from "./IconBadge";
 
 type EmptyStateProps = {
-  icon?: string;
   title: string;
   message?: string;
+  iconName?: keyof typeof Ionicons.glyphMap;
+  style?: StyleProp<ViewStyle>;
 };
 
 export default function EmptyState({
-  icon = "📍",
   title,
   message,
+  iconName = "information-circle-outline",
+  style,
 }: EmptyStateProps) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.icon}>{icon}</Text>
+    <View style={[styles.container, style]}>
+      <IconBadge variant="neutral" size="lg" rounded={false}>
+        <Ionicons name={iconName} size={28} color={colors.textMuted} />
+      </IconBadge>
+
       <Text style={styles.title}>{title}</Text>
 
       {message ? <Text style={styles.message}>{message}</Text> : null}
@@ -23,30 +34,25 @@ export default function EmptyState({
 
 const styles = StyleSheet.create({
   container: {
-    padding: 24,
-    borderRadius: 24,
-    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
+    gap: spacing.sm,
+    padding: spacing["2xl"],
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  icon: {
-    fontSize: 36,
-    marginBottom: 10,
+    borderColor: colors.border,
+    borderRadius: radius["2xl"],
   },
   title: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#0F172A",
+    marginTop: spacing.xs,
+    fontSize: 15,
+    fontWeight: "900",
+    color: colors.text,
     textAlign: "center",
   },
   message: {
-    marginTop: 8,
-    fontSize: 13,
-    fontWeight: "500",
-    color: "#64748B",
-    lineHeight: 20,
+    ...typography.caption,
+    color: colors.textMuted,
     textAlign: "center",
   },
 });

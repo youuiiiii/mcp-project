@@ -1,24 +1,22 @@
+import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import { getIncidentMeta } from "../constants/incident";
+import { Alert, StyleSheet, TextInput, View } from "react-native";
+
+import AppButton from "./ui/AppButton";
+import AppCard from "./ui/AppCard";
+import SectionHeader from "./ui/SectionHeader";
+import StatusBadge from "./ui/StatusBadge";
+import EvidencePicker from "../features/incident/components/EvidencePicker";
+import IncidentModalShell from "../features/incident/components/IncidentModalShell";
+import IncidentPreviewCard from "../features/incident/components/IncidentPreviewCard";
 import { useAuth } from "../contexts/AuthContext";
 import { uploadImageAsync } from "../services/cloudinaryService";
 import { resolveIncidentReport } from "../services/incidentService";
+import { colors } from "../theme/colors";
+import { radius, spacing } from "../theme/layout";
+import { typography } from "../theme/typography";
 import { IncidentReport } from "../types/incident";
 
 type ResolveIncidentModalProps = {
@@ -40,7 +38,9 @@ export default function ResolveIncidentModal({
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const meta = incident ? getIncidentMeta(incident.type) : null;
+  const canSubmit =
+    Boolean(incident && user && imageUri && resolutionNote.trim().length >= 10) &&
+    !submitting;
 
   const resetForm = () => {
     setResolutionNote("");
@@ -159,7 +159,9 @@ export default function ResolveIncidentModal({
       return false;
     }
 
-    if (!resolutionNote.trim()) {
+    const cleanNote = resolutionNote.trim();
+
+    if (!cleanNote) {
       Alert.alert(
         "Catatan Wajib Diisi",
         "Jelaskan kenapa laporan ini sudah bisa dinyatakan selesai."
@@ -167,7 +169,7 @@ export default function ResolveIncidentModal({
       return false;
     }
 
-    if (resolutionNote.trim().length < 10) {
+    if (cleanNote.length < 10) {
       Alert.alert(
         "Catatan Terlalu Pendek",
         "Catatan penyelesaian minimal 10 karakter."
@@ -194,7 +196,7 @@ export default function ResolveIncidentModal({
       await resolveIncidentReport({
         reportId: incident.id,
         resolvedImageUri: uploadedImageUrl,
-        resolutionNote,
+        resolutionNote: resolutionNote.trim(),
         resolvedBy: user?.displayName ?? user?.email ?? user?.uid,
       });
 
@@ -229,447 +231,140 @@ export default function ResolveIncidentModal({
   };
 
   return (
-    <Modal
+    <IncidentModalShell
       visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={handleClose}
+      title="Validasi Selesai"
+      subtitle="Upload gambar terbaru agar status selesai bisa dipercaya."
+      submitting={submitting}
+      onClose={handleClose}
+      footer={
+        <>
+          <AppButton
+            title="Batal"
+            variant="secondary"
+            size="lg"
+            disabled={submitting}
+            onPress={handleClose}
+            style={styles.footerCancelButton}
+          />
+
+          <AppButton
+            title="Tandai Selesai"
+            variant="danger"
+            size="lg"
+            loading={submitting}
+            disabled={!canSubmit}
+            onPress={handleSubmit}
+            leftIcon={
+              <Ionicons
+                name="checkmark-done"
+                size={18}
+                color={colors.textInverse}
+              />
+            }
+            style={styles.footerSubmitButton}
+          />
+        </>
+      }
     >
-      <View style={styles.backdrop}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={styles.keyboardView}
-        >
-          <View style={styles.sheet}>
-            <View style={styles.handle} />
+      {incident ? <IncidentPreviewCard incident={incident} /> : null}
 
-            <View style={styles.header}>
-              <View style={styles.headerText}>
-                <Text style={styles.title}>Validasi Selesai</Text>
-                <Text style={styles.subtitle}>
-                  Upload gambar terbaru agar status selesai bisa dipercaya.
-                </Text>
-              </View>
+      <AppCard variant="muted" style={styles.noticeCard}>
+        <StatusBadge label="Validasi Wajib" variant="warning" size="sm" />
 
-              <Pressable
-                disabled={submitting}
-                onPress={handleClose}
-                style={({ pressed }) => [
-                  styles.closeButton,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <Text style={styles.closeText}>×</Text>
-              </Pressable>
-            </View>
+        <View style={styles.noticeTextGroup}>
+          <Ionicons name="warning" size={20} color={colors.warningDark} />
+          <TextInput
+            editable={false}
+            multiline
+            value="Foto harus sesuai dengan laporan dan menunjukkan bahwa lokasi sudah aman, sudah dibersihkan, atau kejadian sudah tidak mengganggu aktivitas sekitar."
+            style={styles.noticeText}
+          />
+        </View>
+      </AppCard>
 
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.content}
-            >
-              {incident && meta ? (
-                <View style={styles.incidentBox}>
-                  <View
-                    style={[
-                      styles.incidentIconBox,
-                      {
-                        backgroundColor: meta.lightColor,
-                      },
-                    ]}
-                  >
-                    <Text style={styles.incidentIcon}>{meta.icon}</Text>
-                  </View>
+      <EvidencePicker
+        title="Bukti Foto Selesai"
+        subtitle="Upload foto terbaru sebagai bukti bahwa kejadian sudah selesai."
+        emptyTitle="Belum ada bukti selesai"
+        emptyMessage="Upload foto terbaru sebagai bukti bahwa kejadian sudah selesai."
+        imageUri={imageUri}
+        disabled={submitting}
+        onTakePhoto={handleTakePhoto}
+        onPickFromGallery={handlePickFromGallery}
+        onRemoveImage={() => setImageUri(null)}
+      />
 
-                  <View style={styles.incidentInfo}>
-                    <Text style={styles.incidentTitle}>{incident.title}</Text>
-                    <Text style={styles.incidentType}>{meta.label}</Text>
-                    <Text style={styles.incidentDescription} numberOfLines={3}>
-                      {incident.description}
-                    </Text>
-                  </View>
-                </View>
-              ) : null}
+      <View style={styles.section}>
+        <SectionHeader
+          title="Catatan Penyelesaian"
+          subtitle="Jelaskan alasan laporan ini sudah bisa dinyatakan selesai."
+        />
 
-              <View style={styles.validationNotice}>
-                <Text style={styles.validationTitle}>Validasi Wajib</Text>
-                <Text style={styles.validationText}>
-                  Foto harus sesuai dengan laporan di atas dan menunjukkan bahwa
-                  lokasi sudah aman, sudah dibersihkan, atau kejadian sudah tidak
-                  mengganggu aktivitas sekitar.
-                </Text>
-              </View>
+        <TextInput
+          value={resolutionNote}
+          onChangeText={setResolutionNote}
+          placeholder="Contoh: Jalan sudah dibersihkan dan kendaraan sudah bisa lewat."
+          placeholderTextColor={colors.textSoft}
+          style={styles.input}
+          multiline
+          textAlignVertical="top"
+          editable={!submitting}
+        />
 
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Bukti Foto Selesai</Text>
-
-                {imageUri ? (
-                  <View style={styles.imageWrapper}>
-                    <Image source={{ uri: imageUri }} style={styles.image} />
-
-                    <Pressable
-                      disabled={submitting}
-                      onPress={() => setImageUri(null)}
-                      style={styles.removeImageButton}
-                    >
-                      <Text style={styles.removeImageText}>Hapus Foto</Text>
-                    </Pressable>
-                  </View>
-                ) : (
-                  <View style={styles.photoEmptyBox}>
-                    <Text style={styles.photoIcon}>✅</Text>
-                    <Text style={styles.photoTitle}>Belum ada bukti selesai</Text>
-                    <Text style={styles.photoSubtitle}>
-                      Upload foto terbaru sebagai bukti bahwa kejadian sudah
-                      selesai.
-                    </Text>
-                  </View>
-                )}
-
-                <View style={styles.photoActions}>
-                  <Pressable
-                    disabled={submitting}
-                    onPress={handleTakePhoto}
-                    style={({ pressed }) => [
-                      styles.photoButton,
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    <Text style={styles.photoButtonText}>Ambil Foto</Text>
-                  </Pressable>
-
-                  <Pressable
-                    disabled={submitting}
-                    onPress={handlePickFromGallery}
-                    style={({ pressed }) => [
-                      styles.photoButtonSecondary,
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    <Text style={styles.photoButtonSecondaryText}>
-                      Pilih Galeri
-                    </Text>
-                  </Pressable>
-                </View>
-              </View>
-
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Catatan Penyelesaian</Text>
-
-                <TextInput
-                  value={resolutionNote}
-                  onChangeText={setResolutionNote}
-                  placeholder="Contoh: Jalan sudah dibersihkan dan kendaraan sudah bisa lewat."
-                  placeholderTextColor="#94A3B8"
-                  style={[styles.input, styles.textArea]}
-                  multiline
-                  textAlignVertical="top"
-                  editable={!submitting}
-                />
-              </View>
-            </ScrollView>
-
-            <View style={styles.footer}>
-              <Pressable
-                disabled={submitting}
-                onPress={handleClose}
-                style={({ pressed }) => [
-                  styles.cancelButton,
-                  pressed && styles.pressed,
-                  submitting && styles.disabled,
-                ]}
-              >
-                <Text style={styles.cancelText}>Batal</Text>
-              </Pressable>
-
-              <Pressable
-                disabled={submitting}
-                onPress={handleSubmit}
-                style={({ pressed }) => [
-                  styles.submitButton,
-                  pressed && styles.pressed,
-                  submitting && styles.disabled,
-                ]}
-              >
-                {submitting ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.submitText}>Tandai Selesai</Text>
-                )}
-              </Pressable>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
+        <StatusBadge
+          label={`${Math.max(
+            resolutionNote.trim().length,
+            0
+          )}/10 minimum karakter`}
+          variant={resolutionNote.trim().length >= 10 ? "success" : "neutral"}
+          size="sm"
+        />
       </View>
-    </Modal>
+    </IncidentModalShell>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.45)",
-    justifyContent: "flex-end",
-  },
-  keyboardView: {
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  sheet: {
-    maxHeight: "92%",
-    backgroundColor: "#F8FAFC",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    overflow: "hidden",
-  },
-  handle: {
-    width: 44,
-    height: 5,
-    borderRadius: 999,
-    backgroundColor: "#CBD5E1",
-    alignSelf: "center",
-    marginTop: 12,
-    marginBottom: 12,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingBottom: 14,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
-  },
-  headerText: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: "#0F172A",
-  },
-  subtitle: {
-    marginTop: 4,
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#64748B",
-    lineHeight: 19,
-  },
-  closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#E2E8F0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  closeText: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: "#0F172A",
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 28,
-  },
-  incidentBox: {
-    flexDirection: "row",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 24,
-    padding: 14,
-    gap: 12,
-  },
-  incidentIconBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  incidentIcon: {
-    fontSize: 26,
-  },
-  incidentInfo: {
-    flex: 1,
-  },
-  incidentTitle: {
-    fontSize: 15,
-    fontWeight: "900",
-    color: "#0F172A",
-  },
-  incidentType: {
-    marginTop: 3,
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#64748B",
-  },
-  incidentDescription: {
-    marginTop: 7,
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#475569",
-    lineHeight: 18,
-  },
-  validationNotice: {
-    marginTop: 14,
-    backgroundColor: "#FFFBEB",
-    borderWidth: 1,
+  noticeCard: {
+    marginTop: spacing["2xl"],
+    gap: spacing.md,
+    backgroundColor: colors.warningSoft,
     borderColor: "#FDE68A",
-    borderRadius: 22,
-    padding: 14,
   },
-  validationTitle: {
-    fontSize: 13,
-    fontWeight: "900",
+  noticeTextGroup: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+  },
+  noticeText: {
+    flex: 1,
+    padding: 0,
+    margin: 0,
+    ...typography.caption,
     color: "#92400E",
   },
-  validationText: {
-    marginTop: 6,
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#B45309",
-    lineHeight: 18,
-  },
   section: {
-    marginTop: 20,
-  },
-  sectionTitle: {
-    marginBottom: 10,
-    fontSize: 14,
-    fontWeight: "900",
-    color: "#0F172A",
-  },
-  photoEmptyBox: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: "#CBD5E1",
-    borderRadius: 22,
-    padding: 22,
-    alignItems: "center",
-  },
-  photoIcon: {
-    fontSize: 34,
-  },
-  photoTitle: {
-    marginTop: 8,
-    fontSize: 15,
-    fontWeight: "900",
-    color: "#0F172A",
-  },
-  photoSubtitle: {
-    marginTop: 5,
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#64748B",
-    textAlign: "center",
-    lineHeight: 18,
-  },
-  imageWrapper: {
-    gap: 10,
-  },
-  image: {
-    width: "100%",
-    height: 210,
-    borderRadius: 22,
-    backgroundColor: "#E2E8F0",
-  },
-  removeImageButton: {
-    alignSelf: "flex-start",
-    backgroundColor: "#FEE2E2",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-  },
-  removeImageText: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: "#B91C1C",
-  },
-  photoActions: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 12,
-  },
-  photoButton: {
-    flex: 1,
-    backgroundColor: "#0F766E",
-    paddingVertical: 13,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-  photoButtonText: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: "#FFFFFF",
-  },
-  photoButtonSecondary: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
-    paddingVertical: 13,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-  photoButtonSecondaryText: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: "#0F172A",
+    marginTop: spacing["2xl"],
+    gap: spacing.md,
   },
   input: {
-    backgroundColor: "#FFFFFF",
+    minHeight: 112,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 18,
-    paddingHorizontal: 14,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.lg,
     paddingVertical: 13,
     fontSize: 14,
     fontWeight: "600",
-    color: "#0F172A",
-  },
-  textArea: {
-    height: 110,
+    color: colors.text,
     lineHeight: 20,
   },
-  footer: {
-    padding: 16,
-    flexDirection: "row",
-    gap: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#E2E8F0",
-    backgroundColor: "#FFFFFF",
-  },
-  cancelButton: {
+  footerCancelButton: {
     flex: 1,
-    backgroundColor: "#F1F5F9",
-    paddingVertical: 14,
-    borderRadius: 18,
-    alignItems: "center",
   },
-  cancelText: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: "#475569",
-  },
-  submitButton: {
-    flex: 1.4,
-    backgroundColor: "#16A34A",
-    paddingVertical: 14,
-    borderRadius: 18,
-    alignItems: "center",
-  },
-  submitText: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: "#FFFFFF",
-  },
-  pressed: {
-    opacity: 0.82,
-    transform: [{ scale: 0.99 }],
-  },
-  disabled: {
-    opacity: 0.6,
+  footerSubmitButton: {
+    flex: 1.45,
   },
 });

@@ -12,22 +12,28 @@ import {
   runTransaction,
   serverTimestamp,
   Timestamp,
+  UpdateData,
   updateDoc,
+  where,
 } from "firebase/firestore";
+
 import {
   getCategoryBySubcategory,
-  getIncidentMeta,
   isIncidentCategory,
   isIncidentType,
 } from "../constants/incident";
 import { db } from "../services/firebase";
 import {
+  CreateIncidentAccuracyVotePayload,
+  CreateIncidentContentReportPayload,
   CreateIncidentPayload,
   CreateIncidentReplyPayload,
   CreateIncidentVerificationPayload,
   CreateSOSLogPayload,
+  IncidentAccuracyVote,
   IncidentCategory,
   IncidentConditionStatus,
+  IncidentContentReport,
   IncidentReply,
   IncidentReport,
   IncidentSeverity,
@@ -35,8 +41,11 @@ import {
   IncidentSubcategory,
   IncidentType,
   IncidentVerification,
+  ModerationStatus,
+  ProximityStatus,
   ResolveIncidentPayload,
   SOSLog,
+  TrustStatus,
   VerificationStatus,
   VerificationType,
 } from "../types/incident";
@@ -45,6 +54,79 @@ const REPORTS_COLLECTION = "reports";
 const SOS_LOGS_COLLECTION = "sos_logs";
 const VERIFICATIONS_COLLECTION = "verifications";
 const REPLIES_COLLECTION = "replies";
+const INCIDENT_CONTENT_REPORTS_COLLECTION = "incident_content_reports";
+const ACCURACY_VOTES_COLLECTION = "accuracy_votes";
+
+const MAX_REPORT_IMAGES = 4;
+
+const normalizeProximityStatus = (value: unknown): ProximityStatus => {
+  if (
+    value === "near_incident" ||
+    value === "not_near_incident" ||
+    value === "unknown"
+  ) {
+    return value;
+  }
+
+  return "unknown";
+};
+
+const normalizeNullableNumber = (value: unknown): number | null => {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return null;
+  }
+
+  return value;
+};
+
+const normalizeAccuracyVoteType = (
+  value: unknown
+): IncidentAccuracyVote["voteType"] => {
+  if (value === "accurate" || value === "inaccurate") {
+    return value;
+  }
+
+  return "accurate";
+};
+
+const normalizeModerationStatus = (value: unknown): ModerationStatus => {
+  if (
+    value === "visible" ||
+    value === "under_review" ||
+    value === "hidden"
+  ) {
+    return value;
+  }
+
+  return "visible";
+};
+
+const normalizeTrustStatus = (value: unknown): TrustStatus => {
+  if (
+    value === "unverified" ||
+    value === "community_confirmed" ||
+    value === "questioned"
+  ) {
+    return value;
+  }
+
+  return "unverified";
+};
+
+const normalizeCommunityUpdateType = (value: unknown) => {
+  if (
+    value === "still_happening" ||
+    value === "getting_worse" ||
+    value === "improving" ||
+    value === "safe_now" ||
+    value === "not_found" ||
+    value === "additional_info"
+  ) {
+    return value;
+  }
+
+  return "additional_info";
+};
 
 const toDate = (value: unknown): Date | undefined => {
   if (!value) {
@@ -62,31 +144,66 @@ const toDate = (value: unknown): Date | undefined => {
   return undefined;
 };
 
-const normalizeSubcategory = (value: unknown): IncidentSubcategory => {
+const normalizeNullableString = (value: unknown): string | null => {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+const normalizeSubcategory = (
+  value: unknown
+): IncidentSubcategory | null => {
   if (typeof value === "string" && isIncidentType(value)) {
     return value;
   }
 
-  return "public_disturbance";
+  return null;
 };
 
-const normalizeType = (value: unknown): IncidentType => {
+const normalizeType = (value: unknown): IncidentType | null => {
   if (typeof value === "string" && isIncidentType(value)) {
     return value;
   }
 
-  return "public_disturbance";
+  return null;
 };
 
-const normalizeCategory = (
-  value: unknown,
-  fallbackSubcategory: IncidentSubcategory
-): IncidentCategory => {
-  if (typeof value === "string" && isIncidentCategory(value)) {
-    return value;
+const normalizeCategory = (input: {
+  category: unknown;
+  subcategory?: IncidentSubcategory | null;
+  type?: IncidentType | null;
+}): IncidentCategory | null => {
+  if (
+    typeof input.category === "string" &&
+    isIncidentCategory(input.category)
+  ) {
+    return input.category;
   }
 
-  return getCategoryBySubcategory(fallbackSubcategory);
+  if (input.subcategory) {
+    return getCategoryBySubcategory(input.subcategory);
+  }
+
+  if (input.type) {
+    return getCategoryBySubcategory(input.type);
+  }
+
+  return null;
+};
+
+const isSubcategoryCompatibleWithCategory = (
+  subcategory: IncidentSubcategory | IncidentType | null,
+  category: IncidentCategory
+): boolean => {
+  if (!subcategory) {
+    return false;
+  }
+
+  return getCategoryBySubcategory(subcategory) === category;
 };
 
 const normalizeStatus = (value: unknown): IncidentStatus => {
@@ -103,6 +220,10 @@ const normalizeSeverity = (value: unknown): IncidentSeverity => {
   }
 
   return "medium";
+};
+
+const isIncidentSeverity = (value: unknown): value is IncidentSeverity => {
+  return value === "low" || value === "medium" || value === "high";
 };
 
 const normalizeVerificationStatus = (value: unknown): VerificationStatus => {
@@ -144,7 +265,45 @@ const normalizeStringArray = (value: unknown): string[] => {
     return [];
   }
 
-  return value.filter((item) => typeof item === "string");
+  return value
+    .map((item) => {
+      return typeof item === "string" ? item.trim() : "";
+    })
+    .filter((item) => item.length > 0);
+};
+
+const normalizeCount = (value: unknown): number => {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return 0;
+  }
+
+  return Math.max(0, value);
+};
+
+const normalizeLatitude = (value: unknown): number | null => {
+  if (
+    typeof value !== "number" ||
+    Number.isNaN(value) ||
+    value < -90 ||
+    value > 90
+  ) {
+    return null;
+  }
+
+  return value;
+};
+
+const normalizeLongitude = (value: unknown): number | null => {
+  if (
+    typeof value !== "number" ||
+    Number.isNaN(value) ||
+    value < -180 ||
+    value > 180
+  ) {
+    return null;
+  }
+
+  return value;
 };
 
 const getNextVerificationStatus = (
@@ -164,12 +323,53 @@ const getNextVerificationStatus = (
 
 const mapIncidentDocument = (
   snapshot: QueryDocumentSnapshot<DocumentData>
-): IncidentReport => {
+): IncidentReport | null => {
   const data = snapshot.data();
 
-  const subcategory = normalizeSubcategory(data.subcategory ?? data.type);
-  const category = normalizeCategory(data.category, subcategory);
-  const type = normalizeType(data.type ?? subcategory);
+  const rawSubcategory = normalizeSubcategory(data.subcategory);
+  const rawType = normalizeType(data.type);
+
+  const category = normalizeCategory({
+    category: data.category,
+    subcategory: rawSubcategory,
+    type: rawType,
+  });
+
+  if (!category) {
+    console.warn("Skipping invalid incident document:", snapshot.id, {
+      category: data.category,
+      subcategory: data.subcategory,
+      type: data.type,
+    });
+
+    return null;
+  }
+
+  const latitude = normalizeLatitude(data.latitude);
+  const longitude = normalizeLongitude(data.longitude);
+
+  if (latitude === null || longitude === null) {
+    console.warn("Skipping incident with invalid coordinate:", snapshot.id, {
+      latitude: data.latitude,
+      longitude: data.longitude,
+    });
+
+    return null;
+  }
+
+  const subcategory = isSubcategoryCompatibleWithCategory(
+    rawSubcategory,
+    category
+  )
+    ? rawSubcategory
+    : null;
+
+  const type = isSubcategoryCompatibleWithCategory(rawType, category)
+    ? rawType
+    : null;
+
+  const coverImageUri = normalizeNullableString(data.imageUri);
+  const storedImageUris = normalizeStringArray(data.imageUris);
 
   return {
     id: snapshot.id,
@@ -178,26 +378,30 @@ const mapIncidentDocument = (
     subcategory,
     type,
 
-    title: typeof data.title === "string" ? data.title : "Untitled Incident",
-    description: typeof data.description === "string" ? data.description : "",
-    latitude: typeof data.latitude === "number" ? data.latitude : 0,
-    longitude: typeof data.longitude === "number" ? data.longitude : 0,
+    title: normalizeNullableString(data.title) ?? "Laporan tanpa judul",
+    description: normalizeNullableString(data.description) ?? "",
+    latitude,
+    longitude,
     status: normalizeStatus(data.status),
     severity: normalizeSeverity(data.severity),
 
-    imageUri: typeof data.imageUri === "string" ? data.imageUri : null,
-    address: typeof data.address === "string" ? data.address : null,
-    reportedBy: typeof data.reportedBy === "string" ? data.reportedBy : null,
-    reporterEmail:
-      typeof data.reporterEmail === "string" ? data.reporterEmail : null,
+    imageUri: coverImageUri,
+    imageUris:
+      storedImageUris.length > 0
+        ? storedImageUris
+        : coverImageUri
+          ? [coverImageUri]
+          : [],
+
+    address: normalizeNullableString(data.address),
+    reportedBy: normalizeNullableString(data.reportedBy),
+    reporterEmail: normalizeNullableString(data.reporterEmail),
 
     verificationStatus: normalizeVerificationStatus(data.verificationStatus),
-    verificationCount:
-      typeof data.verificationCount === "number" ? data.verificationCount : 0,
-    disputeCount: typeof data.disputeCount === "number" ? data.disputeCount : 0,
-    evidenceCount:
-      typeof data.evidenceCount === "number" ? data.evidenceCount : 0,
-    replyCount: typeof data.replyCount === "number" ? data.replyCount : 0,
+    verificationCount: normalizeCount(data.verificationCount),
+    disputeCount: normalizeCount(data.disputeCount),
+    evidenceCount: normalizeCount(data.evidenceCount),
+    replyCount: normalizeCount(data.replyCount),
     verifiedBy: normalizeStringArray(data.verifiedBy),
     disputedBy: normalizeStringArray(data.disputedBy),
 
@@ -205,14 +409,16 @@ const mapIncidentDocument = (
     updatedAt: toDate(data.updatedAt),
     latestActivityAt: toDate(data.latestActivityAt),
 
-    resolvedImageUri:
-      typeof data.resolvedImageUri === "string"
-        ? data.resolvedImageUri
-        : null,
-    resolutionNote:
-      typeof data.resolutionNote === "string" ? data.resolutionNote : null,
-    resolvedBy: typeof data.resolvedBy === "string" ? data.resolvedBy : null,
+    resolvedImageUri: normalizeNullableString(data.resolvedImageUri),
+    resolutionNote: normalizeNullableString(data.resolutionNote),
+    resolvedBy: normalizeNullableString(data.resolvedBy),
     resolvedAt: toDate(data.resolvedAt),
+
+    trustStatus: normalizeTrustStatus(data.trustStatus),
+    moderationStatus: normalizeModerationStatus(data.moderationStatus),
+    moderationReason: normalizeNullableString(data.moderationReason),
+    moderatedBy: normalizeNullableString(data.moderatedBy),
+    moderatedAt: toDate(data.moderatedAt),
   };
 };
 
@@ -227,13 +433,13 @@ const mapVerificationDocument = (
     reportId,
     verificationType: normalizeVerificationType(data.verificationType),
     conditionStatus: normalizeConditionStatus(data.conditionStatus),
-    note: typeof data.note === "string" ? data.note : "",
-    imageUri: typeof data.imageUri === "string" ? data.imageUri : "",
-    latitude: typeof data.latitude === "number" ? data.latitude : 0,
-    longitude: typeof data.longitude === "number" ? data.longitude : 0,
-    userName: typeof data.userName === "string" ? data.userName : null,
-    userEmail: typeof data.userEmail === "string" ? data.userEmail : null,
-    actorKey: typeof data.actorKey === "string" ? data.actorKey : "",
+    note: normalizeNullableString(data.note) ?? "",
+    imageUri: normalizeNullableString(data.imageUri) ?? "",
+    latitude: normalizeLatitude(data.latitude) ?? 0,
+    longitude: normalizeLongitude(data.longitude) ?? 0,
+    userName: normalizeNullableString(data.userName),
+    userEmail: normalizeNullableString(data.userEmail),
+    actorKey: normalizeNullableString(data.actorKey) ?? "",
     createdAt: toDate(data.createdAt),
   };
 };
@@ -247,14 +453,18 @@ const mapReplyDocument = (
   return {
     id: snapshot.id,
     reportId,
-    message: typeof data.message === "string" ? data.message : "",
-    userName: typeof data.userName === "string" ? data.userName : null,
-    userEmail: typeof data.userEmail === "string" ? data.userEmail : null,
-    actorKey: typeof data.actorKey === "string" ? data.actorKey : "",
+    message: normalizeNullableString(data.message) ?? "",
+    imageUri: normalizeNullableString(data.imageUri),
+    parentReplyId: normalizeNullableString(data.parentReplyId),
+    replyToUserName: normalizeNullableString(data.replyToUserName),
+    updateType: normalizeCommunityUpdateType(data.updateType),
+    moderationStatus: normalizeModerationStatus(data.moderationStatus),
+    userName: normalizeNullableString(data.userName),
+    userEmail: normalizeNullableString(data.userEmail),
+    actorKey: normalizeNullableString(data.actorKey) ?? "",
     createdAt: toDate(data.createdAt),
   };
 };
-
 const mapSOSDocument = (
   snapshot: QueryDocumentSnapshot<DocumentData>
 ): SOSLog => {
@@ -262,17 +472,72 @@ const mapSOSDocument = (
 
   return {
     id: snapshot.id,
-    latitude: typeof data.latitude === "number" ? data.latitude : 0,
-    longitude: typeof data.longitude === "number" ? data.longitude : 0,
-    nearestIncidentId:
-      typeof data.nearestIncidentId === "string"
-        ? data.nearestIncidentId
-        : null,
+    latitude: normalizeLatitude(data.latitude) ?? 0,
+    longitude: normalizeLongitude(data.longitude) ?? 0,
+    nearestIncidentId: normalizeNullableString(data.nearestIncidentId),
     nearestIncidentDistance:
-      typeof data.nearestIncidentDistance === "number"
-        ? data.nearestIncidentDistance
+      typeof data.nearestIncidentDistance === "number" &&
+      !Number.isNaN(data.nearestIncidentDistance)
+        ? Math.max(0, data.nearestIncidentDistance)
         : null,
     createdAt: toDate(data.createdAt),
+  };
+};
+
+const mapIncidentContentReportDocument = (
+  snapshot: QueryDocumentSnapshot<DocumentData>
+): IncidentContentReport => {
+  const data = snapshot.data();
+
+  return {
+    id: snapshot.id,
+    targetType:
+      data.targetType === "incident_reply"
+        ? "incident_reply"
+        : "incident_report",
+    targetId: normalizeNullableString(data.targetId) ?? "",
+    reportId: normalizeNullableString(data.reportId) ?? "",
+    reason:
+      data.reason === "false_information" ||
+      data.reason === "harmful_content" ||
+      data.reason === "spam" ||
+      data.reason === "privacy_issue" ||
+      data.reason === "inappropriate_image" ||
+      data.reason === "other"
+        ? data.reason
+        : "other",
+    note: normalizeNullableString(data.note),
+    status:
+      data.status === "reviewed" || data.status === "dismissed"
+        ? data.status
+        : "open",
+    actorKey: normalizeNullableString(data.actorKey) ?? "",
+    userName: normalizeNullableString(data.userName),
+    userEmail: normalizeNullableString(data.userEmail),
+    reviewedBy: normalizeNullableString(data.reviewedBy),
+    reviewedAt: toDate(data.reviewedAt),
+    createdAt: toDate(data.createdAt),
+  };
+};
+
+const mapAccuracyVoteDocument = (
+  snapshot: QueryDocumentSnapshot<DocumentData>,
+  reportId: string
+): IncidentAccuracyVote => {
+  const data = snapshot.data();
+
+  return {
+    id: snapshot.id,
+    reportId,
+    voteType: normalizeAccuracyVoteType(data.voteType),
+    proximityStatus: normalizeProximityStatus(data.proximityStatus),
+    distanceFromIncidentMeters:
+      normalizeNullableNumber(data.distanceFromIncidentMeters) ?? 0,
+    locationAccuracyMeters:
+      normalizeNullableNumber(data.locationAccuracyMeters) ?? 0,
+    actorKey: normalizeNullableString(data.actorKey) ?? "",
+    createdAt: toDate(data.createdAt),
+    updatedAt: toDate(data.updatedAt),
   };
 };
 
@@ -282,13 +547,19 @@ export const subscribeToIncidents = (
 ) => {
   const reportsQuery = query(
     collection(db, REPORTS_COLLECTION),
+    where("moderationStatus", "==", "visible"),
     orderBy("createdAt", "desc")
   );
 
   return onSnapshot(
     reportsQuery,
     (snapshot) => {
-      const reports = snapshot.docs.map(mapIncidentDocument);
+      const reports = snapshot.docs
+        .map(mapIncidentDocument)
+        .filter((report): report is IncidentReport => {
+          return report !== null && report.moderationStatus !== "hidden";
+        });
+
       onSuccess(reports);
     },
     (error) => {
@@ -329,15 +600,18 @@ export const subscribeToIncidentReplies = (
 ) => {
   const repliesQuery = query(
     collection(db, REPORTS_COLLECTION, reportId, REPLIES_COLLECTION),
+    where("moderationStatus", "==", "visible"),
     orderBy("createdAt", "asc")
   );
 
   return onSnapshot(
     repliesQuery,
     (snapshot) => {
-      const items = snapshot.docs.map((item) => {
-        return mapReplyDocument(item, reportId);
-      });
+      const items = snapshot.docs
+        .map((item) => {
+          return mapReplyDocument(item, reportId);
+        })
+        .filter((reply) => reply.moderationStatus !== "hidden");
 
       onSuccess(items);
     },
@@ -347,76 +621,29 @@ export const subscribeToIncidentReplies = (
   );
 };
 
-export const createIncidentReport = async (
-  payload: CreateIncidentPayload
-): Promise<string> => {
-  if (!payload.category) {
-    throw new Error("Kategori kejadian wajib dipilih.");
-  }
+export const subscribeToIncidentAccuracyVotes = (
+  reportId: string,
+  onSuccess: (items: IncidentAccuracyVote[]) => void,
+  onError?: (error: Error) => void
+) => {
+  const votesQuery = query(
+    collection(db, REPORTS_COLLECTION, reportId, ACCURACY_VOTES_COLLECTION),
+    orderBy("updatedAt", "desc")
+  );
 
-  if (!payload.subcategory) {
-    throw new Error("Subkategori kejadian wajib dipilih.");
-  }
+  return onSnapshot(
+    votesQuery,
+    (snapshot) => {
+      const items = snapshot.docs.map((item) => {
+        return mapAccuracyVoteDocument(item, reportId);
+      });
 
-  if (!payload.title.trim()) {
-    throw new Error("Judul laporan wajib diisi.");
-  }
-
-  if (!payload.description.trim()) {
-    throw new Error("Deskripsi laporan wajib diisi.");
-  }
-
-  if (
-    typeof payload.latitude !== "number" ||
-    typeof payload.longitude !== "number"
-  ) {
-    throw new Error("Lokasi laporan tidak valid.");
-  }
-
-  if (!payload.imageUri) {
-    throw new Error("Bukti foto laporan wajib diisi.");
-  }
-
-  const meta = getIncidentMeta(payload.subcategory);
-
-  const docRef = await addDoc(collection(db, REPORTS_COLLECTION), {
-    category: payload.category,
-    subcategory: payload.subcategory,
-    type: payload.subcategory,
-
-    categoryLabel: payload.category,
-    subcategoryLabel: meta.label,
-
-    title: payload.title.trim(),
-    description: payload.description.trim(),
-    latitude: payload.latitude,
-    longitude: payload.longitude,
-    status: "active",
-    severity: payload.severity,
-    imageUri: payload.imageUri,
-    address: payload.address ?? null,
-    reportedBy: payload.reportedBy ?? "Anonymous",
-    reporterEmail: payload.reporterEmail ?? null,
-
-    verificationStatus: "pending",
-    verificationCount: 0,
-    disputeCount: 0,
-    evidenceCount: 0,
-    replyCount: 0,
-    verifiedBy: [],
-    disputedBy: [],
-
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-    latestActivityAt: serverTimestamp(),
-
-    resolvedImageUri: null,
-    resolutionNote: null,
-    resolvedBy: null,
-    resolvedAt: null,
-  });
-
-  return docRef.id;
+      onSuccess(items);
+    },
+    (error) => {
+      onError?.(error);
+    }
+  );
 };
 
 export const createIncidentVerification = async (
@@ -434,8 +661,8 @@ export const createIncidentVerification = async (
     throw new Error("Bukti foto verifikasi wajib diisi.");
   }
 
-  if (!payload.note.trim()) {
-    throw new Error("Catatan verifikasi wajib diisi.");
+  if (payload.note.trim().length < 8) {
+    throw new Error("Catatan verifikasi minimal 8 karakter.");
   }
 
   const reportRef = doc(db, REPORTS_COLLECTION, payload.reportId);
@@ -458,18 +685,11 @@ export const createIncidentVerification = async (
 
     const reportData = reportSnapshot.data();
 
-    const currentVerificationCount =
-      typeof reportData.verificationCount === "number"
-        ? reportData.verificationCount
-        : 0;
-
-    const currentDisputeCount =
-      typeof reportData.disputeCount === "number" ? reportData.disputeCount : 0;
-
-    const currentEvidenceCount =
-      typeof reportData.evidenceCount === "number"
-        ? reportData.evidenceCount
-        : 0;
+    const currentVerificationCount = normalizeCount(
+      reportData.verificationCount
+    );
+    const currentDisputeCount = normalizeCount(reportData.disputeCount);
+    const currentEvidenceCount = normalizeCount(reportData.evidenceCount);
 
     const nextVerificationCount =
       payload.verificationType === "valid"
@@ -493,13 +713,13 @@ export const createIncidentVerification = async (
       imageUri: payload.imageUri,
       latitude: payload.latitude,
       longitude: payload.longitude,
-      userName: payload.userName ?? "Anonymous",
-      userEmail: payload.userEmail ?? null,
+      userName: normalizeNullableString(payload.userName) ?? "Anonymous",
+      userEmail: normalizeNullableString(payload.userEmail),
       actorKey: payload.actorKey,
       createdAt: serverTimestamp(),
     });
 
-    const updateData: Record<string, any> = {
+    const updateData: UpdateData<DocumentData> = {
       verificationStatus: nextVerificationStatus,
       verificationCount: nextVerificationCount,
       disputeCount: nextDisputeCount,
@@ -522,6 +742,121 @@ export const createIncidentVerification = async (
   return verificationRef.id;
 };
 
+export const createIncidentReport = async (
+  payload: CreateIncidentPayload
+): Promise<string> => {
+  if (!payload.category || !isIncidentCategory(payload.category)) {
+    throw new Error("Kategori kejadian tidak valid.");
+  }
+
+  const title = payload.title.trim();
+  const description = payload.description.trim();
+
+  const imageUris = Array.from(
+    new Set(
+      (payload.imageUris && payload.imageUris.length > 0
+        ? payload.imageUris
+        : [payload.imageUri]
+      )
+        .map((item) => item.trim())
+        .filter(Boolean)
+    )
+  ).slice(0, MAX_REPORT_IMAGES);
+
+  const imageUri = imageUris[0] ?? "";
+
+  if (title.length < 5) {
+    throw new Error("Judul laporan minimal 5 karakter.");
+  }
+
+  if (description.length < 10) {
+    throw new Error("Deskripsi laporan minimal 10 karakter.");
+  }
+
+  if (!isIncidentSeverity(payload.severity)) {
+    throw new Error("Tingkat severity laporan tidak valid.");
+  }
+
+  const latitude = normalizeLatitude(payload.latitude);
+  const longitude = normalizeLongitude(payload.longitude);
+
+  if (latitude === null || longitude === null) {
+    throw new Error("Lokasi laporan tidak valid.");
+  }
+
+  if (!imageUri) {
+    throw new Error("Bukti foto laporan wajib diisi.");
+  }
+
+  if (imageUris.length > MAX_REPORT_IMAGES) {
+    throw new Error("Maksimal 4 foto untuk satu laporan.");
+  }
+
+  const subcategory = normalizeSubcategory(payload.subcategory ?? null);
+
+  if (payload.subcategory && !subcategory) {
+    throw new Error("Subkategori laporan tidak valid.");
+  }
+
+  if (
+    subcategory &&
+    getCategoryBySubcategory(subcategory) !== payload.category
+  ) {
+    throw new Error("Subkategori tidak sesuai dengan kategori utama laporan.");
+  }
+
+  const docRef = await addDoc(collection(db, REPORTS_COLLECTION), {
+    category: payload.category,
+
+    /**
+     * Category-first write model.
+     * subcategory remains optional.
+     * type is deprecated and must not be written as a new taxonomy.
+     */
+    subcategory,
+    type: null,
+
+    title,
+    description,
+    latitude,
+    longitude,
+    status: "active",
+    severity: payload.severity,
+
+    imageUri,
+    imageUris,
+
+    address: normalizeNullableString(payload.address),
+    reportedBy: normalizeNullableString(payload.reportedBy) ?? "Anonymous",
+    reporterEmail: normalizeNullableString(payload.reporterEmail),
+
+    verificationStatus: "pending",
+    verificationCount: 0,
+    disputeCount: 0,
+    evidenceCount: 0,
+    replyCount: 0,
+    verifiedBy: [],
+    disputedBy: [],
+
+    trustStatus: "unverified",
+    moderationStatus: "visible",
+    moderationReason: null,
+    moderatedBy: null,
+    moderatedAt: null,
+
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    latestActivityAt: serverTimestamp(),
+
+    resolvedImageUri: null,
+    resolutionNote: null,
+    resolvedBy: null,
+    resolvedAt: null,
+  });
+
+  return docRef.id;
+};
+
 export const createIncidentReply = async (
   payload: CreateIncidentReplyPayload
 ): Promise<string> => {
@@ -533,8 +868,8 @@ export const createIncidentReply = async (
     throw new Error("User tidak valid.");
   }
 
-  if (!payload.message.trim()) {
-    throw new Error("Pesan diskusi tidak boleh kosong.");
+  if (payload.message.trim().length < 3) {
+    throw new Error("Pesan diskusi minimal 3 karakter.");
   }
 
   const repliesRef = collection(
@@ -546,8 +881,13 @@ export const createIncidentReply = async (
 
   const docRef = await addDoc(repliesRef, {
     message: payload.message.trim(),
-    userName: payload.userName ?? "Anonymous",
-    userEmail: payload.userEmail ?? null,
+    imageUri: normalizeNullableString(payload.imageUri),
+    parentReplyId: normalizeNullableString(payload.parentReplyId),
+    replyToUserName: normalizeNullableString(payload.replyToUserName),
+    updateType: payload.updateType ?? "additional_info",
+    moderationStatus: "visible",
+    userName: normalizeNullableString(payload.userName) ?? "Anonymous",
+    userEmail: normalizeNullableString(payload.userEmail),
     actorKey: payload.actorKey,
     createdAt: serverTimestamp(),
   });
@@ -563,6 +903,123 @@ export const createIncidentReply = async (
   return docRef.id;
 };
 
+export const createIncidentContentReport = async (
+  payload: CreateIncidentContentReportPayload
+) => {
+  if (!payload.reportId.trim()) {
+    throw new Error("Report ID tidak valid.");
+  }
+
+  if (!payload.targetId.trim()) {
+    throw new Error("Target konten tidak valid.");
+  }
+
+  if (!payload.actorKey.trim()) {
+    throw new Error("Identitas pelapor konten tidak valid.");
+  }
+
+  await addDoc(collection(db, INCIDENT_CONTENT_REPORTS_COLLECTION), {
+    targetType: payload.targetType,
+    targetId: payload.targetId,
+    reportId: payload.reportId,
+    reason: payload.reason,
+    note: payload.note?.trim() || null,
+    actorKey: payload.actorKey,
+    userName: normalizeNullableString(payload.userName),
+    userEmail: normalizeNullableString(payload.userEmail),
+    status: "open",
+    reviewedBy: null,
+    reviewedAt: null,
+    createdAt: serverTimestamp(),
+  });
+};
+
+export const subscribeToOpenContentReports = (
+  onSuccess: (reports: IncidentContentReport[]) => void,
+  onError?: (error: Error) => void
+) => {
+  const reportsQuery = query(
+    collection(db, INCIDENT_CONTENT_REPORTS_COLLECTION),
+    where("status", "==", "open"),
+    orderBy("createdAt", "desc")
+  );
+
+  return onSnapshot(
+    reportsQuery,
+    (snapshot) => {
+      const reports = snapshot.docs.map(mapIncidentContentReportDocument);
+      onSuccess(reports);
+    },
+    (error) => {
+      onError?.(error);
+    }
+  );
+};
+
+export const hideIncidentReport = async ({
+  reportId,
+  reason,
+  moderatedBy,
+}: {
+  reportId: string;
+  reason: string;
+  moderatedBy: string;
+}) => {
+  if (!reportId.trim()) {
+    throw new Error("Report ID tidak valid.");
+  }
+
+  await updateDoc(doc(db, REPORTS_COLLECTION, reportId), {
+    moderationStatus: "hidden",
+    moderationReason: reason.trim() || null,
+    moderatedBy,
+    moderatedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const dismissIncidentContentReport = async ({
+  contentReportId,
+  reviewedBy,
+}: {
+  contentReportId: string;
+  reviewedBy: string;
+}) => {
+  if (!contentReportId.trim()) {
+    throw new Error("Content report ID tidak valid.");
+  }
+
+  await updateDoc(
+    doc(db, INCIDENT_CONTENT_REPORTS_COLLECTION, contentReportId),
+    {
+      status: "dismissed",
+      reviewedBy,
+      reviewedAt: serverTimestamp(),
+    }
+  );
+};
+
+export const markIncidentContentReportReviewed = async ({
+  contentReportId,
+  reviewedBy,
+}: {
+  contentReportId: string;
+  reviewedBy: string;
+}) => {
+  if (!contentReportId.trim()) {
+    throw new Error("Content report ID tidak valid.");
+  }
+
+  await updateDoc(
+    doc(db, INCIDENT_CONTENT_REPORTS_COLLECTION, contentReportId),
+    {
+      status: "reviewed",
+      reviewedBy,
+      reviewedAt: serverTimestamp(),
+    }
+  );
+};
+
 export const resolveIncidentReport = async (
   payload: ResolveIncidentPayload
 ): Promise<void> => {
@@ -574,8 +1031,8 @@ export const resolveIncidentReport = async (
     throw new Error("Bukti gambar selesai wajib diisi.");
   }
 
-  if (!payload.resolutionNote.trim()) {
-    throw new Error("Catatan penyelesaian wajib diisi.");
+  if (payload.resolutionNote.trim().length < 10) {
+    throw new Error("Catatan penyelesaian minimal 10 karakter.");
   }
 
   const reportRef = doc(db, REPORTS_COLLECTION, payload.reportId);
@@ -584,7 +1041,7 @@ export const resolveIncidentReport = async (
     status: "resolved",
     resolvedImageUri: payload.resolvedImageUri,
     resolutionNote: payload.resolutionNote.trim(),
-    resolvedBy: payload.resolvedBy ?? "Anonymous",
+    resolvedBy: normalizeNullableString(payload.resolvedBy) ?? "Anonymous",
     resolvedAt: serverTimestamp(),
     latestActivityAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -614,18 +1071,22 @@ export const reopenIncidentReport = async (
 export const createSOSLog = async (
   payload: CreateSOSLogPayload
 ): Promise<string> => {
-  if (
-    typeof payload.latitude !== "number" ||
-    typeof payload.longitude !== "number"
-  ) {
+  const latitude = normalizeLatitude(payload.latitude);
+  const longitude = normalizeLongitude(payload.longitude);
+
+  if (latitude === null || longitude === null) {
     throw new Error("Lokasi SOS tidak valid.");
   }
 
   const docRef = await addDoc(collection(db, SOS_LOGS_COLLECTION), {
-    latitude: payload.latitude,
-    longitude: payload.longitude,
+    latitude,
+    longitude,
     nearestIncidentId: payload.nearestIncidentId ?? null,
-    nearestIncidentDistance: payload.nearestIncidentDistance ?? null,
+    nearestIncidentDistance:
+      typeof payload.nearestIncidentDistance === "number" &&
+      !Number.isNaN(payload.nearestIncidentDistance)
+        ? Math.max(0, payload.nearestIncidentDistance)
+        : null,
     createdAt: serverTimestamp(),
   });
 
@@ -651,4 +1112,54 @@ export const subscribeToSOSLogs = (
       onError?.(error);
     }
   );
+};
+
+export const submitIncidentAccuracyVote = async (
+  payload: CreateIncidentAccuracyVotePayload
+): Promise<void> => {
+  if (!payload.reportId.trim()) {
+    throw new Error("Report ID tidak valid.");
+  }
+
+  if (!payload.actorKey.trim()) {
+    throw new Error("User tidak valid.");
+  }
+
+  if (payload.proximityStatus !== "near_incident") {
+    throw new Error("Anda perlu berada cukup dekat untuk menilai akurasi.");
+  }
+
+  const voteRef = doc(
+    db,
+    REPORTS_COLLECTION,
+    payload.reportId,
+    ACCURACY_VOTES_COLLECTION,
+    payload.actorKey
+  );
+
+  await runTransaction(db, async (transaction) => {
+    const voteSnapshot = await transaction.get(voteRef);
+
+    if (voteSnapshot.exists()) {
+      transaction.update(voteRef, {
+        voteType: payload.voteType,
+        proximityStatus: payload.proximityStatus,
+        distanceFromIncidentMeters: payload.distanceFromIncidentMeters,
+        locationAccuracyMeters: payload.locationAccuracyMeters,
+        updatedAt: serverTimestamp(),
+      });
+
+      return;
+    }
+
+    transaction.set(voteRef, {
+      voteType: payload.voteType,
+      proximityStatus: payload.proximityStatus,
+      distanceFromIncidentMeters: payload.distanceFromIncidentMeters,
+      locationAccuracyMeters: payload.locationAccuracyMeters,
+      actorKey: payload.actorKey,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  });
 };

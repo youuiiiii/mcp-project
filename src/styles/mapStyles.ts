@@ -1,9 +1,17 @@
 import { StyleSheet } from "react-native";
 
+import { colors } from "../theme/colors";
+import { radius, shadow, spacing } from "../theme/layout";
+import { typography } from "../theme/typography";
+
+const MAP_TOP_OFFSET = 52;
+const MAP_HORIZONTAL_PADDING = spacing.lg;
+const MAP_BOTTOM_OFFSET = 24;
+
 export const mapStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.background,
   },
 
   map: {
@@ -12,246 +20,204 @@ export const mapStyles = StyleSheet.create({
 
   topOverlay: {
     position: "absolute",
-    top: 52,
-    left: 16,
-    right: 16,
-    gap: 10,
+    top: MAP_TOP_OFFSET,
+    left: MAP_HORIZONTAL_PADDING,
+    right: MAP_HORIZONTAL_PADDING,
+    gap: spacing.sm,
   },
 
-  headerCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 16,
+  compactHeader: {
+    minHeight: 62,
+    backgroundColor: "rgba(255,255,255,0.94)",
+    borderRadius: radius["2xl"],
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#0F172A",
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    borderColor: "rgba(226,232,240,0.9)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.md,
+    ...shadow.card,
   },
 
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  headerTitleGroup: {
+    flex: 1,
+  },
+
+  headerEyebrow: {
+    fontSize: 11,
+    fontWeight: "900",
+    color: colors.textMuted,
+    letterSpacing: 0.2,
+    textTransform: "uppercase",
   },
 
   headerTitle: {
-    fontSize: 18,
+    marginTop: 2,
+    fontSize: 20,
     fontWeight: "900",
-    color: "#0F172A",
-  },
-
-  headerSubtitle: {
-    marginTop: 5,
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#64748B",
-    lineHeight: 18,
+    color: colors.text,
   },
 
   liveBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#DCFCE7",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
+    backgroundColor: colors.successSoft,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 7,
+    borderRadius: radius.full,
   },
 
   liveDot: {
     width: 7,
     height: 7,
-    borderRadius: 999,
-    backgroundColor: "#16A34A",
+    borderRadius: radius.full,
+    backgroundColor: colors.success,
   },
 
   liveText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "900",
-    color: "#16A34A",
+    color: colors.successDark,
   },
 
   filterWrapper: {
-    marginHorizontal: -16,
-  },
-
-  bottomOverlay: {
-    position: "absolute",
-    left: 16,
-    right: 16,
-    bottom: 28,
-  },
-
-  infoCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#0F172A",
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-
-  infoTitle: {
-    fontSize: 15,
-    fontWeight: "900",
-    color: "#0F172A",
-  },
-
-  infoDescription: {
-    marginTop: 6,
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#64748B",
-    lineHeight: 18,
-  },
-
-  warningCard: {
-    marginTop: 10,
-    backgroundColor: "#FEF2F2",
-    borderRadius: 20,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "#FECACA",
-  },
-
-  warningTitle: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: "#991B1B",
-  },
-
-  warningText: {
-    marginTop: 5,
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#B91C1C",
-    lineHeight: 18,
+    marginHorizontal: -MAP_HORIZONTAL_PADDING,
   },
 
   errorBanner: {
-    backgroundColor: "#FEF2F2",
-    borderRadius: 18,
-    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: colors.dangerSoft,
+    borderRadius: radius.xl,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderWidth: 1,
     borderColor: "#FECACA",
   },
 
   errorText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#B91C1C",
-    lineHeight: 18,
+    flex: 1,
+    ...typography.caption,
+    color: colors.primaryDark,
   },
 
-  markerContainer: {
+  mapActions: {
+    position: "absolute",
+    right: spacing.lg,
+    bottom: 122,
+    zIndex: 20,
+    alignItems: "flex-end",
+    gap: spacing.sm,
+  },
+
+  locateButton: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.full,
+    backgroundColor: "rgba(255,255,255,0.96)",
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(226,232,240,0.92)",
+    ...shadow.card,
   },
 
-  markerBubble: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+  locateButtonPressed: {
+    opacity: 0.86,
+    transform: [{ scale: 0.96 }],
+  },
+
+  reportButton: {
+    ...shadow.floating,
+    shadowColor: colors.primaryDark,
+  },
+
+  bottomOverlay: {
+    position: "absolute",
+    left: MAP_HORIZONTAL_PADDING,
+    right: MAP_HORIZONTAL_PADDING,
+    bottom: MAP_BOTTOM_OFFSET,
+  },
+
+  infoCard: {
+    backgroundColor: "rgba(255,255,255,0.96)",
+    borderRadius: radius["2xl"],
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderWidth: 1,
+    borderColor: "rgba(226,232,240,0.92)",
+    ...shadow.card,
+  },
+
+  infoRow: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 3,
-    borderColor: "#FFFFFF",
-    shadowColor: "#0F172A",
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-    elevation: 5,
+    justifyContent: "space-between",
+    gap: spacing.md,
   },
 
-  markerIcon: {
-    fontSize: 21,
+  infoTextGroup: {
+    flex: 1,
   },
 
-  markerPointer: {
-    width: 10,
-    height: 10,
-    marginTop: -4,
-    transform: [{ rotate: "45deg" }],
-    borderRightWidth: 2,
-    borderBottomWidth: 2,
-    borderColor: "#FFFFFF",
-  },
-
-  clusterMarker: {
-    minWidth: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#0F766E",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 3,
-    borderColor: "#FFFFFF",
-    paddingHorizontal: 8,
-    shadowColor: "#0F172A",
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-
-  clusterText: {
+  infoTitle: {
     fontSize: 14,
     fontWeight: "900",
-    color: "#FFFFFF",
+    color: colors.text,
   },
 
-  userMarker: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: "#2563EB",
-    borderWidth: 4,
-    borderColor: "#DBEAFE",
+  infoDescription: {
+    marginTop: 3,
+    fontSize: 11,
+    fontWeight: "800",
+    color: colors.textMuted,
   },
 
-  draftMarker: {
+  nearestRow: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: spacing.sm,
   },
 
-  draftBubble: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#0F172A",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 3,
-    borderColor: "#FFFFFF",
+  nearestText: {
+    flex: 1,
+    fontSize: 11,
+    fontWeight: "800",
+    color: colors.textMuted,
   },
 
-  draftIcon: {
-    fontSize: 22,
-  },
+  sosButton: {
+  minWidth: 74,
+  height: 52,
+  borderRadius: radius.full,
+  backgroundColor: colors.danger,
+  alignItems: "center",
+  justifyContent: "center",
+  flexDirection: "row",
+  gap: 6,
+  paddingHorizontal: spacing.md,
+  borderWidth: 3,
+  borderColor: colors.dangerSoft,
+  ...shadow.floating,
+  shadowColor: colors.dangerDark,
+},
 
-  sosWrapper: {
-    position: "absolute",
-    right: 18,
-    bottom: 210,
-    zIndex: 20,
-  },
+sosButtonPressed: {
+  opacity: 0.88,
+  transform: [{ scale: 0.96 }],
+},
+
+sosButtonText: {
+  fontSize: 12,
+  fontWeight: "900",
+  color: colors.textInverse,
+},
 });

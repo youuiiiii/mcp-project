@@ -1,137 +1,92 @@
-import { StyleSheet, Text, View } from "react-native";
-import { IncidentReport } from "../types/incident";
+import { Ionicons } from "@expo/vector-icons";
+import type { ComponentProps } from "react";
+import {
+  StyleSheet,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
+
+import { colors } from "../theme/colors";
+import { spacing } from "../theme/layout";
+import type { IncidentReport } from "../types/incident";
 import {
   getIncidentTrustMeta,
-  getIncidentTrustSummary,
+  type IncidentTrustLevel,
 } from "../utils/incidentTrust";
+import StatusBadge from "./ui/StatusBadge";
+
+type StatusBadgeVariant = ComponentProps<typeof StatusBadge>["variant"];
+type IoniconName = ComponentProps<typeof Ionicons>["name"];
+
+type IncidentTrustBadgeVariant = "default" | "compact";
 
 type IncidentTrustBadgeProps = {
   incident: IncidentReport;
-  variant?: "compact" | "full";
+  variant?: IncidentTrustBadgeVariant;
+  style?: StyleProp<ViewStyle>;
 };
+
+type TrustBadgeUiMeta = {
+  iconName: IoniconName;
+  badgeVariant: StatusBadgeVariant;
+};
+
+const TRUST_BADGE_UI_META = {
+  pending: {
+    iconName: "time-outline",
+    badgeVariant: "warning",
+  },
+  verified: {
+    iconName: "shield-checkmark-outline",
+    badgeVariant: "success",
+  },
+  disputed: {
+    iconName: "alert-circle-outline",
+    badgeVariant: "danger",
+  },
+  resolved: {
+    iconName: "checkmark-done-circle-outline",
+    badgeVariant: "success",
+  },
+} as const satisfies Record<IncidentTrustLevel, TrustBadgeUiMeta>;
 
 export default function IncidentTrustBadge({
   incident,
-  variant = "compact",
+  variant = "default",
+  style,
 }: IncidentTrustBadgeProps) {
-  const trust = getIncidentTrustMeta(incident);
-
-  if (variant === "full") {
-    return (
-      <View
-        style={[
-          styles.fullContainer,
-          {
-            backgroundColor: trust.lightColor,
-            borderColor: trust.color,
-          },
-        ]}
-      >
-        <View
-          style={[
-            styles.fullIconBox,
-            {
-              backgroundColor: trust.color,
-            },
-          ]}
-        >
-          <Text style={styles.fullIcon}>{trust.icon}</Text>
-        </View>
-
-        <View style={styles.fullContent}>
-          <Text
-            style={[
-              styles.fullTitle,
-              {
-                color: trust.color,
-              },
-            ]}
-          >
-            {trust.label}
-          </Text>
-
-          <Text style={styles.fullDescription}>{trust.description}</Text>
-
-          <Text style={styles.fullMeta}>
-            {getIncidentTrustSummary(incident)}
-          </Text>
-        </View>
-      </View>
-    );
-  }
+  const trustMeta = getIncidentTrustMeta(incident);
+  const uiMeta = TRUST_BADGE_UI_META[trustMeta.level];
+  const isCompact = variant === "compact";
 
   return (
     <View
-      style={[
-        styles.compactContainer,
-        {
-          backgroundColor: trust.lightColor,
-          borderColor: trust.color,
-        },
-      ]}
+      style={[styles.container, style]}
+      accessible
+      accessibilityRole="text"
+      accessibilityLabel={`${trustMeta.label}. ${trustMeta.description}`}
     >
-      <Text
-        style={[
-          styles.compactText,
-          {
-            color: trust.color,
-          },
-        ]}
-      >
-        {trust.icon} {trust.shortLabel}
-      </Text>
+      <Ionicons
+        name={uiMeta.iconName}
+        size={isCompact ? 14 : 16}
+        color={colors.textSoft}
+      />
+
+      <StatusBadge
+        label={isCompact ? trustMeta.shortLabel : trustMeta.label}
+        variant={uiMeta.badgeVariant}
+        size={isCompact ? "sm" : "md"}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  compactContainer: {
+  container: {
     alignSelf: "flex-start",
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  compactText: {
-    fontSize: 11,
-    fontWeight: "900",
-  },
-  fullContainer: {
     flexDirection: "row",
-    gap: 12,
-    borderWidth: 1,
-    borderRadius: 22,
-    padding: 14,
-  },
-  fullIconBox: {
-    width: 42,
-    height: 42,
-    borderRadius: 16,
     alignItems: "center",
-    justifyContent: "center",
-  },
-  fullIcon: {
-    fontSize: 20,
-  },
-  fullContent: {
-    flex: 1,
-  },
-  fullTitle: {
-    fontSize: 14,
-    fontWeight: "900",
-  },
-  fullDescription: {
-    marginTop: 5,
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#475569",
-    lineHeight: 18,
-  },
-  fullMeta: {
-    marginTop: 10,
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#64748B",
-    lineHeight: 17,
+    gap: spacing.xs,
   },
 });
