@@ -208,7 +208,7 @@ function MiniEarthquakeCard({
         </Text>
 
         <Text style={styles.miniSubtitle}>
-          {earthquake.Jam ?? "-"} · {earthquake.Kedalaman ?? "-"}
+          {earthquake.Jam ?? "-"} - {earthquake.Kedalaman ?? "-"}
         </Text>
       </View>
     </AppCard>

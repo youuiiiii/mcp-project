@@ -153,7 +153,7 @@ function LatestReportCard({
         </View>
 
         <Text style={styles.reportMeta} numberOfLines={1}>
-          {meta.label} • {getSeverityLabel(report.severity)}
+          {meta.label} - {getSeverityLabel(report.severity)}
         </Text>
 
         <Text style={styles.reportDescription} numberOfLines={2}>

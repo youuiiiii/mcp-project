@@ -28,7 +28,7 @@ function IncidentMapMarker({ incident, onPress }: IncidentMapMarkerProps) {
       }}
       pinColor={markerColor}
       title={incident.title}
-      description={`${meta.label} • ${getSeverityLabel(incident.severity)}`}
+      description={`${meta.label} - ${getSeverityLabel(incident.severity)}`}
       onPress={() => onPress(incident)}
     />
   );

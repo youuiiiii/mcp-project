@@ -1,35 +1,47 @@
-import * as Sharing from 'expo-sharing';
-import { Alert, Share } from 'react-native';
+import { Alert, Share } from "react-native";
 
-export async function shareIncident(incident: {
-  type?: string;
-  description?: string;
-  location?: { lat: number; lng: number };
-  createdAt?: any;
-}) {
+type ShareIncidentInput = {
+  type?: string | null;
+  description?: string | null;
+  createdAt?: unknown;
+  location?: {
+    lat?: number | null;
+    lng?: number | null;
+  } | null;
+};
+
+const formatCoordinate = (value?: number | null) => {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return null;
+  }
+
+  return value.toFixed(5);
+};
+
+export async function shareIncident(incident: ShareIncidentInput) {
   try {
-    const type = incident.type ?? 'Incident';
-    const description = incident.description ?? '-';
-    const lat = incident.location?.lat?.toFixed(5) ?? '-';
-    const lng = incident.location?.lng?.toFixed(5) ?? '-';
-    const mapsUrl = `https://maps.google.com/?q=${lat},${lng}`;
+    const type = incident.type?.trim() || "Incident";
+    const description = incident.description?.trim() || "-";
+    const lat = formatCoordinate(incident.location?.lat);
+    const lng = formatCoordinate(incident.location?.lng);
+    const locationText =
+      lat && lng ? `https://maps.google.com/?q=${lat},${lng}` : "-";
 
-    const message = `🚨 SIGAP - Incident Report\n\n📍 Type: ${type}\n📝 Description: ${description}\n🗺️ Location: ${mapsUrl}\n\nReported via SIGAP - Disaster Early Warning System`;
+    const message = [
+      "SIGAP - Incident Report",
+      "",
+      `Type: ${type}`,
+      `Description: ${description}`,
+      `Location: ${locationText}`,
+      "",
+      "Reported via SIGAP - Disaster Early Warning System",
+    ].join("\n");
 
-    const isAvailable = await Sharing.isAvailableAsync();
-
-    if (isAvailable) {
-      await Share.share({
-        message,
-        title: 'SIGAP Incident Report',
-      });
-    } else {
-      await Share.share({
-        message,
-        title: 'SIGAP Incident Report',
-      });
-    }
-  } catch (error) {
-    Alert.alert('Error', 'Failed to share incident.');
+    await Share.share({
+      message,
+      title: "SIGAP Incident Report",
+    });
+  } catch {
+    Alert.alert("Error", "Failed to share incident.");
   }
 }

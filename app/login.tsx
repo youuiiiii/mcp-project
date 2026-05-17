@@ -12,7 +12,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useAuth } from "../src/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const HOME_ROUTE = "/(tabs)" as Href;
 const REGISTER_ROUTE = "/register" as Href;

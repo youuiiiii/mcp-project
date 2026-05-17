@@ -42,7 +42,7 @@ export default function IncidentOverviewCard({
             {author}
           </Text>
 
-          <Text style={styles.dot}>·</Text>
+          <Text style={styles.dot}>-</Text>
 
           <Text style={styles.timeText} numberOfLines={1}>
             {formatIncidentDate(incident.createdAt)}

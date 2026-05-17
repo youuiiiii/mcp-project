@@ -181,7 +181,7 @@ export default function MapScreen() {
               />
 
               <Text style={styles.nearestText} numberOfLines={1}>
-                Terdekat: {nearestIncidentMeta.label} •{" "}
+                Terdekat: {nearestIncidentMeta.label} -{" "}
                 {formatDistance(nearestIncident.distance)}
               </Text>
             </View>

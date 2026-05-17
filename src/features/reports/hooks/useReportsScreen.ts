@@ -6,10 +6,10 @@ import type { IncidentReport } from "../../../types/incident";
 
 export type ReportFilter = "all" | "active" | "resolved" | "high";
 
-export const REPORT_FILTER_OPTIONS: ReadonlyArray<{
+export const REPORT_FILTER_OPTIONS: readonly {
   value: ReportFilter;
   label: string;
-}> = [
+}[] = [
   {
     value: "all",
     label: "Semua",

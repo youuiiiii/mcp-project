@@ -138,7 +138,7 @@ export default function EarthquakeDetailScreen() {
                 </Text>
 
                 <Text style={styles.listMeta}>
-                  {item.Jam ?? "-"} • {item.Kedalaman ?? "-"}
+                  {item.Jam ?? "-"} - {item.Kedalaman ?? "-"}
                 </Text>
               </View>
             </AppCard>

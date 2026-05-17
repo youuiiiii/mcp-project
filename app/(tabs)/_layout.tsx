@@ -2,8 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { type Href, Redirect, Tabs } from "expo-router";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 
-import { useAuth } from "../../src/contexts/AuthContext";
-import { colors } from "../../src/theme/colors";
+import { useAuth } from "@/contexts/AuthContext";
+import { colors } from "@/theme/colors";
 
 const LOGIN_ROUTE = "/login" as Href;
 

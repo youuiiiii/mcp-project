@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import {
   ActivityIndicator,
   Modal,
-  Pressable,
   StyleSheet,
   Text,
   View,

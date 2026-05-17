@@ -1,4 +1,4 @@
-import EducationScreen from "../../src/features/education/EducationScreen";
+import EducationScreen from "@/features/education/EducationScreen";
 
 export default function EducationRoute() {
   return <EducationScreen />;

@@ -68,12 +68,12 @@ const STATUS_DISTRIBUTION_OPTIONS = [
     iconName: "checkmark-circle",
     color: colors.success,
   },
-] as const satisfies ReadonlyArray<{
+] as const satisfies readonly {
   value: IncidentStatus;
   label: string;
   iconName: AppIconName;
   color: string;
-}>;
+}[];
 
 const TRUST_DISTRIBUTION_OPTIONS = [
   {
@@ -100,12 +100,12 @@ const TRUST_DISTRIBUTION_OPTIONS = [
     iconName: "checkmark-done-circle-outline",
     color: colors.textSoft,
   },
-] as const satisfies ReadonlyArray<{
+] as const satisfies readonly {
   value: IncidentTrustLevel;
   label: string;
   iconName: AppIconName;
   color: string;
-}>;
+}[];
 
 const SEVERITY_LABEL_BY_VALUE = {
   low: "Rendah",
@@ -369,7 +369,7 @@ export default function AnalyticsScreen() {
               <Text style={styles.activityLabel}>Aktivitas Komunitas</Text>
 
               <Text style={styles.activityTitle}>
-                {totalEvidence} bukti · {totalReplies} diskusi
+                {totalEvidence} bukti - {totalReplies} diskusi
               </Text>
 
               <Text style={styles.activityText}>
@@ -553,7 +553,7 @@ function DistributionRow({
         </View>
 
         <Text style={styles.distributionCount}>
-          {item.count} · {item.percentage}%
+          {item.count} - {item.percentage}%
         </Text>
       </View>
 
@@ -597,7 +597,7 @@ function LatestReportCard({ report }: { report: IncidentReport }) {
         </Text>
 
         <Text style={styles.latestSubtitle} numberOfLines={1}>
-          {meta.label} · {SEVERITY_LABEL_BY_VALUE[report.severity]}
+          {meta.label} - {SEVERITY_LABEL_BY_VALUE[report.severity]}
         </Text>
       </View>
 

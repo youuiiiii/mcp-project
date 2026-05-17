@@ -174,7 +174,7 @@ function ReplyContent({
           {author}
         </Text>
 
-        <Text style={styles.replyDot}>·</Text>
+        <Text style={styles.replyDot}>-</Text>
 
         <Text style={styles.replyTime} numberOfLines={1}>
           {formatIncidentDate(reply.createdAt)}

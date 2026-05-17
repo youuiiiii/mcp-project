@@ -3,11 +3,14 @@ import { StyleSheet, Text, View } from "react-native";
 
 import AppCard from "../../../components/ui/AppCard";
 import IconBadge from "../../../components/ui/IconBadge";
-import { getIncidentCategoryMeta, getIncidentDisplayMeta, getIncidentMeta } from "../../../constants/incident";
+import {
+  getIncidentCategoryMeta,
+  getIncidentDisplayMeta,
+} from "../../../constants/incident";
 import { colors } from "../../../theme/colors";
 import { spacing } from "../../../theme/layout";
 import { typography } from "../../../theme/typography";
-import { IncidentReport } from "../../../types/incident";
+import type { IncidentReport } from "../../../types/incident";
 
 type AppIconName = keyof typeof Ionicons.glyphMap;
 
@@ -15,11 +18,13 @@ type IncidentPreviewCardProps = {
   incident: IncidentReport;
 };
 
-export default function IncidentPreviewCard({ incident }: IncidentPreviewCardProps) {
+export default function IncidentPreviewCard({
+  incident,
+}: IncidentPreviewCardProps) {
   const meta = getIncidentDisplayMeta({
     category: incident.category,
     subcategory: incident.subcategory ?? incident.type,
-});
+  });
   const categoryMeta = getIncidentCategoryMeta(incident.category);
 
   return (
@@ -45,7 +50,7 @@ export default function IncidentPreviewCard({ incident }: IncidentPreviewCardPro
         </Text>
 
         <Text style={styles.type} numberOfLines={1}>
-          {categoryMeta.label} • {meta.label}
+          {categoryMeta.label} - {meta.label}
         </Text>
 
         <Text style={styles.description} numberOfLines={3}>

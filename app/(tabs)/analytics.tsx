@@ -1,4 +1,4 @@
-import AnalyticsScreen from "../../src/features/analytics/AnalyticsScreen";
+import AnalyticsScreen from "@/features/analytics/AnalyticsScreen";
 
 export default function AnalyticsRoute() {
   return <AnalyticsScreen />;
