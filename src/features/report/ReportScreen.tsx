@@ -12,6 +12,7 @@ import ReportDetailsFields from "./components/ReportDetailsFields";
 import ReportEvidenceSection from "./components/ReportEvidenceSection";
 import ReportLocationNotice from "./components/ReportLocationNotice";
 import SeveritySelector from "./components/SeveritySelector";
+import SubcategorySelector from "./components/SubcategorySelector";
 import { useReportForm } from "./hooks/useReportForm";
 
 export default function ReportScreen() {
@@ -21,9 +22,7 @@ export default function ReportScreen() {
     <AppScreen keyboardAvoiding contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <StatusBadge label="Community Report" variant="danger" size="sm" />
-
         <Text style={styles.title}>Report Incident</Text>
-
         <Text style={styles.subtitle}>
           Laporkan kejadian dari lokasi Anda saat ini. Setelah terkirim,
           laporan akan muncul sebagai pin di Map.
@@ -37,6 +36,15 @@ export default function ReportScreen() {
         disabled={form.loading}
         onSelectCategory={form.setCategory}
       />
+
+      {form.category === "missing_lost" && (
+        <SubcategorySelector
+          category={form.category}
+          selectedSubcategory={form.subcategory}
+          disabled={form.loading}
+          onSelectSubcategory={form.setSubcategory}
+        />
+      )}
 
       <ReportDetailsFields
         title={form.title}

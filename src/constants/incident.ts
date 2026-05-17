@@ -58,11 +58,8 @@ export type SeverityOption = {
 };
 
 export const REPORT_ALLOWED_DISTANCE_METERS = 20;
-
 export const VERIFICATION_DISTANCE_METERS = 80;
-
-export const WARNING_DISTANCE_METERS  = 700;
-
+export const WARNING_DISTANCE_METERS = 700;
 export const LOCAL_INCIDENT_NOTIFICATION_DISTANCE_METERS = 300;
 
 const UNKNOWN_INCIDENT_META: IncidentCategoryMeta = {
@@ -71,8 +68,7 @@ const UNKNOWN_INCIDENT_META: IncidentCategoryMeta = {
   iconName: "help-circle",
   color: "#64748B",
   lightColor: "#F1F5F9",
-  description:
-    "Kategori laporan tidak tersedia atau belum dikenali oleh sistem.",
+  description: "Kategori laporan tidak tersedia atau belum dikenali oleh sistem.",
 };
 
 export const INCIDENT_CATEGORIES = {
@@ -82,8 +78,7 @@ export const INCIDENT_CATEGORIES = {
     iconName: "earth",
     color: "#2563EB",
     lightColor: "#DBEAFE",
-    description:
-      "Banjir, gempa, longsor, tsunami, angin kencang, atau kejadian alam lain.",
+    description: "Banjir, gempa, longsor, tsunami, angin kencang, atau kejadian alam lain.",
   },
   fire_emergency: {
     label: "Kebakaran",
@@ -91,8 +86,7 @@ export const INCIDENT_CATEGORIES = {
     iconName: "flame",
     color: "#DC2626",
     lightColor: "#FEE2E2",
-    description:
-      "Api, asap tebal, kebakaran bangunan, kendaraan, lahan, atau listrik.",
+    description: "Api, asap tebal, kebakaran bangunan, kendaraan, lahan, atau listrik.",
   },
   accident_infrastructure: {
     label: "Kecelakaan & Infrastruktur",
@@ -100,8 +94,7 @@ export const INCIDENT_CATEGORIES = {
     iconName: "construct",
     color: "#EA580C",
     lightColor: "#FFEDD5",
-    description:
-      "Kecelakaan, jalan rusak/terhalang, pohon tumbang, kabel jatuh, atau fasilitas rusak.",
+    description: "Kecelakaan, jalan rusak/terhalang, pohon tumbang, kabel jatuh, atau fasilitas rusak.",
   },
   security_public_order: {
     label: "Keamanan & Ketertiban",
@@ -109,8 +102,7 @@ export const INCIDENT_CATEGORIES = {
     iconName: "shield",
     color: "#BE123C",
     lightColor: "#FFE4E6",
-    description:
-      "Kriminalitas, pencurian, tawuran, kerumunan berisiko, atau gangguan publik.",
+    description: "Kriminalitas, pencurian, tawuran, kerumunan berisiko, atau gangguan publik.",
   },
   medical_rescue: {
     label: "Medis & Penyelamatan",
@@ -118,20 +110,18 @@ export const INCIDENT_CATEGORIES = {
     iconName: "medkit",
     color: "#0891B2",
     lightColor: "#CFFAFE",
-    description:
-      "Darurat medis, orang pingsan, kecelakaan kerja, tenggelam, atau butuh evakuasi.",
+    description: "Darurat medis, orang pingsan, kecelakaan kerja, tenggelam, atau butuh evakuasi.",
+  },
+  missing_lost: {
+    label: "Orang / Benda Hilang",
+    shortLabel: "Hilang",
+    iconName: "search",
+    color: "#7C3AED",
+    lightColor: "#EDE9FE",
+    description: "Orang hilang, barang hilang, atau kendaraan hilang.",
   },
 } as const satisfies Record<IncidentCategory, IncidentCategoryMeta>;
 
-/**
- * Legacy / advanced taxonomy.
- *
- * Tidak dipakai sebagai input wajib report form.
- * Dipertahankan hanya untuk:
- * - membaca data lama,
- * - display fallback legacy,
- * - advanced classification nanti kalau benar-benar dibutuhkan.
- */
 export const INCIDENT_TYPES = {
   flood: {
     category: "natural_disaster",
@@ -181,7 +171,6 @@ export const INCIDENT_TYPES = {
     color: "#1D4ED8",
     lightColor: "#DBEAFE",
   },
-
   fire: {
     category: "fire_emergency",
     label: "Kebakaran Umum",
@@ -222,7 +211,6 @@ export const INCIDENT_TYPES = {
     color: "#CA8A04",
     lightColor: "#FEF9C3",
   },
-
   traffic_accident: {
     category: "accident_infrastructure",
     label: "Kecelakaan Lalu Lintas",
@@ -271,7 +259,6 @@ export const INCIDENT_TYPES = {
     color: "#7C2D12",
     lightColor: "#FFEDD5",
   },
-
   crime: {
     category: "security_public_order",
     label: "Kriminalitas",
@@ -320,7 +307,6 @@ export const INCIDENT_TYPES = {
     color: "#9333EA",
     lightColor: "#F3E8FF",
   },
-
   medical: {
     category: "medical_rescue",
     label: "Darurat Medis",
@@ -361,6 +347,30 @@ export const INCIDENT_TYPES = {
     color: "#DC2626",
     lightColor: "#FEE2E2",
   },
+  missing_person: {
+    category: "missing_lost",
+    label: "Orang Hilang",
+    shortLabel: "Missing",
+    iconName: "person-outline",
+    color: "#7C3AED",
+    lightColor: "#EDE9FE",
+  },
+  missing_item: {
+    category: "missing_lost",
+    label: "Barang Hilang",
+    shortLabel: "Item",
+    iconName: "bag-handle-outline",
+    color: "#7C3AED",
+    lightColor: "#EDE9FE",
+  },
+  missing_vehicle: {
+    category: "missing_lost",
+    label: "Kendaraan Hilang",
+    shortLabel: "Vehicle",
+    iconName: "car-outline",
+    color: "#6D28D9",
+    lightColor: "#EDE9FE",
+  },
 } as const satisfies Record<IncidentSubcategory, IncidentMeta>;
 
 export const INCIDENT_CATEGORY_OPTIONS: IncidentCategoryOption[] =
@@ -393,8 +403,7 @@ export const SEVERITY_OPTIONS: SeverityOption[] = [
     color: "#16A34A",
     lightColor: "#DCFCE7",
     iconName: "checkmark-circle",
-    description:
-      "Tidak terlalu berbahaya, tetapi tetap perlu diketahui warga sekitar.",
+    description: "Tidak terlalu berbahaya, tetapi tetap perlu diketahui warga sekitar.",
   },
   {
     value: "medium",
@@ -414,9 +423,7 @@ export const SEVERITY_OPTIONS: SeverityOption[] = [
   },
 ];
 
-export const isIncidentCategory = (
-  value: string
-): value is IncidentCategory => {
+export const isIncidentCategory = (value: string): value is IncidentCategory => {
   return Object.prototype.hasOwnProperty.call(INCIDENT_CATEGORIES, value);
 };
 
@@ -430,23 +437,15 @@ export const getIncidentCategoryMeta = (
   if (!category || !isIncidentCategory(category)) {
     return UNKNOWN_INCIDENT_META;
   }
-
   return INCIDENT_CATEGORIES[category];
 };
 
-/**
- * Legacy-only helper.
- *
- * Jangan dipakai sebagai helper utama display incident baru.
- * Untuk UI incident, gunakan getIncidentDisplayMeta().
- */
 export const getIncidentMeta = (
   type?: IncidentType | IncidentSubcategory | null
 ): IncidentMeta | null => {
   if (!type || !isIncidentType(type)) {
     return null;
   }
-
   return INCIDENT_TYPES[type];
 };
 
@@ -455,11 +454,9 @@ export const getIncidentDisplayMeta = (input: {
   subcategory?: IncidentSubcategory | IncidentType | null;
 }): IncidentDisplayMeta => {
   const subcategoryMeta = getIncidentMeta(input.subcategory);
-
   if (subcategoryMeta) {
     return subcategoryMeta;
   }
-
   return getIncidentCategoryMeta(input.category);
 };
 
@@ -467,7 +464,6 @@ export const getCategoryBySubcategory = (
   subcategory?: IncidentSubcategory | IncidentType | null
 ): IncidentCategory | null => {
   const subcategoryMeta = getIncidentMeta(subcategory);
-
   return subcategoryMeta?.category ?? null;
 };
 
@@ -478,25 +474,10 @@ export const getSubcategoriesByCategory = (
 };
 
 export const getFilterLabel = (value: string): string => {
-  if (value === "all") {
-    return "Semua kejadian";
-  }
-
-  if (value === "active") {
-    return "Laporan aktif";
-  }
-
-  if (value === "resolved") {
-    return "Laporan selesai";
-  }
-
-  if (isIncidentCategory(value)) {
-    return getIncidentCategoryMeta(value).label;
-  }
-
-  if (isIncidentType(value)) {
-    return getIncidentMeta(value)?.label ?? "Filter tidak dikenal";
-  }
-
+  if (value === "all") return "Semua kejadian";
+  if (value === "active") return "Laporan aktif";
+  if (value === "resolved") return "Laporan selesai";
+  if (isIncidentCategory(value)) return getIncidentCategoryMeta(value).label;
+  if (isIncidentType(value)) return getIncidentMeta(value)?.label ?? "Filter tidak dikenal";
   return "Filter tidak dikenal";
 };

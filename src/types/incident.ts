@@ -3,7 +3,8 @@ export type IncidentCategory =
   | "fire_emergency"
   | "accident_infrastructure"
   | "security_public_order"
-  | "medical_rescue";
+  | "medical_rescue"
+  | "missing_lost";
 
 export type IncidentSubcategory =
   | "flood"
@@ -33,7 +34,10 @@ export type IncidentSubcategory =
   | "fainted_person"
   | "work_accident"
   | "drowning"
-  | "evacuation_needed";
+  | "evacuation_needed"
+  | "missing_person"
+  | "missing_item"
+  | "missing_vehicle";
 
 /**
  * Legacy alias.
@@ -125,38 +129,20 @@ export type CreateIncidentAccuracyVotePayload = {
 
 export type IncidentReport = {
   id: string;
-
   category: IncidentCategory;
-
   subcategory?: IncidentSubcategory | null;
-
-  /**
-   * Deprecated legacy field.
-   */
   type?: IncidentType | null;
-
   title: string;
   description: string;
   latitude: number;
   longitude: number;
   status: IncidentStatus;
   severity: IncidentSeverity;
-
-  /**
-   * Cover image / first evidence image.
-   */
   imageUri?: string | null;
-
-  /**
-   * All evidence images for the report.
-   * The first item should always be the same as imageUri.
-   */
   imageUris?: string[];
-
   address?: string | null;
   reportedBy?: string | null;
   reporterEmail?: string | null;
-
   verificationStatus?: VerificationStatus;
   verificationCount?: number;
   disputeCount?: number;
@@ -164,17 +150,14 @@ export type IncidentReport = {
   replyCount?: number;
   verifiedBy?: string[];
   disputedBy?: string[];
-
   trustStatus?: TrustStatus;
   moderationStatus?: ModerationStatus;
   moderationReason?: string | null;
   moderatedBy?: string | null;
   moderatedAt?: Date | null;
-
   createdAt?: Date;
   updatedAt?: Date;
   latestActivityAt?: Date;
-
   resolvedImageUri?: string | null;
   resolutionNote?: string | null;
   resolvedBy?: string | null;
@@ -231,16 +214,13 @@ export type CreateIncidentPayload = {
   category: IncidentCategory;
   subcategory?: IncidentSubcategory | null;
   type?: IncidentType | null;
-
   title: string;
   description: string;
   latitude: number;
   longitude: number;
   severity: IncidentSeverity;
-
   imageUri: string;
   imageUris?: string[];
-
   address?: string | null;
   reportedBy?: string | null;
   reporterEmail?: string | null;

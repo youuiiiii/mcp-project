@@ -10,6 +10,7 @@ import { createIncidentReport } from "../../../services/incidentService";
 import type {
   IncidentCategory,
   IncidentSeverity,
+  IncidentSubcategory,
 } from "../../../types/incident";
 
 const MAP_ROUTE = "/(tabs)/map" as Href;
@@ -22,6 +23,7 @@ export const useReportForm = () => {
   const { user } = useAuth();
 
   const [category, setCategory] = useState<IncidentCategory | null>(null);
+  const [subcategory, setSubcategory] = useState<IncidentSubcategory | null>(null);
   const [severity, setSeverity] = useState<IncidentSeverity>("medium");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -32,14 +34,21 @@ export const useReportForm = () => {
   const cleanDescription = description.trim();
 
   const canSubmit = Boolean(
-  user &&
-    category &&
-    cleanTitle.length >= 5 &&
-    cleanDescription.length >= 10 &&
-    photoUris.length >= 1 &&
-    photoUris.length <= MAX_REPORT_PHOTOS &&
-    !loading
+    user &&
+      category &&
+      cleanTitle.length >= 5 &&
+      cleanDescription.length >= 10 &&
+      photoUris.length >= 1 &&
+      photoUris.length <= MAX_REPORT_PHOTOS &&
+      !loading
   );
+
+  // Reset subcategory when category changes
+  const handleSetCategory = (cat: IncidentCategory) => {
+    setCategory(cat);
+    setSubcategory(null);
+  };
+
   const appendPhotos = (uris: string[]) => {
     setPhotoUris((current) => {
       const merged = Array.from(new Set([...current, ...uris]));
@@ -48,78 +57,47 @@ export const useReportForm = () => {
   };
 
   const takePhoto = async () => {
-    if (loading) {
-      return;
-    }
-
+    if (loading) return;
     if (photoUris.length >= MAX_REPORT_PHOTOS) {
       Alert.alert("Maksimal Foto", "Maksimal 4 foto untuk satu laporan.");
       return;
     }
-
     try {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
-
       if (!permission.granted) {
-        Alert.alert(
-          "Izin Kamera Dibutuhkan",
-          "Aktifkan izin kamera untuk mengambil foto bukti."
-        );
+        Alert.alert("Izin Kamera Dibutuhkan", "Aktifkan izin kamera untuk mengambil foto bukti.");
         return;
       }
-
       const result = await ImagePicker.launchCameraAsync({
         allowsEditing: false,
         quality: 0.75,
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
       });
-
-      if (result.canceled) {
-        return;
-      }
-
+      if (result.canceled) return;
       const assetUri = result.assets?.[0]?.uri;
-
       if (!assetUri) {
         Alert.alert("Foto Tidak Valid", "Gagal membaca hasil foto.");
         return;
       }
-
       appendPhotos([assetUri]);
     } catch (error) {
-      Alert.alert(
-        "Gagal Membuka Kamera",
-        error instanceof Error
-          ? error.message
-          : "Terjadi kesalahan saat membuka kamera."
-      );
+      Alert.alert("Gagal Membuka Kamera", error instanceof Error ? error.message : "Terjadi kesalahan saat membuka kamera.");
     }
   };
 
   const pickFromGallery = async () => {
-    if (loading) {
-      return;
-    }
-
+    if (loading) return;
     if (photoUris.length >= MAX_REPORT_PHOTOS) {
       Alert.alert("Maksimal Foto", "Maksimal 4 foto untuk satu laporan.");
       return;
     }
-
     try {
-      const permission =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert(
-          "Izin Galeri Dibutuhkan",
-          "Aktifkan izin galeri untuk memilih foto bukti."
-        );
+        Alert.alert("Izin Galeri Dibutuhkan", "Aktifkan izin galeri untuk memilih foto bukti.");
         return;
       }
-
       const remainingSlots = MAX_REPORT_PHOTOS - photoUris.length;
-
       const result = await ImagePicker.launchImageLibraryAsync({
         allowsEditing: false,
         allowsMultipleSelection: true,
@@ -127,28 +105,15 @@ export const useReportForm = () => {
         quality: 0.75,
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
       });
-
-      if (result.canceled) {
-        return;
-      }
-
-      const uris = result.assets
-        .map((asset) => asset.uri)
-        .filter((uri): uri is string => Boolean(uri));
-
+      if (result.canceled) return;
+      const uris = result.assets.map((asset) => asset.uri).filter((uri): uri is string => Boolean(uri));
       if (uris.length === 0) {
         Alert.alert("Foto Tidak Valid", "Gagal membaca gambar dari galeri.");
         return;
       }
-
       appendPhotos(uris);
     } catch (error) {
-      Alert.alert(
-        "Gagal Membuka Galeri",
-        error instanceof Error
-          ? error.message
-          : "Terjadi kesalahan saat membuka galeri."
-      );
+      Alert.alert("Gagal Membuka Galeri", error instanceof Error ? error.message : "Terjadi kesalahan saat membuka galeri.");
     }
   };
 
@@ -158,6 +123,7 @@ export const useReportForm = () => {
 
   const resetForm = () => {
     setCategory(null);
+    setSubcategory(null);
     setSeverity("medium");
     setTitle("");
     setDescription("");
@@ -169,66 +135,45 @@ export const useReportForm = () => {
       Alert.alert("Belum Login", "Silakan login terlebih dahulu.");
       return false;
     }
-
     if (!category) {
       Alert.alert("Kategori Belum Dipilih", "Pilih kategori kejadian dulu.");
       return false;
     }
-
     if (cleanTitle.length < 5) {
       Alert.alert("Judul Terlalu Pendek", "Judul minimal 5 karakter.");
       return false;
     }
-
     if (cleanDescription.length < 10) {
       Alert.alert("Deskripsi Terlalu Pendek", "Deskripsi minimal 10 karakter.");
       return false;
     }
-
     if (photoUris.length < 1) {
       Alert.alert("Foto Wajib Ada", "Tambahkan minimal 1 foto kejadian.");
       return false;
     }
-
     if (photoUris.length > MAX_REPORT_PHOTOS) {
       Alert.alert("Maksimal Foto", "Maksimal 4 foto untuk satu laporan.");
       return false;
     }
-
     return true;
   };
 
   const handleSubmit = async () => {
     try {
-      if (!validateForm() || !user || !category) {
-        return;
-      }
-
+      if (!validateForm() || !user || !category) return;
       setLoading(true);
 
       const permission = await Location.requestForegroundPermissionsAsync();
-
       if (permission.status !== "granted") {
-        Alert.alert(
-          "Izin Lokasi Dibutuhkan",
-          "Aktifkan izin lokasi agar laporan bisa dikirim."
-        );
+        Alert.alert("Izin Lokasi Dibutuhkan", "Aktifkan izin lokasi agar laporan bisa dikirim.");
         return;
       }
 
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-
+      const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       const accuracy = location.coords.accuracy ?? 999;
 
       if (accuracy > LOCATION_MAX_ACCURACY_METERS) {
-        Alert.alert(
-          "Akurasi Lokasi Rendah",
-          `Akurasi lokasi kamu sekitar ${Math.round(
-            accuracy
-          )} meter. Coba aktifkan GPS/high accuracy lalu kirim ulang.`
-        );
+        Alert.alert("Akurasi Lokasi Rendah", `Akurasi lokasi kamu sekitar ${Math.round(accuracy)} meter. Coba aktifkan GPS/high accuracy lalu kirim ulang.`);
         return;
       }
 
@@ -237,17 +182,14 @@ export const useReportForm = () => {
       );
 
       if (uploadedImageUrls.length < 1) {
-        Alert.alert(
-          "Upload Gagal",
-          "Minimal 1 foto bukti wajib berhasil diunggah."
-        );
+        Alert.alert("Upload Gagal", "Minimal 1 foto bukti wajib berhasil diunggah.");
         return;
       }
 
       await createIncidentReport({
         category,
-        subcategory: null,
-        type: null,
+        subcategory: subcategory ?? null,
+        type: subcategory ?? null,
         title: cleanTitle,
         description: cleanDescription,
         severity,
@@ -259,28 +201,14 @@ export const useReportForm = () => {
         reportedBy: user.displayName || user.email || "Anonymous",
         reporterEmail: user.email ?? null,
       });
+
       Alert.alert("Laporan Terkirim", "Laporan berhasil dikirim ke Map.", [
-        {
-          text: "Lihat Map",
-          onPress: () => {
-            resetForm();
-            router.push(MAP_ROUTE);
-          },
-        },
-        {
-          text: "Buat Lagi",
-          onPress: resetForm,
-        },
+        { text: "Lihat Map", onPress: () => { resetForm(); router.push(MAP_ROUTE); } },
+        { text: "Buat Lagi", onPress: resetForm },
       ]);
     } catch (error) {
       console.error("Create report error:", error);
-
-      Alert.alert(
-        "Gagal Mengirim Laporan",
-        error instanceof Error
-          ? error.message
-          : "Terjadi kesalahan saat mengirim laporan."
-      );
+      Alert.alert("Gagal Mengirim Laporan", error instanceof Error ? error.message : "Terjadi kesalahan saat mengirim laporan.");
     } finally {
       setLoading(false);
     }
@@ -288,23 +216,19 @@ export const useReportForm = () => {
 
   return {
     category,
-    setCategory,
-
+    setCategory: handleSetCategory,
+    subcategory,
+    setSubcategory,
     severity,
     setSeverity,
-
     title,
     setTitle,
-
     description,
     setDescription,
-
     photoUris,
     setPhotoUris,
-
     loading,
     canSubmit,
-
     takePhoto,
     pickFromGallery,
     removePhoto,
