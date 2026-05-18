@@ -49,7 +49,7 @@ export default function IncidentReplyComposer({
   onSubmitReply,
 }: IncidentReplyComposerProps) {
   const targetName =
-    replyingTo?.userName || replyingTo?.userEmail || "komentar ini";
+    replyingTo?.userName || replyingTo?.userEmail || "this comment";
 
   return (
     <View style={styles.wrapper}>
@@ -77,7 +77,7 @@ export default function IncidentReplyComposer({
 
       {!replyingTo ? (
         <View style={styles.updateTypeSection}>
-          <Text style={styles.updateTypeLabel}>Kondisi di lokasi</Text>
+          <Text style={styles.updateTypeLabel}>Condition at location</Text>
 
           <ScrollView
             horizontal
@@ -159,7 +159,7 @@ export default function IncidentReplyComposer({
           onChangeText={onChangeReplyText}
           editable={!replySubmitting}
           placeholder={
-            replyingTo ? "Tulis balasan..." : "Tulis update kondisi..."
+            replyingTo ? "Write a reply..." : "Write a condition update..."
           }
           placeholderTextColor={colors.textSoft}
           multiline

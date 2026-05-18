@@ -53,7 +53,7 @@ export const useProfileScreen = () => {
       },
       (error) => {
         console.error("Profile reports error:", error);
-        setErrorMessage(error.message || "Gagal memuat data laporan.");
+        setErrorMessage(error.message || "Could not load report data.");
         setLoading(false);
       }
     );
@@ -108,9 +108,9 @@ export const useProfileScreen = () => {
   }, [userReports]);
 
   const handleLogout = () => {
-    Alert.alert("Logout", "Keluar dari akun ini?", [
+    Alert.alert("Logout", "Log out of this account?", [
       {
-        text: "Batal",
+        text: "Cancel",
         style: "cancel",
       },
       {
@@ -122,7 +122,7 @@ export const useProfileScreen = () => {
             router.replace(LOGIN_ROUTE);
           } catch (error) {
             console.error("Logout error:", error);
-            Alert.alert("Logout Gagal", "Terjadi kesalahan saat logout.");
+            Alert.alert("Logout Failed", "Something went wrong while logging out.");
           }
         },
       },

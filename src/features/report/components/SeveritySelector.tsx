@@ -23,7 +23,7 @@ export default function SeveritySelector({
     <View style={styles.section}>
       <SectionHeader
         title="3. Severity"
-        subtitle="Pilih seberapa mendesak kondisi saat ini."
+        subtitle="Choose how urgent the current situation is."
       />
 
       <View style={styles.row}>

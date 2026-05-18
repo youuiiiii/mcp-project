@@ -37,22 +37,25 @@ export default function RegisterScreen() {
       const cleanEmail = email.trim().toLowerCase();
 
       if (!cleanName) {
-        Alert.alert("Nama wajib diisi", "Masukkan nama Anda.");
+        Alert.alert("Name Required", "Enter your name.");
         return;
       }
 
       if (cleanName.length < 3) {
-        Alert.alert("Nama terlalu pendek", "Nama minimal 3 karakter.");
+        Alert.alert("Name Too Short", "Name must be at least 3 characters.");
         return;
       }
 
       if (!cleanEmail) {
-        Alert.alert("Email wajib diisi", "Masukkan email Anda.");
+        Alert.alert("Email Required", "Enter your email.");
         return;
       }
 
       if (password.length < 6) {
-        Alert.alert("Password terlalu pendek", "Password minimal 6 karakter.");
+        Alert.alert(
+          "Password Too Short",
+          "Password must be at least 6 characters."
+        );
         return;
       }
 
@@ -63,8 +66,8 @@ export default function RegisterScreen() {
       router.replace(HOME_ROUTE);
     } catch (error) {
       Alert.alert(
-        "Register Gagal",
-        error instanceof Error ? error.message : "Gagal membuat akun."
+        "Registration Failed",
+        error instanceof Error ? error.message : "Could not create an account."
       );
     } finally {
       setSubmitting(false);
@@ -92,19 +95,19 @@ export default function RegisterScreen() {
             <Text style={styles.badgeText}>CREATE ACCOUNT</Text>
           </View>
 
-          <Text style={styles.title}>Daftar Akun</Text>
+          <Text style={styles.title}>Create Account</Text>
 
           <Text style={styles.subtitle}>
-            Buat akun untuk ikut berkontribusi dalam pelaporan kejadian sekitar.
+            Create an account to contribute reports around you.
           </Text>
 
           <View style={styles.form}>
             <View>
-              <Text style={styles.label}>Nama</Text>
+              <Text style={styles.label}>Name</Text>
               <TextInput
                 value={name}
                 onChangeText={setName}
-                placeholder="Nama lengkap"
+                placeholder="Full name"
                 placeholderTextColor="#94A3B8"
                 style={styles.input}
                 editable={!submitting}
@@ -130,7 +133,7 @@ export default function RegisterScreen() {
               <TextInput
                 value={password}
                 onChangeText={setPassword}
-                placeholder="Minimal 6 karakter"
+                placeholder="At least 6 characters"
                 placeholderTextColor="#94A3B8"
                 secureTextEntry
                 style={styles.input}
@@ -150,13 +153,13 @@ export default function RegisterScreen() {
               {submitting ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.buttonText}>Daftar</Text>
+                <Text style={styles.buttonText}>Create Account</Text>
               )}
             </Pressable>
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Sudah punya akun?</Text>
+            <Text style={styles.footerText}>Already have an account?</Text>
 
             <Link href={LOGIN_ROUTE} asChild>
               <Pressable disabled={submitting}>

@@ -18,14 +18,14 @@ type IncidentCardProps = {
 };
 
 const STATUS_LABEL = {
-  active: "Aktif",
-  resolved: "Selesai",
+  active: "Active",
+  resolved: "Resolved",
 } as const satisfies Record<IncidentReport["status"], string>;
 
 const SEVERITY_LABEL = {
-  low: "Rendah",
-  medium: "Sedang",
-  high: "Tinggi",
+  low: "Low",
+  medium: "Medium",
+  high: "High",
 } as const satisfies Record<IncidentReport["severity"], string>;
 
 export default function IncidentCard({
@@ -70,7 +70,7 @@ export default function IncidentCard({
 
         <View style={styles.headerContent}>
           <Text style={styles.title} numberOfLines={1}>
-            {incident.title || "Laporan tanpa judul"}
+            {incident.title || "Untitled report"}
           </Text>
 
           <Text style={styles.category} numberOfLines={1}>
@@ -85,7 +85,7 @@ export default function IncidentCard({
       </View>
 
       <Text style={styles.description} numberOfLines={2}>
-        {incident.description || "Tidak ada deskripsi."}
+        {incident.description || "No description provided."}
       </Text>
 
       {showImage && incident.imageUri ? (
@@ -122,7 +122,7 @@ export default function IncidentCard({
 
 function formatDate(date?: Date): string {
   if (!date) {
-    return "Waktu tidak tersedia";
+    return "Time unavailable";
   }
 
   return date.toLocaleString("id-ID", {

@@ -32,9 +32,9 @@ export default function IncidentAccuracyPanel({
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.titleGroup}>
-          <Text style={styles.title}>Akurasi Laporan</Text>
+          <Text style={styles.title}>Report Accuracy</Text>
           <Text style={styles.subtitle}>
-            Dinilai oleh warga yang berada cukup dekat dari lokasi.
+            Rated by users who are close enough to the reported location.
           </Text>
         </View>
 
@@ -71,7 +71,7 @@ export default function IncidentAccuracyPanel({
         />
 
         <AccuracyButton
-          label="Tidak akurat"
+          label="Inaccurate"
           count={inaccurateCount}
           iconName="arrow-down-circle"
           active={currentUserVote === "inaccurate"}

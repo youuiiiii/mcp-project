@@ -34,7 +34,7 @@ export default function EarthquakeDetailScreen() {
         setErrorMessage(
           error instanceof Error
             ? error.message
-            : "Gagal memuat data gempa BMKG."
+            : "Could not load BMKG earthquake data."
         );
       } finally {
         setLoading(false);
@@ -48,12 +48,12 @@ export default function EarthquakeDetailScreen() {
     <AppScreen contentContainerStyle={styles.content}>
       <SectionHeader
         title="BMKG Earthquake"
-        subtitle="Data gempa terkini dari BMKG."
+        subtitle="Latest earthquake data from BMKG."
       />
 
       {loading ? (
         <AppCard style={styles.loadingCard}>
-          <LoadingState message="Memuat data BMKG..." />
+          <LoadingState message="Loading BMKG data..." />
         </AppCard>
       ) : null}
 
@@ -75,7 +75,7 @@ export default function EarthquakeDetailScreen() {
               />
 
               <Text style={styles.location}>
-                {latest.Wilayah ?? "Lokasi tidak diketahui"}
+                {latest.Wilayah ?? "Unknown location"}
               </Text>
             </View>
 
@@ -88,18 +88,18 @@ export default function EarthquakeDetailScreen() {
           </View>
 
           <View style={styles.infoGrid}>
-            <InfoItem label="Tanggal" value={latest.Tanggal ?? "-"} />
-            <InfoItem label="Jam" value={latest.Jam ?? "-"} />
-            <InfoItem label="Kedalaman" value={latest.Kedalaman ?? "-"} />
-            <InfoItem label="Koordinat" value={latest.Coordinates ?? "-"} />
+            <InfoItem label="Date" value={latest.Tanggal ?? "-"} />
+            <InfoItem label="Time" value={latest.Jam ?? "-"} />
+            <InfoItem label="Depth" value={latest.Kedalaman ?? "-"} />
+            <InfoItem label="Coordinates" value={latest.Coordinates ?? "-"} />
           </View>
 
           <AppCard variant="muted" style={styles.potentialCard}>
             <Ionicons name="alert-circle" size={20} color={colors.danger} />
             <View style={styles.potentialText}>
-              <Text style={styles.potentialTitle}>Potensi</Text>
+              <Text style={styles.potentialTitle}>Potential Impact</Text>
               <Text style={styles.potentialDescription}>
-                {latest.Potensi ?? "Informasi potensi tidak tersedia."}
+                {latest.Potensi ?? "Potential impact information is unavailable."}
               </Text>
             </View>
           </AppCard>
@@ -108,7 +108,7 @@ export default function EarthquakeDetailScreen() {
             <AppCard variant="muted" style={styles.potentialCard}>
               <Ionicons name="people" size={20} color={colors.info} />
               <View style={styles.potentialText}>
-                <Text style={styles.potentialTitle}>Dirasakan</Text>
+                <Text style={styles.potentialTitle}>Felt Reports</Text>
                 <Text style={styles.potentialDescription}>
                   {latest.Dirasakan}
                 </Text>
@@ -121,8 +121,8 @@ export default function EarthquakeDetailScreen() {
       {!loading && earthquakes.length > 1 ? (
         <View style={styles.section}>
           <SectionHeader
-            title="Gempa Lainnya"
-            subtitle="Daftar gempa terbaru dari BMKG."
+            title="Other Earthquakes"
+            subtitle="Latest earthquake list from BMKG."
           />
 
           {earthquakes.slice(1, 6).map((item, index) => (
@@ -134,7 +134,7 @@ export default function EarthquakeDetailScreen() {
 
               <View style={styles.listContent}>
                 <Text style={styles.listTitle} numberOfLines={2}>
-                  {item.Wilayah ?? "Lokasi tidak diketahui"}
+                  {item.Wilayah ?? "Unknown location"}
                 </Text>
 
                 <Text style={styles.listMeta}>

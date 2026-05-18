@@ -54,7 +54,7 @@ export default function IncidentPreviewCard({
         </Text>
 
         <Text style={styles.description} numberOfLines={3}>
-          {incident.description || "Tidak ada deskripsi."}
+          {incident.description || "No description provided."}
         </Text>
       </View>
     </AppCard>

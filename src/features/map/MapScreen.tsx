@@ -159,7 +159,7 @@ export default function MapScreen() {
           <View style={styles.infoRow}>
             <View style={styles.infoTextGroup}>
               <Text style={styles.infoTitle}>
-                {filteredReports.length} laporan ditampilkan
+                {filteredReports.length} reports shown
               </Text>
 
               <Text style={styles.infoDescription}>
@@ -181,7 +181,7 @@ export default function MapScreen() {
               />
 
               <Text style={styles.nearestText} numberOfLines={1}>
-                Terdekat: {nearestIncidentMeta.label} -{" "}
+                Nearest: {nearestIncidentMeta.label} -{" "}
                 {formatDistance(nearestIncident.distance)}
               </Text>
             </View>

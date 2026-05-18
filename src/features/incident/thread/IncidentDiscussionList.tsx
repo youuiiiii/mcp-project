@@ -52,13 +52,13 @@ export default function IncidentDiscussionList({
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Komentar Warga</Text>
+        <Text style={styles.sectionTitle}>Community Comments</Text>
         <Text style={styles.sectionSubtitle}>
-          {replies.length} komentar tersedia
+          {replies.length} comments available
         </Text>
       </View>
 
-      {loading ? <LoadingState message="Memuat komentar..." /> : null}
+      {loading ? <LoadingState message="Loading comments..." /> : null}
 
       {!loading && replies.length === 0 ? (
         <View style={styles.emptyState}>
@@ -69,9 +69,9 @@ export default function IncidentDiscussionList({
           />
 
           <View style={styles.emptyTextGroup}>
-            <Text style={styles.emptyTitle}>Belum ada komentar</Text>
+            <Text style={styles.emptyTitle}>No comments yet</Text>
             <Text style={styles.emptyText}>
-              Jadilah yang pertama memberi informasi tambahan.
+              Be the first to add useful information.
             </Text>
           </View>
         </View>
@@ -323,7 +323,7 @@ function NaturalReplyImage({
 
       <View style={styles.imageHint}>
         <Ionicons name="expand-outline" size={13} color={colors.textInverse} />
-        <Text style={styles.imageHintText}>Lihat</Text>
+        <Text style={styles.imageHintText}>View</Text>
       </View>
     </Pressable>
   );

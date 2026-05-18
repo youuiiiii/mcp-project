@@ -24,8 +24,8 @@ export default function ReportScreen() {
         <StatusBadge label="Community Report" variant="danger" size="sm" />
         <Text style={styles.title}>Report Incident</Text>
         <Text style={styles.subtitle}>
-          Laporkan kejadian dari lokasi Anda saat ini. Setelah terkirim,
-          laporan akan muncul sebagai pin di Map.
+          Send a report from your current location. Before publishing, SIGAP
+          checks for similar active incidents nearby.
         </Text>
       </View>
 
@@ -69,7 +69,7 @@ export default function ReportScreen() {
       />
 
       <AppButton
-        title={form.loading ? "Mengirim..." : "Submit Report"}
+        title={form.loading ? "Sending..." : "Submit Report"}
         variant="danger"
         size="lg"
         fullWidth

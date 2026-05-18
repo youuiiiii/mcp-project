@@ -6,17 +6,23 @@ import { Alert } from "react-native";
 
 import { useAuth } from "../../../contexts/AuthContext";
 import { uploadImageAsync } from "../../../services/cloudinaryService";
-import { createIncidentReport } from "../../../services/incidentService";
+import {
+  createIncidentReport,
+  findNearbyActiveIncidentCandidates,
+  type NearbyIncidentCandidate,
+} from "../../../services/incidentService";
 import type {
   IncidentCategory,
   IncidentSeverity,
   IncidentSubcategory,
 } from "../../../types/incident";
+import { formatDistance } from "../../../utils/geo";
 
 const MAP_ROUTE = "/(tabs)/map" as Href;
 
 const LOCATION_MAX_ACCURACY_METERS = 80;
 const MAX_REPORT_PHOTOS = 4;
+const DUPLICATE_CHECK_RADIUS_METERS = 150;
 
 export const useReportForm = () => {
   const router = useRouter();
@@ -43,7 +49,6 @@ export const useReportForm = () => {
       !loading
   );
 
-  // Reset subcategory when category changes
   const handleSetCategory = (cat: IncidentCategory) => {
     setCategory(cat);
     setSubcategory(null);
@@ -59,13 +64,16 @@ export const useReportForm = () => {
   const takePhoto = async () => {
     if (loading) return;
     if (photoUris.length >= MAX_REPORT_PHOTOS) {
-      Alert.alert("Maksimal Foto", "Maksimal 4 foto untuk satu laporan.");
+      Alert.alert("Photo Limit", "You can add up to 4 photos per report.");
       return;
     }
     try {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert("Izin Kamera Dibutuhkan", "Aktifkan izin kamera untuk mengambil foto bukti.");
+        Alert.alert(
+          "Camera Permission Needed",
+          "Enable camera permission to take evidence photos."
+        );
         return;
       }
       const result = await ImagePicker.launchCameraAsync({
@@ -76,25 +84,33 @@ export const useReportForm = () => {
       if (result.canceled) return;
       const assetUri = result.assets?.[0]?.uri;
       if (!assetUri) {
-        Alert.alert("Foto Tidak Valid", "Gagal membaca hasil foto.");
+        Alert.alert("Invalid Photo", "Could not read the captured photo.");
         return;
       }
       appendPhotos([assetUri]);
     } catch (error) {
-      Alert.alert("Gagal Membuka Kamera", error instanceof Error ? error.message : "Terjadi kesalahan saat membuka kamera.");
+      Alert.alert(
+        "Could Not Open Camera",
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while opening the camera."
+      );
     }
   };
 
   const pickFromGallery = async () => {
     if (loading) return;
     if (photoUris.length >= MAX_REPORT_PHOTOS) {
-      Alert.alert("Maksimal Foto", "Maksimal 4 foto untuk satu laporan.");
+      Alert.alert("Photo Limit", "You can add up to 4 photos per report.");
       return;
     }
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert("Izin Galeri Dibutuhkan", "Aktifkan izin galeri untuk memilih foto bukti.");
+        Alert.alert(
+          "Gallery Permission Needed",
+          "Enable gallery permission to choose evidence photos."
+        );
         return;
       }
       const remainingSlots = MAX_REPORT_PHOTOS - photoUris.length;
@@ -108,12 +124,17 @@ export const useReportForm = () => {
       if (result.canceled) return;
       const uris = result.assets.map((asset) => asset.uri).filter((uri): uri is string => Boolean(uri));
       if (uris.length === 0) {
-        Alert.alert("Foto Tidak Valid", "Gagal membaca gambar dari galeri.");
+        Alert.alert("Invalid Photo", "Could not read the selected image.");
         return;
       }
       appendPhotos(uris);
     } catch (error) {
-      Alert.alert("Gagal Membuka Galeri", error instanceof Error ? error.message : "Terjadi kesalahan saat membuka galeri.");
+      Alert.alert(
+        "Could Not Open Gallery",
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while opening the gallery."
+      );
     }
   };
 
@@ -132,27 +153,30 @@ export const useReportForm = () => {
 
   const validateForm = () => {
     if (!user) {
-      Alert.alert("Belum Login", "Silakan login terlebih dahulu.");
+      Alert.alert("Login Required", "Please log in before sending a report.");
       return false;
     }
     if (!category) {
-      Alert.alert("Kategori Belum Dipilih", "Pilih kategori kejadian dulu.");
+      Alert.alert("Category Required", "Choose the incident category first.");
       return false;
     }
     if (cleanTitle.length < 5) {
-      Alert.alert("Judul Terlalu Pendek", "Judul minimal 5 karakter.");
+      Alert.alert("Title Too Short", "The title must be at least 5 characters.");
       return false;
     }
     if (cleanDescription.length < 10) {
-      Alert.alert("Deskripsi Terlalu Pendek", "Deskripsi minimal 10 karakter.");
+      Alert.alert(
+        "Description Too Short",
+        "The description must be at least 10 characters."
+      );
       return false;
     }
     if (photoUris.length < 1) {
-      Alert.alert("Foto Wajib Ada", "Tambahkan minimal 1 foto kejadian.");
+      Alert.alert("Photo Required", "Add at least 1 incident photo.");
       return false;
     }
     if (photoUris.length > MAX_REPORT_PHOTOS) {
-      Alert.alert("Maksimal Foto", "Maksimal 4 foto untuk satu laporan.");
+      Alert.alert("Photo Limit", "You can add up to 4 photos per report.");
       return false;
     }
     return true;
@@ -165,7 +189,10 @@ export const useReportForm = () => {
 
       const permission = await Location.requestForegroundPermissionsAsync();
       if (permission.status !== "granted") {
-        Alert.alert("Izin Lokasi Dibutuhkan", "Aktifkan izin lokasi agar laporan bisa dikirim.");
+        Alert.alert(
+          "Location Permission Needed",
+          "Enable location permission so this report can be placed on the map."
+        );
         return;
       }
 
@@ -173,8 +200,32 @@ export const useReportForm = () => {
       const accuracy = location.coords.accuracy ?? 999;
 
       if (accuracy > LOCATION_MAX_ACCURACY_METERS) {
-        Alert.alert("Akurasi Lokasi Rendah", `Akurasi lokasi kamu sekitar ${Math.round(accuracy)} meter. Coba aktifkan GPS/high accuracy lalu kirim ulang.`);
+        Alert.alert(
+          "Low Location Accuracy",
+          `Your location accuracy is about ${Math.round(
+            accuracy
+          )} meters. Turn on high accuracy/GPS and try again.`
+        );
         return;
+      }
+
+      const nearbyCandidates = await findNearbyActiveIncidentCandidates({
+        category,
+        subcategory,
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        radiusMeters: DUPLICATE_CHECK_RADIUS_METERS,
+      });
+
+      if (nearbyCandidates.length > 0) {
+        const shouldCreateNewReport = await confirmNewReportDespiteDuplicate(
+          nearbyCandidates[0]
+        );
+
+        if (!shouldCreateNewReport) {
+          router.push(MAP_ROUTE);
+          return;
+        }
       }
 
       const uploadedImageUrls = await Promise.all(
@@ -182,7 +233,10 @@ export const useReportForm = () => {
       );
 
       if (uploadedImageUrls.length < 1) {
-        Alert.alert("Upload Gagal", "Minimal 1 foto bukti wajib berhasil diunggah.");
+        Alert.alert(
+          "Upload Failed",
+          "At least 1 evidence photo must upload successfully."
+        );
         return;
       }
 
@@ -202,13 +256,24 @@ export const useReportForm = () => {
         reporterEmail: user.email ?? null,
       });
 
-      Alert.alert("Laporan Terkirim", "Laporan berhasil dikirim ke Map.", [
-        { text: "Lihat Map", onPress: () => { resetForm(); router.push(MAP_ROUTE); } },
-        { text: "Buat Lagi", onPress: resetForm },
+      Alert.alert("Report Sent", "Your report has been added to the map.", [
+        {
+          text: "View Map",
+          onPress: () => {
+            resetForm();
+            router.push(MAP_ROUTE);
+          },
+        },
+        { text: "Create Another", onPress: resetForm },
       ]);
     } catch (error) {
       console.error("Create report error:", error);
-      Alert.alert("Gagal Mengirim Laporan", error instanceof Error ? error.message : "Terjadi kesalahan saat mengirim laporan.");
+      Alert.alert(
+        "Could Not Send Report",
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while sending the report."
+      );
     } finally {
       setLoading(false);
     }
@@ -235,3 +300,28 @@ export const useReportForm = () => {
     handleSubmit,
   };
 };
+
+function confirmNewReportDespiteDuplicate(
+  candidate: NearbyIncidentCandidate
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    Alert.alert(
+      "Similar Incident Nearby",
+      `"${candidate.incident.title}" is about ${formatDistance(
+        candidate.distanceMeters
+      )} away. Updating the existing incident usually keeps the map cleaner.`,
+      [
+        {
+          text: "Review Map",
+          style: "cancel",
+          onPress: () => resolve(false),
+        },
+        {
+          text: "Submit New",
+          style: "destructive",
+          onPress: () => resolve(true),
+        },
+      ]
+    );
+  });
+}

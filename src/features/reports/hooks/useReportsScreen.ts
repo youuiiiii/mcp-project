@@ -16,15 +16,15 @@ export const REPORT_FILTER_OPTIONS: readonly {
   },
   {
     value: "active",
-    label: "Aktif",
+    label: "Active",
   },
   {
     value: "resolved",
-    label: "Selesai",
+    label: "Resolved",
   },
   {
     value: "high",
-    label: "Severity Tinggi",
+    label: "High Severity",
   },
 ];
 
@@ -66,7 +66,7 @@ export const useReportsScreen = () => {
       },
       (error) => {
         console.error("Reports screen error:", error);
-        setErrorMessage(error.message || "Gagal memuat laporan.");
+        setErrorMessage(error.message || "Could not load reports.");
         setLoading(false);
       }
     );

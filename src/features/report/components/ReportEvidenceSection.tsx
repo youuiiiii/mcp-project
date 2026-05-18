@@ -31,7 +31,7 @@ export default function ReportEvidenceSection({
     <View style={styles.section}>
       <SectionHeader
         title="4. Evidence"
-        subtitle="Tambahkan 1–4 foto kejadian. Foto pertama akan menjadi cover laporan."
+        subtitle="Add 1-4 incident photos. The first photo becomes the report cover."
       />
 
       <View style={styles.photoRow}>
@@ -63,7 +63,7 @@ export default function ReportEvidenceSection({
       </View>
 
       <Text style={styles.counterText}>
-        {photoUris.length}/{MAX_REPORT_PHOTOS} foto dipilih
+        {photoUris.length}/{MAX_REPORT_PHOTOS} photos selected
       </Text>
 
       {photoUris.length > 0 ? (
@@ -97,9 +97,9 @@ export default function ReportEvidenceSection({
           <Ionicons name="images-outline" size={22} color={colors.textMuted} />
 
           <View style={styles.emptyTextGroup}>
-            <Text style={styles.emptyTitle}>Belum ada foto</Text>
+            <Text style={styles.emptyTitle}>No photos yet</Text>
             <Text style={styles.emptyText}>
-              Minimal 1 foto wajib agar laporan bisa tampil sebagai pin publik.
+              At least 1 photo is required before the report can become a public map pin.
             </Text>
           </View>
         </AppCard>

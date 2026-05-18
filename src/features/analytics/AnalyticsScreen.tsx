@@ -58,13 +58,13 @@ type DistributionItem = {
 const STATUS_DISTRIBUTION_OPTIONS = [
   {
     value: "active",
-    label: "Aktif",
+    label: "Active",
     iconName: "radio",
     color: colors.danger,
   },
   {
     value: "resolved",
-    label: "Selesai",
+    label: "Resolved",
     iconName: "checkmark-circle",
     color: colors.success,
   },
@@ -78,25 +78,25 @@ const STATUS_DISTRIBUTION_OPTIONS = [
 const TRUST_DISTRIBUTION_OPTIONS = [
   {
     value: "pending",
-    label: "Menunggu Verifikasi",
+    label: "Needs Verification",
     iconName: "time-outline",
     color: colors.warning,
   },
   {
     value: "verified",
-    label: "Terverifikasi",
+    label: "Verified",
     iconName: "shield-checkmark-outline",
     color: colors.success,
   },
   {
     value: "disputed",
-    label: "Dipertanyakan",
+    label: "Questioned",
     iconName: "alert-circle-outline",
     color: colors.danger,
   },
   {
     value: "resolved",
-    label: "Selesai",
+    label: "Resolved",
     iconName: "checkmark-done-circle-outline",
     color: colors.textSoft,
   },
@@ -108,9 +108,9 @@ const TRUST_DISTRIBUTION_OPTIONS = [
 }[];
 
 const SEVERITY_LABEL_BY_VALUE = {
-  low: "Rendah",
-  medium: "Sedang",
-  high: "Tinggi",
+  low: "Low",
+  medium: "Medium",
+  high: "High",
 } as const satisfies Record<IncidentSeverity, string>;
 
 export default function AnalyticsScreen() {
@@ -129,7 +129,7 @@ export default function AnalyticsScreen() {
       },
       (error) => {
         console.error("Analytics error:", error);
-        setErrorMessage(error.message || "Gagal memuat analytics.");
+        setErrorMessage(error.message || "Could not load analytics.");
         setLoading(false);
       }
     );
@@ -196,34 +196,34 @@ export default function AnalyticsScreen() {
       return total + diffHours;
     }, 0);
 
-    return `${Math.round(totalHours / resolvedWithTime.length)} jam`;
+    return `${Math.round(totalHours / resolvedWithTime.length)} hours`;
   }, [resolvedReports]);
 
   const summaryItems = useMemo<SummaryItem[]>(() => {
     return [
       {
-        label: "Total Laporan",
+        label: "Total Reports",
         value: reports.length,
         iconName: "location",
         color: colors.info,
         variant: "info",
       },
       {
-        label: "Aktif",
+        label: "Active",
         value: activeReports.length,
         iconName: "radio",
         color: colors.danger,
         variant: "danger",
       },
       {
-        label: "Selesai",
+        label: "Resolved",
         value: resolvedReports.length,
         iconName: "checkmark-circle",
         color: colors.success,
         variant: "success",
       },
       {
-        label: "Severity Tinggi",
+        label: "High Severity",
         value: highSeverityReports.length,
         iconName: "alert-circle",
         color: colors.warningDark,
@@ -240,19 +240,19 @@ export default function AnalyticsScreen() {
   const metricItems = useMemo<MetricItem[]>(() => {
     return [
       {
-        label: "Terverifikasi",
+        label: "Verified",
         value: trustCounts.verified,
-        text: "laporan dipercaya komunitas",
+        text: "community-trusted reports",
         iconName: "shield-checkmark",
       },
       {
-        label: "Dipertanyakan",
+        label: "Questioned",
         value: trustCounts.disputed,
-        text: "laporan perlu ditinjau",
+        text: "reports that need review",
         iconName: "help-circle",
       },
       {
-        label: "Rata-rata Selesai",
+        label: "Avg. Resolution",
         value: averageResolutionHours,
         text: "durasi penyelesaian",
         iconName: "time",
@@ -285,7 +285,7 @@ export default function AnalyticsScreen() {
   if (loading) {
     return (
       <AppScreen scroll={false} contentContainerStyle={styles.loadingContainer}>
-        <LoadingState message="Memuat analytics..." />
+        <LoadingState message="Loading analytics..." />
       </AppScreen>
     );
   }
@@ -298,8 +298,8 @@ export default function AnalyticsScreen() {
         <Text style={styles.title}>Incident Insights</Text>
 
         <Text style={styles.subtitle}>
-          Pantau distribusi kategori, severity, status, validasi komunitas, dan
-          aktivitas laporan secara realtime.
+          Monitor category distribution, severity, status, community validation,
+          and report activity in real time.
         </Text>
       </View>
 
@@ -310,7 +310,7 @@ export default function AnalyticsScreen() {
           </IconBadge>
 
           <View style={styles.errorContent}>
-            <Text style={styles.errorTitle}>Gagal memuat data</Text>
+            <Text style={styles.errorTitle}>Could not load data</Text>
             <Text style={styles.errorMessage}>{errorMessage}</Text>
           </View>
         </AppCard>
@@ -333,30 +333,30 @@ export default function AnalyticsScreen() {
           </View>
 
           <DistributionSection
-            title="Distribusi Kategori"
-            subtitle="Komposisi laporan berdasarkan kategori utama"
-            emptyText="Belum ada kategori laporan."
+            title="Category Distribution"
+            subtitle="Report composition by main category"
+            emptyText="No category data yet."
             items={categoryDistribution}
           />
 
           <DistributionSection
-            title="Distribusi Severity"
-            subtitle="Komposisi tingkat dampak laporan"
-            emptyText="Belum ada data severity."
+            title="Severity Distribution"
+            subtitle="Report composition by impact level"
+            emptyText="No severity data yet."
             items={severityDistribution}
           />
 
           <DistributionSection
-            title="Distribusi Status"
-            subtitle="Perbandingan laporan aktif dan selesai"
-            emptyText="Belum ada data status."
+            title="Status Distribution"
+            subtitle="Active versus resolved reports"
+            emptyText="No status data yet."
             items={statusDistribution}
           />
 
           <DistributionSection
-            title="Validasi Komunitas"
-            subtitle="Ringkasan tingkat kepercayaan berdasarkan verifikasi dan dispute"
-            emptyText="Belum ada data validasi."
+            title="Community Validation"
+            subtitle="Trust summary based on confirmations and disputes"
+            emptyText="No validation data yet."
             items={trustDistribution}
           />
 
@@ -369,19 +369,19 @@ export default function AnalyticsScreen() {
               <Text style={styles.activityLabel}>Aktivitas Komunitas</Text>
 
               <Text style={styles.activityTitle}>
-                {totalEvidence} bukti - {totalReplies} diskusi
+                {totalEvidence} evidence - {totalReplies} discussions
               </Text>
 
               <Text style={styles.activityText}>
-                Bukti foto dan diskusi membantu warga memahami kondisi laporan.
+                Evidence photos and discussions help people understand report conditions.
               </Text>
             </View>
           </AppCard>
 
           <View style={styles.section}>
             <SectionHeader
-              title="Aktivitas Terbaru"
-              subtitle="Laporan terbaru berdasarkan aktivitas terakhir"
+              title="Latest Activity"
+              subtitle="Latest reports by recent activity"
               style={styles.sectionHeader}
             />
 
@@ -617,10 +617,10 @@ function EmptyAnalyticsState() {
         <Ionicons name="stats-chart" size={28} color={colors.info} />
       </IconBadge>
 
-      <Text style={styles.emptyStateTitle}>Belum ada data analytics</Text>
+      <Text style={styles.emptyStateTitle}>No analytics data yet</Text>
 
       <Text style={styles.emptyStateText}>
-        Analytics akan muncul setelah ada laporan incident yang masuk.
+        Analytics will appear after incident reports are submitted.
       </Text>
     </AppCard>
   );
@@ -642,13 +642,13 @@ function getStatusVariant(status: IncidentReport["status"]): StatusBadgeVariant 
 function getStatusLabel(status: IncidentReport["status"]): string {
   switch (status) {
     case "active":
-      return "Aktif";
+      return "Active";
 
     case "resolved":
-      return "Selesai";
+      return "Resolved";
 
     default:
-      return "Tidak dikenal";
+      return "Unknown";
   }
 }
 

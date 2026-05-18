@@ -26,38 +26,38 @@ type ReportReasonOption = {
 const REASON_OPTIONS: ReportReasonOption[] = [
   {
     value: "false_information",
-    label: "Informasi tidak benar",
-    description: "Laporan terlihat palsu, salah lokasi, atau menyesatkan.",
+    label: "False information",
+    description: "The report looks fake, misplaced, or misleading.",
     iconName: "alert-circle-outline",
   },
   {
     value: "harmful_content",
-    label: "Konten berbahaya",
-    description: "Konten dapat memicu panik, kekerasan, atau bahaya lain.",
+    label: "Harmful content",
+    description: "The content could trigger panic, violence, or other harm.",
     iconName: "warning-outline",
   },
   {
     value: "spam",
     label: "Spam",
-    description: "Laporan berulang, tidak relevan, atau promosi.",
+    description: "Repeated, irrelevant, or promotional content.",
     iconName: "ban-outline",
   },
   {
     value: "privacy_issue",
-    label: "Masalah privasi",
-    description: "Memuat data pribadi, alamat sensitif, atau identitas orang.",
+    label: "Privacy issue",
+    description: "Contains private data, sensitive addresses, or someone's identity.",
     iconName: "lock-closed-outline",
   },
   {
     value: "inappropriate_image",
-    label: "Foto tidak pantas",
-    description: "Foto mengandung konten sensitif atau tidak layak tampil.",
+    label: "Inappropriate photo",
+    description: "The photo contains sensitive or unsuitable content.",
     iconName: "image-outline",
   },
   {
     value: "other",
-    label: "Lainnya",
-    description: "Alasan lain yang perlu ditinjau.",
+    label: "Other",
+    description: "Another reason that needs review.",
     iconName: "ellipsis-horizontal-circle-outline",
   },
 ];
@@ -105,9 +105,9 @@ export default function ReportContentModal({
           <View style={styles.sheet}>
             <View style={styles.header}>
               <View style={styles.headerText}>
-                <Text style={styles.title}>Laporkan Konten</Text>
+                <Text style={styles.title}>Report Content</Text>
                 <Text style={styles.subtitle}>
-                  Bantu menjaga laporan warga tetap aman dan relevan.
+                  Help keep community reports safe and relevant.
                 </Text>
               </View>
 
@@ -172,7 +172,7 @@ export default function ReportContentModal({
               value={note}
               onChangeText={onChangeNote}
               editable={!submitting}
-              placeholder="Tambahkan catatan singkat, opsional..."
+              placeholder="Add a short note, optional..."
               placeholderTextColor={colors.textSoft}
               multiline
               maxLength={280}
@@ -181,7 +181,7 @@ export default function ReportContentModal({
 
             <View style={styles.footer}>
               <AppButton
-                title="Batal"
+                title="Cancel"
                 variant="secondary"
                 size="md"
                 disabled={submitting}
@@ -190,7 +190,7 @@ export default function ReportContentModal({
               />
 
               <AppButton
-                title="Kirim"
+                title="Submit"
                 variant="danger"
                 size="md"
                 loading={submitting}

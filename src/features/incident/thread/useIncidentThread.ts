@@ -170,17 +170,17 @@ export function useIncidentThread({
       accuracyVotes.find((item) => item.actorKey === actorKey)?.voteType ??
       null;
 
-    let label = "Belum diverifikasi";
+    let label = "Not verified yet";
     let tone: "neutral" | "success" | "warning" | "danger" = "neutral";
 
     if (accurateCount >= 2 && accurateCount > inaccurateCount) {
-      label = "Dikonfirmasi warga";
+      label = "Confirmed by community";
       tone = "success";
     } else if (inaccurateCount >= 2 && inaccurateCount > accurateCount) {
-      label = "Dipertanyakan";
+      label = "Questioned";
       tone = "danger";
     } else if (accurateCount > 0 || inaccurateCount > 0) {
-      label = "Menunggu lebih banyak sinyal";
+      label = "Waiting for more signals";
       tone = "warning";
     }
 
@@ -269,7 +269,7 @@ export function useIncidentThread({
 
       if (!user?.uid) {
         setVoteFeedbackStatus("error");
-        setVoteFeedbackMessage("Silakan login untuk menilai laporan.");
+        setVoteFeedbackMessage("Please log in to rate this report.");
         return;
       }
 
@@ -349,7 +349,7 @@ export function useIncidentThread({
     } catch (error) {
       setVoteFeedbackStatus("error");
       setVoteFeedbackMessage(
-        error instanceof Error ? error.message : "Gagal menyimpan penilaian."
+        error instanceof Error ? error.message : "Could not save your rating."
       );
     } finally {
       setAccuracySubmitting(false);
@@ -419,7 +419,7 @@ export function useIncidentThread({
   const openLocationSettings = () => {
     Linking.openSettings().catch(() => {
       setVoteFeedbackStatus("error");
-      setVoteFeedbackMessage("Gagal membuka pengaturan lokasi.");
+      setVoteFeedbackMessage("Could not open location settings.");
     });
   };
 

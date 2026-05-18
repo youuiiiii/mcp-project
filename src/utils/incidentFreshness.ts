@@ -25,20 +25,20 @@ export const INCIDENT_STALE_AFTER_HOURS_BY_CATEGORY = {
 
 const formatInactiveDuration = (hours: number): string => {
   if (hours < 1) {
-    return "kurang dari 1 jam";
+    return "less than 1 hour";
   }
 
   if (hours < 24) {
-    return `sekitar ${Math.round(hours)} jam`;
+    return `about ${Math.round(hours)} hours`;
   }
 
   const days = hours / 24;
 
   if (days < 10) {
-    return `sekitar ${days.toFixed(1)} hari`;
+    return `about ${days.toFixed(1)} days`;
   }
 
-  return `sekitar ${Math.round(days)} hari`;
+  return `about ${Math.round(days)} days`;
 };
 
 export const getIncidentLastActivityAt = (
@@ -92,7 +92,7 @@ export const getIncidentFreshnessMeta = (
       inactiveHours,
       staleAfterHours,
       needsUpdate: false,
-      message: "Laporan ini sudah selesai.",
+      message: "This report is already resolved.",
     };
   }
 
@@ -102,7 +102,7 @@ export const getIncidentFreshnessMeta = (
       inactiveHours,
       staleAfterHours,
       needsUpdate: false,
-      message: "Belum ada informasi aktivitas terbaru untuk laporan ini.",
+      message: "No recent activity information is available for this report.",
     };
   }
 
@@ -112,7 +112,7 @@ export const getIncidentFreshnessMeta = (
       inactiveHours,
       staleAfterHours,
       needsUpdate: false,
-      message: "Update laporan ini masih cukup baru.",
+      message: "This report was updated recently.",
     };
   }
 
@@ -121,9 +121,9 @@ export const getIncidentFreshnessMeta = (
     inactiveHours,
     staleAfterHours,
     needsUpdate: true,
-    message: `Laporan ini belum diperbarui selama ${formatInactiveDuration(
+    message: `This report has not been updated for ${formatInactiveDuration(
       inactiveHours
-    )}. Warga sekitar dapat mengirim update kondisi terbaru jika aman.`,
+    )}. Nearby users can send a condition update if it is safe.`,
   };
 };
 

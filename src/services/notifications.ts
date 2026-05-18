@@ -154,10 +154,10 @@ export async function checkAndNotifyNearbyDisaster(
       if (distance <= NOTIFICATION_DISTANCE_KM) {
         const magnitude = earthquake.Magnitude ?? "-";
 
-        const title = `Gempa M${magnitude} Terdeteksi`;
-        const body = `${earthquake.Wilayah ?? "Lokasi tidak diketahui"} - ${
+        const title = `M${magnitude} Earthquake Detected`;
+        const body = `${earthquake.Wilayah ?? "Unknown location"} - ${
           earthquake.Jam ?? "-"
-        }. Jarak sekitar ${Math.round(distance)} km dari lokasi Anda.`;
+        }. About ${Math.round(distance)} km from your location.`;
 
         const Notifications = await getNotificationsModule();
 

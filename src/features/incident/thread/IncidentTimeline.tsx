@@ -47,7 +47,7 @@ export default function IncidentTimeline({
         <View>
           <Text style={styles.title}>Live Timeline</Text>
           <Text style={styles.subtitle}>
-            Perubahan terbaru dari laporan dan warga sekitar.
+            Latest changes from the report and nearby users.
           </Text>
         </View>
 
@@ -76,8 +76,8 @@ function buildTimelineItems({
     id: `report-${incident.id}`,
     kind: "report",
     date: incident.createdAt,
-    title: "Laporan dibuat",
-    message: incident.title || "Laporan baru masuk ke SIGAP.",
+    title: "Report created",
+    message: incident.title || "A new report was added to SIGAP.",
     author: incident.reportedBy ?? incident.reporterEmail,
     color: colors.info,
     badgeLabel: "Report",
@@ -108,7 +108,7 @@ function buildTimelineItems({
       imageUri: item.imageUri,
       color: updateMeta.color,
       badgeLabel: item.imageUri
-        ? `${updateMeta.shortLabel} + foto`
+        ? `${updateMeta.shortLabel} + photo`
         : updateMeta.shortLabel,
     };
   });
@@ -123,7 +123,7 @@ function buildTimelineItems({
             title: "Ditandai selesai",
             message:
               incident.resolutionNote ||
-              "Laporan sudah ditandai selesai oleh komunitas.",
+              "This report has been marked resolved by the community.",
             author: incident.resolvedBy,
             imageUri: incident.resolvedImageUri,
             color: colors.success,
@@ -173,7 +173,7 @@ function TimelineRow({
 
         <Text style={styles.meta} numberOfLines={1}>
           {item.author || "Anonymous"} - {formatIncidentDate(item.date)}
-          {item.imageUri ? " - ada foto" : ""}
+          {item.imageUri ? " - has photo" : ""}
         </Text>
       </View>
     </View>

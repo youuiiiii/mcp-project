@@ -21,8 +21,8 @@ export default function CategorySelector({
   return (
     <View style={styles.section}>
       <SectionHeader
-        title="1. Kategori"
-        subtitle="Pilih jenis kejadian utama."
+        title="1. Category"
+        subtitle="Choose the main type of incident."
       />
 
       <View style={styles.list}>

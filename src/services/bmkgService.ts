@@ -27,7 +27,7 @@ export const fetchRecentBmkgEarthquakes = async (): Promise<
   const response = await fetch(BMKG_EARTHQUAKE_URL);
 
   if (!response.ok) {
-    throw new Error("Gagal mengambil data gempa BMKG.");
+    throw new Error("Could not fetch BMKG earthquake data.");
   }
 
   const data = (await response.json()) as BmkgEarthquakeResponse;

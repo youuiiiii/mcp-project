@@ -27,8 +27,8 @@ export default function SubcategorySelector({
   return (
     <View style={styles.section}>
       <SectionHeader
-        title="2. Sub-Kategori"
-        subtitle="Pilih jenis kejadian lebih spesifik (opsional)."
+        title="2. Subcategory"
+        subtitle="Choose a more specific incident type when useful."
       />
 
       <ScrollView

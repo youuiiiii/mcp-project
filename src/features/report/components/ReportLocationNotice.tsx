@@ -15,11 +15,11 @@ export default function ReportLocationNotice() {
       </IconBadge>
 
       <View style={styles.content}>
-        <Text style={styles.title}>Lokasi laporan otomatis</Text>
+        <Text style={styles.title}>Automatic report location</Text>
 
         <Text style={styles.description}>
-          Saat laporan dikirim, aplikasi akan mengambil lokasi Anda saat ini.
-          Pastikan Anda berada di sekitar kejadian dan izin lokasi aktif.
+          When you submit, SIGAP uses your current location. Make sure you are
+          near the incident and location permission is enabled.
         </Text>
       </View>
     </AppCard>

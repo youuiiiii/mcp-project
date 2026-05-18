@@ -72,9 +72,9 @@ const getConfidencePresentation = (
   if (incident.status === "resolved") {
     return {
       level: "resolved",
-      label: "Selesai",
-      shortLabel: "Selesai",
-      description: "Kejadian sudah ditandai selesai dengan catatan penyelesaian.",
+      label: "Resolved",
+      shortLabel: "Done",
+      description: "The incident has been marked resolved with resolution notes.",
       color: colors.successDark,
       backgroundColor: colors.successSoft,
       borderColor: "#BBF7D0",
@@ -87,7 +87,7 @@ const getConfidencePresentation = (
       label: "Perlu Ditinjau",
       shortLabel: "Ditinjau",
       description:
-        "Ada sinyal yang bertentangan. Gunakan laporan ini sebagai informasi awal.",
+        "There are conflicting signals. Treat this report as early information.",
       color: colors.primaryDark,
       backgroundColor: colors.dangerSoft,
       borderColor: "#FECACA",
@@ -100,7 +100,7 @@ const getConfidencePresentation = (
       label: "Butuh Update",
       shortLabel: "Stale",
       description:
-        "Laporan ini sudah lama tidak diperbarui dan perlu konfirmasi kondisi terbaru.",
+        "This report has not been updated recently and needs a fresh condition check.",
       color: colors.warningDark,
       backgroundColor: colors.warningSoft,
       borderColor: "#FDE68A",
@@ -113,7 +113,7 @@ const getConfidencePresentation = (
       label: "Kuat",
       shortLabel: "Kuat",
       description:
-        "Laporan punya cukup bukti atau konfirmasi untuk dipercaya komunitas.",
+        "This report has enough evidence or confirmation to be trusted by the community.",
       color: colors.successDark,
       backgroundColor: colors.successSoft,
       borderColor: "#BBF7D0",
@@ -126,7 +126,7 @@ const getConfidencePresentation = (
       label: "Cukup Kuat",
       shortLabel: "Cukup",
       description:
-        "Laporan punya beberapa sinyal pendukung, tetapi masih bisa diperkuat.",
+        "This report has some supporting signals, but it can still be strengthened.",
       color: colors.infoDark,
       backgroundColor: colors.infoSoft,
       borderColor: "#BFDBFE",
@@ -138,7 +138,7 @@ const getConfidencePresentation = (
     label: "Baru Muncul",
     shortLabel: "Baru",
     description:
-      "Laporan masih baru atau belum memiliki cukup sinyal dari warga sekitar.",
+      "This report is still new or does not have enough nearby community signals yet.",
     color: colors.warningDark,
     backgroundColor: colors.warningSoft,
     borderColor: "#FDE68A",
@@ -196,7 +196,7 @@ export const getIncidentConfidenceMeta = (
         value: `${score}/100`,
       },
       {
-        label: "Bukti",
+        label: "Evidence",
         value: String(summary.evidenceCount),
       },
       {
@@ -204,15 +204,15 @@ export const getIncidentConfidenceMeta = (
         value: String(summary.verificationCount),
       },
       {
-        label: "Bantahan",
+        label: "Disputes",
         value: String(summary.disputeCount),
       },
       {
-        label: "Update",
+        label: "Updates",
         value: String(incident.conditionUpdateCount ?? 0),
       },
       {
-        label: "Akurat",
+        label: "Accurate",
         value: String(incident.accurateCount ?? 0),
       },
     ],

@@ -26,21 +26,21 @@ export default function ReportDetailsFields({
   return (
     <View style={styles.section}>
       <SectionHeader
-        title="2. Detail Kejadian"
-        subtitle="Judul dan deskripsi adalah sumber detail utama laporan."
+        title="2. Incident Details"
+        subtitle="A clear title and description help nearby users understand the situation."
       />
 
       <TextInput
         value={title}
         onChangeText={onChangeTitle}
         editable={!disabled}
-        placeholder="Contoh: Pohon tumbang menutup jalan utama"
+        placeholder="Example: Fallen tree blocking the main road"
         placeholderTextColor={colors.textSoft}
         style={styles.input}
       />
 
       <StatusBadge
-        label={`${cleanTitleLength}/5 minimum karakter`}
+        label={`${cleanTitleLength}/5 minimum characters`}
         variant={cleanTitleLength >= 5 ? "success" : "neutral"}
         size="sm"
       />
@@ -49,7 +49,7 @@ export default function ReportDetailsFields({
         value={description}
         onChangeText={onChangeDescription}
         editable={!disabled}
-        placeholder="Jelaskan situasi, kondisi sekitar, dampak, dan hal penting yang perlu diketahui."
+        placeholder="Describe the situation, nearby conditions, impact, and anything important people should know."
         placeholderTextColor={colors.textSoft}
         multiline
         textAlignVertical="top"
@@ -57,7 +57,7 @@ export default function ReportDetailsFields({
       />
 
       <StatusBadge
-        label={`${cleanDescriptionLength}/10 minimum karakter`}
+        label={`${cleanDescriptionLength}/10 minimum characters`}
         variant={cleanDescriptionLength >= 10 ? "success" : "neutral"}
         size="sm"
       />

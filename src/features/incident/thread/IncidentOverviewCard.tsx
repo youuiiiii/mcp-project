@@ -133,7 +133,7 @@ export default function IncidentOverviewCard({
                   color={latestUpdate.color}
                 />
                 <Text style={styles.latestUpdateText} numberOfLines={2}>
-                  Update terakhir warga: {latestUpdate.label}
+                  Latest community update: {latestUpdate.label}
                 </Text>
               </View>
             ) : null}
@@ -152,7 +152,7 @@ export default function IncidentOverviewCard({
         <Text style={styles.title}>{incident.title}</Text>
 
         <Text style={styles.description}>
-          {incident.description || "Tidak ada deskripsi."}
+          {incident.description || "No description provided."}
         </Text>
 
         {incident.imageUri ? (
@@ -160,9 +160,8 @@ export default function IncidentOverviewCard({
         ) : null}
 
         <Text style={styles.disclaimer}>
-          Laporan ini berasal dari warga dan belum tentu merupakan informasi
-          resmi. Gunakan sebagai informasi awal dan tetap berhati-hati di
-          lapangan.
+          This report comes from the community and may not be official
+          information. Treat it as an early signal and stay careful on site.
         </Text>
 
         <Pressable
@@ -177,7 +176,7 @@ export default function IncidentOverviewCard({
             size={16}
             color={colors.primaryDark}
           />
-          <Text style={styles.reportContentText}>Laporkan Konten</Text>
+          <Text style={styles.reportContentText}>Report Content</Text>
         </Pressable>
       </View>
     </View>
@@ -186,14 +185,14 @@ export default function IncidentOverviewCard({
 
 function getSeverityLabel(severity: IncidentReport["severity"]) {
   if (severity === "high") {
-    return "Tinggi";
+    return "High";
   }
 
   if (severity === "medium") {
-    return "Sedang";
+    return "Medium";
   }
 
-  return "Rendah";
+  return "Low";
 }
 
 function getSeverityVariant(

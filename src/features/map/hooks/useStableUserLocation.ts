@@ -77,7 +77,7 @@ export const useStableUserLocation = (mapRef: RefObject<MapView | null>) => {
 
         if (permission.status !== "granted") {
           setLocationErrorMessage(
-            "Izin lokasi ditolak. Map tetap dapat digunakan, tetapi posisi Anda tidak bisa ditampilkan."
+            "Location permission was denied. You can still use the map, but your position cannot be shown."
           );
           setLoadingLocation(false);
           return;
@@ -137,7 +137,7 @@ export const useStableUserLocation = (mapRef: RefObject<MapView | null>) => {
         setLocationErrorMessage(
           error instanceof Error
             ? error.message
-            : "Gagal mengambil lokasi perangkat."
+            : "Could not get device location."
         );
 
         setLoadingLocation(false);
@@ -155,8 +155,8 @@ export const useStableUserLocation = (mapRef: RefObject<MapView | null>) => {
   const focusUserLocation = () => {
     if (!userLocation) {
       Alert.alert(
-        "Lokasi Tidak Tersedia",
-        "Izinkan akses lokasi untuk menampilkan posisi Anda."
+        "Location Unavailable",
+        "Allow location access to show your position."
       );
       return;
     }

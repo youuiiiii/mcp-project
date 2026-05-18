@@ -31,13 +31,12 @@ export default function SosInfoModal({ visible, onClose }: SosInfoModalProps) {
           <Text style={styles.title}>SOS</Text>
 
           <Text style={styles.description}>
-            Fitur SOS sudah dikembalikan ke UI sebagai entry point. Logic
-            pengiriman darurat bisa dilanjutkan setelah flow dan kebijakan
-            keselamatannya ditentukan.
+            SOS is available as an entry point. Emergency sending can be built
+            next after the flow and safety policy are defined.
           </Text>
 
           <AppButton
-            title="Tutup"
+            title="Close"
             variant="secondary"
             size="md"
             fullWidth

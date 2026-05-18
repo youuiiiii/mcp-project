@@ -43,7 +43,7 @@ export function useHomeScreen() {
       },
       (error) => {
         console.error("Home reports error:", error);
-        setErrorMessage(error.message || "Gagal memuat laporan terbaru.");
+        setErrorMessage(error.message || "Could not load latest reports.");
         setLoadingReports(false);
       }
     );

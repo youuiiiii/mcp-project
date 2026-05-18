@@ -28,7 +28,7 @@ export default function HomeLatestReportsSection({
   if (loading) {
     return (
       <AppCard style={styles.loadingCard}>
-        <LoadingState message="Memuat laporan terbaru..." />
+        <LoadingState message="Loading latest reports..." />
       </AppCard>
     );
   }
@@ -42,14 +42,14 @@ export default function HomeLatestReportsSection({
           </IconBadge>
 
           <View style={styles.errorContent}>
-            <Text style={styles.errorTitle}>Gagal memuat laporan</Text>
+            <Text style={styles.errorTitle}>Could not load reports</Text>
             <Text style={styles.errorMessage}>{errorMessage}</Text>
           </View>
         </AppCard>
       ) : null}
 
       <SectionHeader
-        title="Laporan Terbaru"
+        title="Latest Reports"
         subtitle="Update komunitas terakhir"
         style={styles.sectionHeader}
         right={
@@ -80,10 +80,10 @@ export default function HomeLatestReportsSection({
             />
           </IconBadge>
 
-          <Text style={styles.emptyTitle}>Belum ada laporan</Text>
+          <Text style={styles.emptyTitle}>No reports yet</Text>
 
           <Text style={styles.emptyText}>
-            Laporan warga akan muncul di sini setelah dikirim.
+            Community reports will appear here after they are submitted.
           </Text>
 
           <AppButton

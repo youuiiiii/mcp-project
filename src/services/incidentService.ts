@@ -4,6 +4,7 @@ import {
   collection,
   doc,
   DocumentData,
+  getDocs,
   increment,
   onSnapshot,
   orderBy,
@@ -50,6 +51,7 @@ import {
   VerificationStatus,
   VerificationType,
 } from "../types/incident";
+import { getDistanceInMeters } from "../utils/geo";
 
 const REPORTS_COLLECTION = "reports";
 const SOS_LOGS_COLLECTION = "sos_logs";
@@ -59,6 +61,20 @@ const INCIDENT_CONTENT_REPORTS_COLLECTION = "incident_content_reports";
 const ACCURACY_VOTES_COLLECTION = "accuracy_votes";
 
 const MAX_REPORT_IMAGES = 4;
+
+export type NearbyIncidentCandidate = {
+  incident: IncidentReport;
+  distanceMeters: number;
+};
+
+type FindNearbyActiveIncidentCandidatesInput = {
+  category: IncidentCategory;
+  subcategory?: IncidentSubcategory | null;
+  latitude: number;
+  longitude: number;
+  radiusMeters?: number;
+  limit?: number;
+};
 
 const normalizeProximityStatus = (value: unknown): ProximityStatus => {
   if (
@@ -379,7 +395,7 @@ const mapIncidentDocument = (
     subcategory,
     type,
 
-    title: normalizeNullableString(data.title) ?? "Laporan tanpa judul",
+    title: normalizeNullableString(data.title) ?? "Untitled report",
     description: normalizeNullableString(data.description) ?? "",
     latitude,
     longitude,
@@ -659,19 +675,19 @@ export const createIncidentVerification = async (
   payload: CreateIncidentVerificationPayload
 ): Promise<string> => {
   if (!payload.reportId) {
-    throw new Error("Report ID tidak valid.");
+    throw new Error("Invalid report ID.");
   }
 
   if (!payload.actorKey.trim()) {
-    throw new Error("User verifikator tidak valid.");
+    throw new Error("Invalid verifier.");
   }
 
   if (!payload.imageUri) {
-    throw new Error("Bukti foto verifikasi wajib diisi.");
+    throw new Error("A verification photo is required.");
   }
 
   if (payload.note.trim().length < 8) {
-    throw new Error("Catatan verifikasi minimal 8 karakter.");
+    throw new Error("Verification notes must be at least 8 characters.");
   }
 
   const reportRef = doc(db, REPORTS_COLLECTION, payload.reportId);
@@ -689,7 +705,7 @@ export const createIncidentVerification = async (
     const reportSnapshot = await transaction.get(reportRef);
 
     if (!reportSnapshot.exists()) {
-      throw new Error("Incident tidak ditemukan.");
+      throw new Error("Incident not found.");
     }
 
     const reportData = reportSnapshot.data();
@@ -755,7 +771,7 @@ export const createIncidentReport = async (
   payload: CreateIncidentPayload
 ): Promise<string> => {
   if (!payload.category || !isIncidentCategory(payload.category)) {
-    throw new Error("Kategori kejadian tidak valid.");
+    throw new Error("Invalid incident category.");
   }
 
   const title = payload.title.trim();
@@ -775,43 +791,43 @@ export const createIncidentReport = async (
   const imageUri = imageUris[0] ?? "";
 
   if (title.length < 5) {
-    throw new Error("Judul laporan minimal 5 karakter.");
+    throw new Error("Report title must be at least 5 characters.");
   }
 
   if (description.length < 10) {
-    throw new Error("Deskripsi laporan minimal 10 karakter.");
+    throw new Error("Report description must be at least 10 characters.");
   }
 
   if (!isIncidentSeverity(payload.severity)) {
-    throw new Error("Tingkat severity laporan tidak valid.");
+    throw new Error("Invalid report severity.");
   }
 
   const latitude = normalizeLatitude(payload.latitude);
   const longitude = normalizeLongitude(payload.longitude);
 
   if (latitude === null || longitude === null) {
-    throw new Error("Lokasi laporan tidak valid.");
+    throw new Error("Invalid report location.");
   }
 
   if (!imageUri) {
-    throw new Error("Bukti foto laporan wajib diisi.");
+    throw new Error("At least one report photo is required.");
   }
 
   if (imageUris.length > MAX_REPORT_IMAGES) {
-    throw new Error("Maksimal 4 foto untuk satu laporan.");
+    throw new Error("A report can include up to 4 photos.");
   }
 
   const subcategory = normalizeSubcategory(payload.subcategory ?? null);
 
   if (payload.subcategory && !subcategory) {
-    throw new Error("Subkategori laporan tidak valid.");
+    throw new Error("Invalid report subcategory.");
   }
 
   if (
     subcategory &&
     getCategoryBySubcategory(subcategory) !== payload.category
   ) {
-    throw new Error("Subkategori tidak sesuai dengan kategori utama laporan.");
+    throw new Error("The subcategory does not match the selected category.");
   }
 
   const docRef = await addDoc(collection(db, REPORTS_COLLECTION), {
@@ -872,19 +888,71 @@ export const createIncidentReport = async (
   return docRef.id;
 };
 
+export const findNearbyActiveIncidentCandidates = async ({
+  category,
+  subcategory,
+  latitude,
+  longitude,
+  radiusMeters = 150,
+  limit = 3,
+}: FindNearbyActiveIncidentCandidatesInput): Promise<
+  NearbyIncidentCandidate[]
+> => {
+  const safeLatitude = normalizeLatitude(latitude);
+  const safeLongitude = normalizeLongitude(longitude);
+
+  if (safeLatitude === null || safeLongitude === null) {
+    throw new Error("Report location is invalid.");
+  }
+
+  const reportsQuery = query(
+    collection(db, REPORTS_COLLECTION),
+    where("status", "==", "active"),
+    where("moderationStatus", "==", "visible"),
+    where("category", "==", category)
+  );
+
+  const snapshot = await getDocs(reportsQuery);
+  const origin = {
+    latitude: safeLatitude,
+    longitude: safeLongitude,
+  };
+
+  return snapshot.docs
+    .map(mapIncidentDocument)
+    .filter((incident): incident is IncidentReport => {
+      if (!incident) {
+        return false;
+      }
+
+      if (subcategory && incident.subcategory && incident.subcategory !== subcategory) {
+        return false;
+      }
+
+      return incident.status === "active";
+    })
+    .map((incident) => ({
+      incident,
+      distanceMeters: getDistanceInMeters(origin, incident),
+    }))
+    .filter((candidate) => candidate.distanceMeters <= radiusMeters)
+    .sort((a, b) => a.distanceMeters - b.distanceMeters)
+    .slice(0, limit);
+};
+
 export const createIncidentReply = async (
   payload: CreateIncidentReplyPayload
 ): Promise<string> => {
   if (!payload.reportId) {
-    throw new Error("Report ID tidak valid.");
+    throw new Error("Invalid report ID.");
   }
 
   if (!payload.actorKey.trim()) {
-    throw new Error("User tidak valid.");
+    throw new Error("Invalid user.");
   }
 
   if (payload.message.trim().length < 3) {
-    throw new Error("Pesan diskusi minimal 3 karakter.");
+    throw new Error("Discussion messages must be at least 3 characters.");
   }
 
   const reportRef = doc(db, REPORTS_COLLECTION, payload.reportId);
@@ -898,7 +966,7 @@ export const createIncidentReply = async (
     const reportSnapshot = await transaction.get(reportRef);
 
     if (!reportSnapshot.exists()) {
-      throw new Error("Incident tidak ditemukan.");
+      throw new Error("Incident not found.");
     }
 
     transaction.set(replyRef, {
@@ -936,15 +1004,15 @@ export const createIncidentContentReport = async (
   payload: CreateIncidentContentReportPayload
 ) => {
   if (!payload.reportId.trim()) {
-    throw new Error("Report ID tidak valid.");
+    throw new Error("Invalid report ID.");
   }
 
   if (!payload.targetId.trim()) {
-    throw new Error("Target konten tidak valid.");
+    throw new Error("Invalid content target.");
   }
 
   if (!payload.actorKey.trim()) {
-    throw new Error("Identitas pelapor konten tidak valid.");
+    throw new Error("Invalid content reporter identity.");
   }
 
   await addDoc(collection(db, INCIDENT_CONTENT_REPORTS_COLLECTION), {
@@ -995,7 +1063,7 @@ export const hideIncidentReport = async ({
   moderatedBy: string;
 }) => {
   if (!reportId.trim()) {
-    throw new Error("Report ID tidak valid.");
+    throw new Error("Invalid report ID.");
   }
 
   await updateDoc(doc(db, REPORTS_COLLECTION, reportId), {
@@ -1015,7 +1083,7 @@ export const dismissIncidentContentReport = async ({
   reviewedBy: string;
 }) => {
   if (!contentReportId.trim()) {
-    throw new Error("Content report ID tidak valid.");
+    throw new Error("Invalid content report ID.");
   }
 
   await updateDoc(
@@ -1036,7 +1104,7 @@ export const markIncidentContentReportReviewed = async ({
   reviewedBy: string;
 }) => {
   if (!contentReportId.trim()) {
-    throw new Error("Content report ID tidak valid.");
+    throw new Error("Invalid content report ID.");
   }
 
   await updateDoc(
@@ -1053,15 +1121,15 @@ export const resolveIncidentReport = async (
   payload: ResolveIncidentPayload
 ): Promise<void> => {
   if (!payload.reportId) {
-    throw new Error("Report ID tidak valid.");
+    throw new Error("Invalid report ID.");
   }
 
   if (!payload.resolvedImageUri) {
-    throw new Error("Bukti gambar selesai wajib diisi.");
+    throw new Error("A resolution photo is required.");
   }
 
   if (payload.resolutionNote.trim().length < 10) {
-    throw new Error("Catatan penyelesaian minimal 10 karakter.");
+    throw new Error("Resolution notes must be at least 10 characters.");
   }
 
   const reportRef = doc(db, REPORTS_COLLECTION, payload.reportId);
@@ -1081,7 +1149,7 @@ export const reopenIncidentReport = async (
   reportId: string
 ): Promise<void> => {
   if (!reportId) {
-    throw new Error("Report ID tidak valid.");
+    throw new Error("Invalid report ID.");
   }
 
   const reportRef = doc(db, REPORTS_COLLECTION, reportId);
@@ -1104,7 +1172,7 @@ export const createSOSLog = async (
   const longitude = normalizeLongitude(payload.longitude);
 
   if (latitude === null || longitude === null) {
-    throw new Error("Lokasi SOS tidak valid.");
+    throw new Error("Invalid SOS location.");
   }
 
   const docRef = await addDoc(collection(db, SOS_LOGS_COLLECTION), {
@@ -1147,15 +1215,15 @@ export const submitIncidentAccuracyVote = async (
   payload: CreateIncidentAccuracyVotePayload
 ): Promise<void> => {
   if (!payload.reportId.trim()) {
-    throw new Error("Report ID tidak valid.");
+    throw new Error("Invalid report ID.");
   }
 
   if (!payload.actorKey.trim()) {
-    throw new Error("User tidak valid.");
+    throw new Error("Invalid user.");
   }
 
   if (payload.proximityStatus !== "near_incident") {
-    throw new Error("Anda perlu berada cukup dekat untuk menilai akurasi.");
+    throw new Error("You need to be near the incident to rate its accuracy.");
   }
 
   const voteRef = doc(
@@ -1172,7 +1240,7 @@ export const submitIncidentAccuracyVote = async (
     const voteSnapshot = await transaction.get(voteRef);
 
     if (!reportSnapshot.exists()) {
-      throw new Error("Incident tidak ditemukan.");
+      throw new Error("Incident not found.");
     }
 
     const previousVoteType = voteSnapshot.exists()

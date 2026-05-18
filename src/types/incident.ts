@@ -42,8 +42,8 @@ export type IncidentSubcategory =
 /**
  * Legacy alias.
  *
- * Jangan dipakai untuk flow baru.
- * Field ini dipertahankan sementara supaya data lama / komponen lama tidak crash.
+ * Do not use this for new flows.
+ * Kept temporarily so older data and older components do not crash.
  */
 export type IncidentType = IncidentSubcategory;
 
