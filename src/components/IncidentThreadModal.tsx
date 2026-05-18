@@ -7,6 +7,7 @@ import IncidentAccuracyPanel from "../features/incident/thread/IncidentAccuracyP
 import IncidentDiscussionList from "../features/incident/thread/IncidentDiscussionList";
 import IncidentOverviewCard from "../features/incident/thread/IncidentOverviewCard";
 import IncidentReplyComposer from "../features/incident/thread/IncidentReplyComposer";
+import IncidentTimeline from "../features/incident/thread/IncidentTimeline";
 import IncidentVoteFeedbackModal from "../features/incident/thread/IncidentVoteFeedbackModal";
 import ReportContentModal from "../features/incident/thread/ReportContentModal";
 import { useIncidentThread } from "../features/incident/thread/useIncidentThread";
@@ -142,6 +143,12 @@ export default function IncidentThreadModal({
           onReportContent={openReportContentModal}
         />
 
+        <IncidentTimeline
+          incident={incident}
+          verifications={thread.verifications}
+          replies={thread.replies}
+        />
+
         <IncidentAccuracyPanel
           accurateCount={thread.accuracySummary.accurateCount}
           inaccurateCount={thread.accuracySummary.inaccurateCount}
@@ -162,10 +169,12 @@ export default function IncidentThreadModal({
           replyText={thread.replyText}
           replyImageUri={thread.replyImageUri}
           replyingTo={thread.replyingTo}
+          selectedUpdateType={thread.selectedUpdateType}
           replySubmitting={thread.replySubmitting}
           replyIsValid={thread.replyIsValid}
           repliesCount={thread.replies.length}
           onChangeReplyText={thread.setReplyText}
+          onChangeUpdateType={thread.setSelectedUpdateType}
           onPickImage={thread.pickReplyImage}
           onRemoveImage={thread.removeReplyImage}
           onCancelReplyTo={thread.cancelReplyTo}

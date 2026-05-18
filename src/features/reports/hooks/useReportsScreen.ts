@@ -114,6 +114,7 @@ export const useReportsScreen = () => {
         report.status,
         report.severity,
         report.verificationStatus,
+        report.latestCommunityUpdateType,
         meta.label,
         report.reportedBy,
         report.reporterEmail,

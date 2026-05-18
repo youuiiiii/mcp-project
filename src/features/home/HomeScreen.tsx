@@ -17,6 +17,7 @@ import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/layout";
 import { typography } from "../../theme/typography";
 import type { IncidentReport } from "../../types/incident";
+import { getIncidentConfidenceMeta } from "../../utils/incidentConfidence";
 import HomeHero from "./components/HomeHero";
 import { useHomeScreen } from "./hooks/useHomeScreen";
 
@@ -125,6 +126,7 @@ function LatestReportCard({
     category: report.category,
     subcategory: report.subcategory ?? report.type,
   });
+  const confidence = getIncidentConfidenceMeta(report);
 
   return (
     <AppCard onPress={onPress} style={styles.reportCard}>
@@ -146,8 +148,8 @@ function LatestReportCard({
           </Text>
 
           <StatusBadge
-            label={report.status}
-            variant={report.status === "active" ? "active" : "resolved"}
+            label={`${confidence.shortLabel} ${confidence.score}`}
+            variant={getConfidenceVariant(confidence.level)}
             size="sm"
           />
         </View>
@@ -174,6 +176,24 @@ function getSeverityLabel(severity: IncidentReport["severity"]) {
   }
 
   return "Low severity";
+}
+
+function getConfidenceVariant(
+  level: ReturnType<typeof getIncidentConfidenceMeta>["level"]
+) {
+  if (level === "confirmed" || level === "resolved") {
+    return "success";
+  }
+
+  if (level === "questioned") {
+    return "danger";
+  }
+
+  if (level === "credible") {
+    return "info";
+  }
+
+  return "warning";
 }
 
 const styles = StyleSheet.create({

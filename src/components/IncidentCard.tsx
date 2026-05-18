@@ -6,6 +6,7 @@ import { colors } from "../theme/colors";
 import { radius, spacing } from "../theme/layout";
 import { typography } from "../theme/typography";
 import type { IncidentReport } from "../types/incident";
+import { getIncidentConfidenceMeta } from "../utils/incidentConfidence";
 import { shareIncident } from "../utils/shareIncident";
 import AppCard from "./ui/AppCard";
 import IconBadge from "./ui/IconBadge";
@@ -36,6 +37,7 @@ export default function IncidentCard({
     category: incident.category,
     subcategory: incident.subcategory ?? incident.type,
   });
+  const confidence = getIncidentConfidenceMeta(incident);
 
   const handleShare = () => {
     shareIncident({
@@ -76,8 +78,8 @@ export default function IncidentCard({
           </Text>
         </View>
         <StatusBadge
-          label={STATUS_LABEL[incident.status]}
-          variant={getStatusVariant(incident.status)}
+          label={`${confidence.shortLabel} ${confidence.score}`}
+          variant={getConfidenceVariant(confidence.level)}
           size="sm"
         />
       </View>
@@ -94,6 +96,12 @@ export default function IncidentCard({
         <StatusBadge
           label={SEVERITY_LABEL[incident.severity]}
           variant={getSeverityVariant(incident.severity)}
+          size="sm"
+        />
+
+        <StatusBadge
+          label={STATUS_LABEL[incident.status]}
+          variant={getStatusVariant(incident.status)}
           size="sm"
         />
 
@@ -152,6 +160,24 @@ function getSeverityVariant(
   }
 
   return "success";
+}
+
+function getConfidenceVariant(
+  level: ReturnType<typeof getIncidentConfidenceMeta>["level"]
+): StatusBadgeVariant {
+  if (level === "confirmed" || level === "resolved") {
+    return "success";
+  }
+
+  if (level === "questioned") {
+    return "danger";
+  }
+
+  if (level === "credible") {
+    return "info";
+  }
+
+  return "warning";
 }
 
 const styles = StyleSheet.create({

@@ -30,6 +30,7 @@ import {
   CreateIncidentReplyPayload,
   CreateIncidentVerificationPayload,
   CreateSOSLogPayload,
+  CommunityUpdateType,
   IncidentAccuracyVote,
   IncidentCategory,
   IncidentConditionStatus,
@@ -113,7 +114,7 @@ const normalizeTrustStatus = (value: unknown): TrustStatus => {
   return "unverified";
 };
 
-const normalizeCommunityUpdateType = (value: unknown) => {
+const normalizeCommunityUpdateType = (value: unknown): CommunityUpdateType => {
   if (
     value === "still_happening" ||
     value === "getting_worse" ||
@@ -402,12 +403,20 @@ const mapIncidentDocument = (
     disputeCount: normalizeCount(data.disputeCount),
     evidenceCount: normalizeCount(data.evidenceCount),
     replyCount: normalizeCount(data.replyCount),
+    accurateCount: normalizeCount(data.accurateCount),
+    inaccurateCount: normalizeCount(data.inaccurateCount),
     verifiedBy: normalizeStringArray(data.verifiedBy),
     disputedBy: normalizeStringArray(data.disputedBy),
 
     createdAt: toDate(data.createdAt),
     updatedAt: toDate(data.updatedAt),
     latestActivityAt: toDate(data.latestActivityAt),
+    latestCommunityUpdateType: normalizeCommunityUpdateType(
+      data.latestCommunityUpdateType
+    ),
+    latestCommunityUpdateAt: toDate(data.latestCommunityUpdateAt),
+    latestAccuracyVoteAt: toDate(data.latestAccuracyVoteAt),
+    conditionUpdateCount: normalizeCount(data.conditionUpdateCount),
 
     resolvedImageUri: normalizeNullableString(data.resolvedImageUri),
     resolutionNote: normalizeNullableString(data.resolutionNote),
@@ -835,6 +844,8 @@ export const createIncidentReport = async (
     disputeCount: 0,
     evidenceCount: 0,
     replyCount: 0,
+    accurateCount: 0,
+    inaccurateCount: 0,
     verifiedBy: [],
     disputedBy: [],
 
@@ -847,6 +858,10 @@ export const createIncidentReport = async (
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
     latestActivityAt: serverTimestamp(),
+    latestCommunityUpdateType: null,
+    latestCommunityUpdateAt: null,
+    latestAccuracyVoteAt: null,
+    conditionUpdateCount: 0,
 
     resolvedImageUri: null,
     resolutionNote: null,
@@ -872,35 +887,49 @@ export const createIncidentReply = async (
     throw new Error("Pesan diskusi minimal 3 karakter.");
   }
 
-  const repliesRef = collection(
-    db,
-    REPORTS_COLLECTION,
-    payload.reportId,
-    REPLIES_COLLECTION
-  );
-
-  const docRef = await addDoc(repliesRef, {
-    message: payload.message.trim(),
-    imageUri: normalizeNullableString(payload.imageUri),
-    parentReplyId: normalizeNullableString(payload.parentReplyId),
-    replyToUserName: normalizeNullableString(payload.replyToUserName),
-    updateType: payload.updateType ?? "additional_info",
-    moderationStatus: "visible",
-    userName: normalizeNullableString(payload.userName) ?? "Anonymous",
-    userEmail: normalizeNullableString(payload.userEmail),
-    actorKey: payload.actorKey,
-    createdAt: serverTimestamp(),
-  });
-
   const reportRef = doc(db, REPORTS_COLLECTION, payload.reportId);
+  const replyRef = doc(
+    collection(db, REPORTS_COLLECTION, payload.reportId, REPLIES_COLLECTION)
+  );
+  const updateType = normalizeCommunityUpdateType(payload.updateType);
+  const parentReplyId = normalizeNullableString(payload.parentReplyId);
 
-  await updateDoc(reportRef, {
-    replyCount: increment(1),
-    latestActivityAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
+  await runTransaction(db, async (transaction) => {
+    const reportSnapshot = await transaction.get(reportRef);
+
+    if (!reportSnapshot.exists()) {
+      throw new Error("Incident tidak ditemukan.");
+    }
+
+    transaction.set(replyRef, {
+      message: payload.message.trim(),
+      imageUri: normalizeNullableString(payload.imageUri),
+      parentReplyId,
+      replyToUserName: normalizeNullableString(payload.replyToUserName),
+      updateType,
+      moderationStatus: "visible",
+      userName: normalizeNullableString(payload.userName) ?? "Anonymous",
+      userEmail: normalizeNullableString(payload.userEmail),
+      actorKey: payload.actorKey,
+      createdAt: serverTimestamp(),
+    });
+
+    const reportUpdate: UpdateData<DocumentData> = {
+      replyCount: increment(1),
+      latestActivityAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    if (!parentReplyId && updateType !== "additional_info") {
+      reportUpdate.latestCommunityUpdateType = updateType;
+      reportUpdate.latestCommunityUpdateAt = serverTimestamp();
+      reportUpdate.conditionUpdateCount = increment(1);
+    }
+
+    transaction.update(reportRef, reportUpdate);
   });
 
-  return docRef.id;
+  return replyRef.id;
 };
 
 export const createIncidentContentReport = async (
@@ -1136,9 +1165,26 @@ export const submitIncidentAccuracyVote = async (
     ACCURACY_VOTES_COLLECTION,
     payload.actorKey
   );
+  const reportRef = doc(db, REPORTS_COLLECTION, payload.reportId);
 
   await runTransaction(db, async (transaction) => {
+    const reportSnapshot = await transaction.get(reportRef);
     const voteSnapshot = await transaction.get(voteRef);
+
+    if (!reportSnapshot.exists()) {
+      throw new Error("Incident tidak ditemukan.");
+    }
+
+    const previousVoteType = voteSnapshot.exists()
+      ? normalizeAccuracyVoteType(voteSnapshot.data().voteType)
+      : null;
+
+    const accurateDelta =
+      (payload.voteType === "accurate" ? 1 : 0) -
+      (previousVoteType === "accurate" ? 1 : 0);
+    const inaccurateDelta =
+      (payload.voteType === "inaccurate" ? 1 : 0) -
+      (previousVoteType === "inaccurate" ? 1 : 0);
 
     if (voteSnapshot.exists()) {
       transaction.update(voteRef, {
@@ -1148,17 +1194,23 @@ export const submitIncidentAccuracyVote = async (
         locationAccuracyMeters: payload.locationAccuracyMeters,
         updatedAt: serverTimestamp(),
       });
-
-      return;
+    } else {
+      transaction.set(voteRef, {
+        voteType: payload.voteType,
+        proximityStatus: payload.proximityStatus,
+        distanceFromIncidentMeters: payload.distanceFromIncidentMeters,
+        locationAccuracyMeters: payload.locationAccuracyMeters,
+        actorKey: payload.actorKey,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
     }
 
-    transaction.set(voteRef, {
-      voteType: payload.voteType,
-      proximityStatus: payload.proximityStatus,
-      distanceFromIncidentMeters: payload.distanceFromIncidentMeters,
-      locationAccuracyMeters: payload.locationAccuracyMeters,
-      actorKey: payload.actorKey,
-      createdAt: serverTimestamp(),
+    transaction.update(reportRef, {
+      accurateCount: increment(accurateDelta),
+      inaccurateCount: increment(inaccurateDelta),
+      latestAccuracyVoteAt: serverTimestamp(),
+      latestActivityAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
   });

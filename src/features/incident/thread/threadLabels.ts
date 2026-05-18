@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { colors } from "../../../theme/colors";
 import type {
+  CommunityUpdateType,
   IncidentConditionStatus,
   IncidentReport,
   IncidentVerification,
@@ -10,6 +11,74 @@ import type { StatusBadgeVariant } from "../../../components/ui/StatusBadge";
 import type { TimelineKind } from "./types";
 
 export type AppIconName = keyof typeof Ionicons.glyphMap;
+
+export type CommunityUpdateMeta = {
+  label: string;
+  shortLabel: string;
+  description: string;
+  iconName: AppIconName;
+  color: string;
+};
+
+export const COMMUNITY_UPDATE_META = {
+  still_happening: {
+    label: "Masih Terjadi",
+    shortLabel: "Masih",
+    description: "Kondisi di lokasi masih berlangsung.",
+    iconName: "radio",
+    color: colors.danger,
+  },
+  getting_worse: {
+    label: "Makin Parah",
+    shortLabel: "Parah",
+    description: "Kondisi terlihat memburuk atau makin berisiko.",
+    iconName: "trending-up",
+    color: colors.primaryDark,
+  },
+  improving: {
+    label: "Membaik",
+    shortLabel: "Membaik",
+    description: "Kondisi mulai membaik tetapi belum sepenuhnya selesai.",
+    iconName: "trending-down",
+    color: colors.info,
+  },
+  safe_now: {
+    label: "Sudah Aman",
+    shortLabel: "Aman",
+    description: "Lokasi tampak aman atau kejadian sudah mereda.",
+    iconName: "checkmark-circle",
+    color: colors.success,
+  },
+  not_found: {
+    label: "Tidak Ditemukan",
+    shortLabel: "Tidak Ada",
+    description: "Kejadian tidak terlihat di lokasi laporan.",
+    iconName: "help-circle",
+    color: colors.warningDark,
+  },
+  additional_info: {
+    label: "Info Tambahan",
+    shortLabel: "Info",
+    description: "Tambahan konteks, foto, atau keterangan dari warga.",
+    iconName: "chatbubble-ellipses",
+    color: colors.textMuted,
+  },
+} as const satisfies Record<CommunityUpdateType, CommunityUpdateMeta>;
+
+export const COMMUNITY_UPDATE_OPTIONS: CommunityUpdateType[] = [
+  "still_happening",
+  "getting_worse",
+  "improving",
+  "safe_now",
+  "not_found",
+  "additional_info",
+];
+
+export function getCommunityUpdateMeta(
+  updateType?: CommunityUpdateType | null
+): CommunityUpdateMeta {
+  return COMMUNITY_UPDATE_META[updateType ?? "additional_info"];
+}
 
 export function formatIncidentDate(date?: Date) {
   if (!date) {
@@ -116,5 +185,5 @@ export function getTimelineIcon(kind: TimelineKind): AppIconName {
     return "chatbubble-ellipses";
   }
 
-  return "flag";
+  return "checkmark-done-circle";
 }

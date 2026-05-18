@@ -150,6 +150,9 @@ export type IncidentReport = {
   replyCount?: number;
   verifiedBy?: string[];
   disputedBy?: string[];
+  accurateCount?: number;
+  inaccurateCount?: number;
+  latestAccuracyVoteAt?: Date;
   trustStatus?: TrustStatus;
   moderationStatus?: ModerationStatus;
   moderationReason?: string | null;
@@ -158,6 +161,9 @@ export type IncidentReport = {
   createdAt?: Date;
   updatedAt?: Date;
   latestActivityAt?: Date;
+  latestCommunityUpdateType?: CommunityUpdateType | null;
+  latestCommunityUpdateAt?: Date;
+  conditionUpdateCount?: number;
   resolvedImageUri?: string | null;
   resolutionNote?: string | null;
   resolvedBy?: string | null;
