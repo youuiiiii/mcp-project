@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import HomeEarthquakeSection from "./components/HomeEarthquakeSection";
 import { useBmkgEarthquakes } from "./hooks/useBmkgEarthquakes";
 
+import EarthquakeAlertModal from "../../components/EarthquakeAlertModal";
 import IncidentThreadModal from "../../components/IncidentThreadModal";
 import AppCard from "../../components/ui/AppCard";
 import AppScreen from "../../components/ui/AppScreen";
@@ -20,12 +21,24 @@ import type { IncidentReport } from "../../types/incident";
 import HomeHero from "./components/HomeHero";
 import { useHomeScreen } from "./hooks/useHomeScreen";
 
+const ALERT_MAGNITUDE_THRESHOLD = 5.0;
+
 export default function HomeScreen() {
   const home = useHomeScreen();
   const earthquake = useBmkgEarthquakes();
 
   const [selectedIncident, setSelectedIncident] =
     useState<IncidentReport | null>(null);
+  const [alertVisible, setAlertVisible] = useState(false);
+
+  useEffect(() => {
+    if (earthquake.mainEarthquake) {
+      const magnitude = parseFloat(earthquake.mainEarthquake.Magnitude ?? "0");
+      if (magnitude >= ALERT_MAGNITUDE_THRESHOLD) {
+        setAlertVisible(true);
+      }
+    }
+  }, [earthquake.mainEarthquake]);
 
   const openIncidentThread = (incident: IncidentReport) => {
     setSelectedIncident(incident);
@@ -66,7 +79,6 @@ export default function HomeScreen() {
             <Ionicons name="warning" size={18} color={colors.danger} />
             <Text style={styles.errorTitle}>Data belum lengkap</Text>
           </View>
-
           <Text style={styles.errorMessage}>{home.errorMessage}</Text>
         </AppCard>
       ) : null}
@@ -110,6 +122,12 @@ export default function HomeScreen() {
         onClose={closeIncidentThread}
         showActions={false}
       />
+
+      <EarthquakeAlertModal
+        visible={alertVisible}
+        earthquake={earthquake.mainEarthquake}
+        onClose={() => setAlertVisible(false)}
+      />
     </AppScreen>
   );
 }
@@ -132,9 +150,7 @@ function LatestReportCard({
         variant="neutral"
         size="md"
         rounded={false}
-        style={{
-          backgroundColor: meta.lightColor,
-        }}
+        style={{ backgroundColor: meta.lightColor }}
       >
         <Ionicons name={meta.iconName} size={21} color={meta.color} />
       </IconBadge>
@@ -144,7 +160,6 @@ function LatestReportCard({
           <Text style={styles.reportTitle} numberOfLines={1}>
             {report.title}
           </Text>
-
           <StatusBadge
             label={report.status}
             variant={report.status === "active" ? "active" : "resolved"}
@@ -165,14 +180,8 @@ function LatestReportCard({
 }
 
 function getSeverityLabel(severity: IncidentReport["severity"]) {
-  if (severity === "high") {
-    return "High severity";
-  }
-
-  if (severity === "medium") {
-    return "Medium severity";
-  }
-
+  if (severity === "high") return "High severity";
+  if (severity === "medium") return "Medium severity";
   return "Low severity";
 }
 
