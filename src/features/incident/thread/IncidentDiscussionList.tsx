@@ -11,11 +11,12 @@ import {
 } from "react-native";
 
 import LoadingState from "../../../components/ui/LoadingState";
+import StatusBadge from "../../../components/ui/StatusBadge";
 import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
 import { typography } from "../../../theme/typography";
 import type { IncidentReply } from "../../../types/incident";
-import { formatIncidentDate } from "./threadLabels";
+import { formatIncidentDate, getCommunityUpdateMeta } from "./threadLabels";
 
 type IncidentDiscussionListProps = {
   replies: IncidentReply[];
@@ -51,13 +52,13 @@ export default function IncidentDiscussionList({
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Komentar Warga</Text>
+        <Text style={styles.sectionTitle}>Community Comments</Text>
         <Text style={styles.sectionSubtitle}>
-          {replies.length} komentar tersedia
+          {replies.length} comments available
         </Text>
       </View>
 
-      {loading ? <LoadingState message="Memuat komentar..." /> : null}
+      {loading ? <LoadingState message="Loading comments..." /> : null}
 
       {!loading && replies.length === 0 ? (
         <View style={styles.emptyState}>
@@ -68,9 +69,9 @@ export default function IncidentDiscussionList({
           />
 
           <View style={styles.emptyTextGroup}>
-            <Text style={styles.emptyTitle}>Belum ada komentar</Text>
+            <Text style={styles.emptyTitle}>No comments yet</Text>
             <Text style={styles.emptyText}>
-              Jadilah yang pertama memberi informasi tambahan.
+              Be the first to add useful information.
             </Text>
           </View>
         </View>
@@ -166,6 +167,7 @@ function ReplyContent({
   onPreviewImage: (imageUri: string) => void;
 }) {
   const author = reply.userName || reply.userEmail || "Anonymous";
+  const updateMeta = getCommunityUpdateMeta(reply.updateType);
 
   return (
     <View>
@@ -174,12 +176,21 @@ function ReplyContent({
           {author}
         </Text>
 
-        <Text style={styles.replyDot}>·</Text>
+        <Text style={styles.replyDot}>-</Text>
 
         <Text style={styles.replyTime} numberOfLines={1}>
           {formatIncidentDate(reply.createdAt)}
         </Text>
       </View>
+
+      {!compact ? (
+        <StatusBadge
+          label={updateMeta.label}
+          variant={getUpdateBadgeVariant(reply.updateType)}
+          size="sm"
+          style={styles.updateBadge}
+        />
+      ) : null}
 
       {reply.replyToUserName ? (
         <Text style={styles.replyingToText}>
@@ -213,6 +224,32 @@ function ReplyContent({
       </Pressable>
     </View>
   );
+}
+
+function getUpdateBadgeVariant(
+  updateType: IncidentReply["updateType"]
+): "active" | "danger" | "success" | "warning" | "info" | "neutral" {
+  if (updateType === "still_happening") {
+    return "active";
+  }
+
+  if (updateType === "getting_worse") {
+    return "danger";
+  }
+
+  if (updateType === "safe_now") {
+    return "success";
+  }
+
+  if (updateType === "not_found") {
+    return "warning";
+  }
+
+  if (updateType === "improving") {
+    return "info";
+  }
+
+  return "neutral";
 }
 
 function NaturalReplyImage({
@@ -286,7 +323,7 @@ function NaturalReplyImage({
 
       <View style={styles.imageHint}>
         <Ionicons name="expand-outline" size={13} color={colors.textInverse} />
-        <Text style={styles.imageHintText}>Lihat</Text>
+        <Text style={styles.imageHintText}>View</Text>
       </View>
     </Pressable>
   );
@@ -445,6 +482,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
     color: colors.info,
+  },
+  updateBadge: {
+    marginTop: 2,
   },
   replyMessage: {
     marginTop: 2,

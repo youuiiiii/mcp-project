@@ -35,7 +35,7 @@ export default function ProfileScreen() {
   if (loading) {
     return (
       <AppScreen scroll={false} contentContainerStyle={styles.loadingContainer}>
-        <LoadingState message="Memuat profil..." />
+        <LoadingState message="Loading profile..." />
       </AppScreen>
     );
   }
@@ -77,7 +77,7 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <SectionHeader
           title="Kontribusi"
-          subtitle="Ringkasan laporan dari akun ini."
+          subtitle="Report summary for this account."
         />
 
         <StatsStrip stats={stats} />
@@ -85,14 +85,14 @@ export default function ProfileScreen() {
 
       <View style={styles.section}>
         <SectionHeader
-          title="Akun"
-          subtitle="Informasi dasar dan pengaturan akun."
+          title="Account"
+          subtitle="Basic information and account settings."
         />
 
         <AppCard style={styles.accountCard}>
           <AccountRow
             iconName="person-outline"
-            label="Nama"
+            label="Name"
             value={displayName}
           />
 
@@ -110,7 +110,7 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <SectionHeader
           title="Moderator"
-          subtitle="Tinjau laporan konten dari warga."
+          subtitle="Review content reports from the community."
         />
 
         <AppCard style={styles.moderatorCard}>
@@ -121,7 +121,7 @@ export default function ProfileScreen() {
           <View style={styles.moderatorText}>
             <Text style={styles.moderatorTitle}>Moderation Queue</Text>
             <Text style={styles.moderatorDescription}>
-              Review konten yang dilaporkan dan sembunyikan laporan bermasalah.
+              Review reported content and hide problematic reports.
             </Text>
           </View>
 
@@ -163,19 +163,19 @@ function StatsStrip({ stats }: { stats: ProfileStats }) {
       color: colors.info,
     },
     {
-      label: "Aktif",
+      label: "Active",
       value: stats.activeReports,
       iconName: "radio" as const,
       color: colors.danger,
     },
     {
-      label: "Selesai",
+      label: "Resolved",
       value: stats.resolvedReports,
       iconName: "checkmark-circle-outline" as const,
       color: colors.success,
     },
     {
-      label: "Tinggi",
+      label: "High",
       value: stats.highSeverityReports,
       iconName: "warning-outline" as const,
       color: colors.warningDark,

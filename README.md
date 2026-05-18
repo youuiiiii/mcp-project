@@ -1,50 +1,49 @@
-# Welcome to your Expo app 👋
+# SIGAP
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+SIGAP is a cross-platform Expo app for community incident reporting, disaster
+monitoring, verification, moderation, and safety response workflows.
 
-## Get started
+## Tech Stack
 
-1. Install dependencies
+- Expo Router and React Native
+- TypeScript with strict mode enabled
+- Firebase Authentication and Firestore
+- React Native Maps
+- BMKG earthquake data integration
 
-   ```bash
-   npm install
-   ```
+## Project Structure
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```text
+app/                 File-based routes and route guards
+assets/              App icons, splash assets, and static media
+scripts/             Project maintenance scripts
+src/components/      Shared app components and UI primitives
+src/constants/       Domain constants and app configuration values
+src/contexts/        React context providers
+src/features/        Feature-owned screens, hooks, components, and utilities
+src/services/        External service clients and persistence logic
+src/styles/          Shared StyleSheet modules
+src/theme/           Design tokens for color, spacing, layout, and typography
+src/types/           Shared TypeScript domain types
+src/utils/           Shared pure utilities
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Available Scripts
 
-## Learn more
+```bash
+npm run start
+npm run android
+npm run ios
+npm run web
+npm run lint
+npm run typecheck
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## Code Standards
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Keep route files in `app/` thin; put business logic in `src/features`.
+- Keep feature-specific components, hooks, and utilities inside their feature
+  folder.
+- Put reusable UI primitives in `src/components/ui`.
+- Use `@/` imports for app-level imports from `src`.
+- Run `npm run lint` and `npm run typecheck` before handing off changes.

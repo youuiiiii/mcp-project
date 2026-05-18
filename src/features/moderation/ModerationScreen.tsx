@@ -62,7 +62,7 @@ export default function ModerationScreen() {
         setErrorMessage(null);
       },
       (error) => {
-        setErrorMessage(error.message || "Gagal memuat moderation queue.");
+        setErrorMessage(error.message || "Could not load moderation queue.");
         setLoadingReports(false);
       }
     );
@@ -73,7 +73,7 @@ export default function ModerationScreen() {
         setLoadingIncidents(false);
       },
       (error) => {
-        setErrorMessage(error.message || "Gagal memuat data incident.");
+        setErrorMessage(error.message || "Could not load incident data.");
         setLoadingIncidents(false);
       }
     );
@@ -97,11 +97,11 @@ export default function ModerationScreen() {
 
   const handleDismiss = (ticket: IncidentContentReport) => {
     Alert.alert(
-      "Dismiss Laporan Konten",
-      "Ticket ini akan ditandai tidak perlu tindakan. Konten tetap terlihat publik.",
+      "Dismiss Content Report",
+      "This ticket will be marked as no action needed. The content remains public.",
       [
         {
-          text: "Batal",
+          text: "Cancel",
           style: "cancel",
         },
         {
@@ -116,10 +116,10 @@ export default function ModerationScreen() {
                 reviewedBy: reviewer,
               });
 
-              Alert.alert("Selesai", "Ticket berhasil di-dismiss.");
+              Alert.alert("Done", "Ticket dismissed successfully.");
             } catch (error) {
               Alert.alert(
-                "Gagal Dismiss",
+                "Could Not Dismiss",
                 error instanceof Error
                   ? error.message
                   : "Terjadi kesalahan saat dismiss ticket."
@@ -138,8 +138,8 @@ export default function ModerationScreen() {
 
     if (!incident) {
       Alert.alert(
-        "Incident Tidak Ditemukan",
-        "Konten target tidak ditemukan atau sudah tidak terlihat."
+        "Incident Not Found",
+        "The target content was not found or is no longer visible."
       );
       return;
     }
@@ -151,11 +151,11 @@ export default function ModerationScreen() {
       }`;
 
     Alert.alert(
-      "Hide Laporan",
-      "Laporan akan disembunyikan dari Map dan Home. Lanjutkan?",
+      "Hide Report",
+      "This report will be hidden from Map and Home. Continue?",
       [
         {
-          text: "Batal",
+          text: "Cancel",
           style: "cancel",
         },
         {
@@ -178,13 +178,13 @@ export default function ModerationScreen() {
 
               setModerationReason("");
 
-              Alert.alert("Disembunyikan", "Laporan berhasil disembunyikan.");
+              Alert.alert("Hidden", "The report was hidden successfully.");
             } catch (error) {
               Alert.alert(
-                "Gagal Hide",
+                "Could Not Hide",
                 error instanceof Error
                   ? error.message
-                  : "Terjadi kesalahan saat menyembunyikan laporan."
+                  : "Something went wrong while hiding the report."
               );
             } finally {
               setSelectedTicketId(null);
@@ -198,7 +198,7 @@ export default function ModerationScreen() {
   if (authLoading) {
     return (
       <AppScreen scroll={false} contentContainerStyle={styles.centerContent}>
-        <LoadingState message="Memeriksa akses moderator..." />
+        <LoadingState message="Checking moderator access..." />
       </AppScreen>
     );
   }
@@ -209,15 +209,14 @@ export default function ModerationScreen() {
         <AppCard style={styles.accessCard}>
           <Ionicons name="lock-closed" size={32} color={colors.danger} />
 
-          <Text style={styles.accessTitle}>Akses Moderator Dibutuhkan</Text>
+          <Text style={styles.accessTitle}>Moderator Access Required</Text>
 
           <Text style={styles.accessDescription}>
-            Halaman ini hanya untuk moderator yang bertugas meninjau konten
-            warga.
+            This page is only for moderators who review community content.
           </Text>
 
           <AppButton
-            title="Kembali ke Home"
+            title="Back to Home"
             variant="secondary"
             size="md"
             onPress={() => router.replace(HOME_ROUTE)}
@@ -235,8 +234,8 @@ export default function ModerationScreen() {
         <Text style={styles.title}>Moderation Queue</Text>
 
         <Text style={styles.subtitle}>
-          Tinjau laporan konten dari warga. Hide hanya untuk konten yang jelas
-          bermasalah.
+          Review community content reports. Hide only content that is clearly
+          problematic.
         </Text>
       </View>
 
@@ -250,12 +249,12 @@ export default function ModerationScreen() {
       <View style={styles.section}>
         <SectionHeader
           title="Open Tickets"
-          subtitle={`${contentReports.length} laporan konten perlu ditinjau.`}
+          subtitle={`${contentReports.length} content reports need review.`}
         />
 
         {loading ? (
           <AppCard style={styles.loadingCard}>
-            <LoadingState message="Memuat moderation queue..." />
+            <LoadingState message="Loading moderation queue..." />
           </AppCard>
         ) : null}
 
@@ -263,7 +262,7 @@ export default function ModerationScreen() {
           <EmptyState
             iconName="shield-checkmark-outline"
             title="Queue kosong"
-            message="Belum ada laporan konten yang perlu ditinjau."
+            message="No content reports need review right now."
           />
         ) : null}
 
@@ -333,13 +332,13 @@ function ModerationTicketCard({
 
       {ticket.note ? (
         <View style={styles.noteBox}>
-          <Text style={styles.noteLabel}>Catatan pelapor</Text>
+          <Text style={styles.noteLabel}>Reporter note</Text>
           <Text style={styles.noteText}>{ticket.note}</Text>
         </View>
       ) : null}
 
       <View style={styles.previewBox}>
-        <Text style={styles.previewLabel}>Konten yang dilaporkan</Text>
+        <Text style={styles.previewLabel}>Reported content</Text>
 
         {incident ? (
           <>
@@ -348,7 +347,7 @@ function ModerationTicketCard({
             </Text>
 
             <Text style={styles.previewDescription} numberOfLines={3}>
-              {incident.description || "Tidak ada deskripsi."}
+              {incident.description || "No description provided."}
             </Text>
 
             <View style={styles.previewMetaRow}>
@@ -359,11 +358,11 @@ function ModerationTicketCard({
               />
 
               <StatusBadge
-                label={incident.severity}
+                label={`Urgency ${incident.urgencyScore ?? incident.urgencyLevel ?? incident.severity}`}
                 variant={
-                  incident.severity === "high"
+                  (incident.urgencyLevel ?? incident.severity) === "high"
                     ? "danger"
-                    : incident.severity === "medium"
+                    : (incident.urgencyLevel ?? incident.severity) === "medium"
                       ? "warning"
                       : "success"
                 }
@@ -373,7 +372,7 @@ function ModerationTicketCard({
           </>
         ) : (
           <Text style={styles.previewMissing}>
-            Konten tidak ditemukan atau sudah disembunyikan.
+            Content was not found or has already been hidden.
           </Text>
         )}
       </View>
@@ -382,7 +381,7 @@ function ModerationTicketCard({
         value={reasonValue}
         onChangeText={onChangeReason}
         editable={!busy}
-        placeholder="Alasan moderator, opsional..."
+        placeholder="Moderator reason, optional..."
         placeholderTextColor={colors.textSoft}
         multiline
         style={styles.reasonInput}
@@ -414,12 +413,12 @@ function ModerationTicketCard({
 
 function getReasonLabel(reason: IncidentContentReportReason) {
   const labels: Record<IncidentContentReportReason, string> = {
-    false_information: "Informasi tidak benar",
-    harmful_content: "Konten berbahaya",
+    false_information: "False information",
+    harmful_content: "Harmful content",
     spam: "Spam",
-    privacy_issue: "Masalah privasi",
-    inappropriate_image: "Foto tidak pantas",
-    other: "Lainnya",
+    privacy_issue: "Privacy issue",
+    inappropriate_image: "Inappropriate photo",
+    other: "Other",
   };
 
   return labels[reason];

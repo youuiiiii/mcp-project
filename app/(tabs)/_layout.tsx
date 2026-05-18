@@ -2,8 +2,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { type Href, Redirect, Tabs } from "expo-router";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 
-import { useAuth } from "../../src/contexts/AuthContext";
-import { colors } from "../../src/theme/colors";
+import { useAuth } from "@/contexts/AuthContext";
+import { useI18n } from "@/i18n";
+import { colors } from "@/theme/colors";
 
 const LOGIN_ROUTE = "/login" as Href;
 
@@ -41,6 +42,7 @@ function TabIcon({
 
 export default function TabsLayout() {
   const { user, loading } = useAuth();
+  const { t } = useI18n();
 
   if (loading) {
     return (
@@ -67,7 +69,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
+          title: t("tabs.home"),
           tabBarIcon: ({ focused, color }) => (
             <TabIcon
               focused={focused}
@@ -82,7 +84,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="map"
         options={{
-          title: "Map",
+          title: t("tabs.map"),
           tabBarIcon: ({ focused, color }) => (
             <TabIcon
               focused={focused}
@@ -97,7 +99,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="report"
         options={{
-          title: "Report",
+          title: t("tabs.report"),
           tabBarIcon: ({ focused, color }) => (
             <TabIcon
               focused={focused}
@@ -112,7 +114,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
+          title: t("tabs.profile"),
           tabBarIcon: ({ focused, color }) => (
             <TabIcon
               focused={focused}

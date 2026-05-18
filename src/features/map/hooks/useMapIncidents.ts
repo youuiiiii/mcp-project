@@ -33,7 +33,7 @@ export const useMapIncidents = ({
       },
       (error) => {
         console.error("Map reports error:", error);
-        setReportsErrorMessage(error.message || "Gagal memuat data laporan.");
+        setReportsErrorMessage(error.message || "Could not load report data.");
         setLoadingReports(false);
       }
     );

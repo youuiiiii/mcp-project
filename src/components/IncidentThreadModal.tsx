@@ -7,6 +7,7 @@ import IncidentAccuracyPanel from "../features/incident/thread/IncidentAccuracyP
 import IncidentDiscussionList from "../features/incident/thread/IncidentDiscussionList";
 import IncidentOverviewCard from "../features/incident/thread/IncidentOverviewCard";
 import IncidentReplyComposer from "../features/incident/thread/IncidentReplyComposer";
+import IncidentTimeline from "../features/incident/thread/IncidentTimeline";
 import IncidentVoteFeedbackModal from "../features/incident/thread/IncidentVoteFeedbackModal";
 import ReportContentModal from "../features/incident/thread/ReportContentModal";
 import { useIncidentThread } from "../features/incident/thread/useIncidentThread";
@@ -77,19 +78,19 @@ export default function IncidentThreadModal({
   const submitContentReport = async () => {
     try {
       if (!user) {
-        Alert.alert("Belum Login", "Silakan login untuk melaporkan konten.");
+        Alert.alert("Login Required", "Please log in to report content.");
         return;
       }
 
       if (!selectedReason) {
-        Alert.alert("Alasan Belum Dipilih", "Pilih alasan laporan konten.");
+        Alert.alert("Reason Required", "Choose a content report reason.");
         return;
       }
 
       const actorKey = user.uid || user.email;
 
       if (!actorKey) {
-        Alert.alert("Identitas Tidak Valid", "Akun Anda tidak valid.");
+        Alert.alert("Invalid Identity", "Your account is invalid.");
         return;
       }
 
@@ -110,13 +111,13 @@ export default function IncidentThreadModal({
       setSelectedReason(null);
       setReportNote("");
 
-      Alert.alert("Konten Dilaporkan", "Terima kasih. Laporan ini akan ditinjau.");
+      Alert.alert("Content Reported", "Thank you. This report will be reviewed.");
     } catch (error) {
       Alert.alert(
-        "Gagal Melaporkan Konten",
+        "Could Not Report Content",
         error instanceof Error
           ? error.message
-          : "Terjadi kesalahan saat mengirim laporan konten."
+          : "Something went wrong while sending the content report."
       );
     } finally {
       setReportSubmitting(false);
@@ -127,8 +128,8 @@ export default function IncidentThreadModal({
     <>
       <IncidentModalShell
         visible={visible}
-        title="Detail Laporan"
-        subtitle="Informasi kejadian dan update warga."
+        title="Report Details"
+        subtitle="Incident information and community updates."
         onClose={thread.closeThread}
         submitting={thread.replySubmitting}
         headerRight={
@@ -140,6 +141,12 @@ export default function IncidentThreadModal({
         <IncidentOverviewCard
           incident={incident}
           onReportContent={openReportContentModal}
+        />
+
+        <IncidentTimeline
+          incident={incident}
+          verifications={thread.verifications}
+          replies={thread.replies}
         />
 
         <IncidentAccuracyPanel
@@ -162,10 +169,12 @@ export default function IncidentThreadModal({
           replyText={thread.replyText}
           replyImageUri={thread.replyImageUri}
           replyingTo={thread.replyingTo}
+          selectedUpdateType={thread.selectedUpdateType}
           replySubmitting={thread.replySubmitting}
           replyIsValid={thread.replyIsValid}
           repliesCount={thread.replies.length}
           onChangeReplyText={thread.setReplyText}
+          onChangeUpdateType={thread.setSelectedUpdateType}
           onPickImage={thread.pickReplyImage}
           onRemoveImage={thread.removeReplyImage}
           onCancelReplyTo={thread.cancelReplyTo}

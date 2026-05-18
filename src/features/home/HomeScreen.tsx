@@ -17,6 +17,7 @@ import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/layout";
 import { typography } from "../../theme/typography";
 import type { IncidentReport } from "../../types/incident";
+import { getIncidentConfidenceMeta } from "../../utils/incidentConfidence";
 import HomeHero from "./components/HomeHero";
 import { useHomeScreen } from "./hooks/useHomeScreen";
 
@@ -64,7 +65,7 @@ export default function HomeScreen() {
         <AppCard variant="muted" style={styles.errorCard}>
           <View style={styles.errorHeader}>
             <Ionicons name="warning" size={18} color={colors.danger} />
-            <Text style={styles.errorTitle}>Data belum lengkap</Text>
+            <Text style={styles.errorTitle}>Data incomplete</Text>
           </View>
 
           <Text style={styles.errorMessage}>{home.errorMessage}</Text>
@@ -74,20 +75,20 @@ export default function HomeScreen() {
       <View style={styles.section}>
         <SectionHeader
           title="Latest Incidents"
-          subtitle="Laporan terbaru dari komunitas."
+          subtitle="Latest community reports."
         />
 
         {home.loadingReports ? (
           <AppCard style={styles.loadingCard}>
-            <LoadingState message="Memuat laporan terbaru..." />
+            <LoadingState message="Loading latest reports..." />
           </AppCard>
         ) : null}
 
         {!home.loadingReports && home.latestReports.length === 0 ? (
           <EmptyState
             iconName="map-outline"
-            title="Belum ada laporan"
-            message="Laporan warga akan muncul setelah ada incident yang dikirim."
+            title="No reports yet"
+            message="Community reports will appear after an incident is submitted."
           />
         ) : null}
 
@@ -125,6 +126,7 @@ function LatestReportCard({
     category: report.category,
     subcategory: report.subcategory ?? report.type,
   });
+  const confidence = getIncidentConfidenceMeta(report);
 
   return (
     <AppCard onPress={onPress} style={styles.reportCard}>
@@ -146,34 +148,58 @@ function LatestReportCard({
           </Text>
 
           <StatusBadge
-            label={report.status}
-            variant={report.status === "active" ? "active" : "resolved"}
+            label={`${confidence.shortLabel} ${confidence.score}`}
+            variant={getConfidenceVariant(confidence.level)}
             size="sm"
           />
         </View>
 
         <Text style={styles.reportMeta} numberOfLines={1}>
-          {meta.label} • {getSeverityLabel(report.severity)}
+          {meta.label} - {getUrgencyLabel(report)}
         </Text>
 
         <Text style={styles.reportDescription} numberOfLines={2}>
-          {report.description || "Tidak ada deskripsi."}
+          {report.description || "No description provided."}
         </Text>
       </View>
     </AppCard>
   );
 }
 
-function getSeverityLabel(severity: IncidentReport["severity"]) {
-  if (severity === "high") {
-    return "High severity";
+function getUrgencyLabel(report: IncidentReport) {
+  const urgency = report.urgencyLevel ?? report.severity;
+
+  if (typeof report.urgencyScore === "number") {
+    return `Urgency ${report.urgencyScore}`;
   }
 
-  if (severity === "medium") {
-    return "Medium severity";
+  if (urgency === "high") {
+    return "High urgency";
   }
 
-  return "Low severity";
+  if (urgency === "medium") {
+    return "Medium urgency";
+  }
+
+  return "Low urgency";
+}
+
+function getConfidenceVariant(
+  level: ReturnType<typeof getIncidentConfidenceMeta>["level"]
+) {
+  if (level === "confirmed" || level === "resolved") {
+    return "success";
+  }
+
+  if (level === "questioned") {
+    return "danger";
+  }
+
+  if (level === "credible") {
+    return "info";
+  }
+
+  return "warning";
 }
 
 const styles = StyleSheet.create({

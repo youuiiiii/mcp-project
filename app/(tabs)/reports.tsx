@@ -1,4 +1,4 @@
-import ReportsScreen from "../../src/features/reports/ReportsScreen";
+import ReportsScreen from "@/features/reports/ReportsScreen";
 
 export default function ReportsRoute() {
   return <ReportsScreen />;

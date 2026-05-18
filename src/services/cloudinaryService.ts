@@ -14,21 +14,21 @@ export const uploadImageAsync = async (
   folder: CloudinaryFolder
 ): Promise<string> => {
   if (!uri) {
-    throw new Error("URI gambar tidak valid.");
+    throw new Error("Invalid image URI.");
   }
 
   if (
     !CLOUDINARY_CONFIG.cloudName ||
     CLOUDINARY_CONFIG.cloudName === "ISI_CLOUD_NAME_KAMU"
   ) {
-    throw new Error("Cloudinary cloudName belum diisi.");
+    throw new Error("Cloudinary cloudName is not configured.");
   }
 
   if (
     !CLOUDINARY_CONFIG.uploadPreset ||
     CLOUDINARY_CONFIG.uploadPreset === "ISI_UPLOAD_PRESET_KAMU"
   ) {
-    throw new Error("Cloudinary upload preset belum diisi.");
+    throw new Error("Cloudinary upload preset is not configured.");
   }
 
   const formData = new FormData();
@@ -55,7 +55,7 @@ export const uploadImageAsync = async (
 
   if (!response.ok || !data.secure_url) {
     throw new Error(
-      data.error?.message || "Gagal upload gambar ke Cloudinary."
+      data.error?.message || "Could not upload image to Cloudinary."
     );
   }
 

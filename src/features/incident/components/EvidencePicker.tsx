@@ -47,11 +47,11 @@ export default function EvidencePicker({
                 size={18}
                 color={colors.success}
               />
-              <Text style={styles.imageText}>Foto bukti sudah dipilih</Text>
+              <Text style={styles.imageText}>Evidence photo selected</Text>
             </View>
 
             <AppButton
-              title="Hapus"
+              title="Remove"
               variant="ghost"
               size="sm"
               disabled={disabled}
@@ -73,7 +73,7 @@ export default function EvidencePicker({
 
       <View style={styles.actions}>
         <AppButton
-          title="Ambil Foto"
+          title="Take Photo"
           variant="primary"
           size="md"
           disabled={disabled}
@@ -85,7 +85,7 @@ export default function EvidencePicker({
         />
 
         <AppButton
-          title="Pilih Galeri"
+          title="Choose Gallery"
           variant="secondary"
           size="md"
           disabled={disabled}

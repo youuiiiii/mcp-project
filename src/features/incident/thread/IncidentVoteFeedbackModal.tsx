@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import {
   ActivityIndicator,
   Modal,
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -74,7 +73,7 @@ export default function IncidentVoteFeedbackModal({
             <View style={styles.actions}>
               {canOpenSettings ? (
                 <AppButton
-                  title="Buka Pengaturan"
+                  title="Open Settings"
                   variant="primary"
                   size="md"
                   fullWidth
@@ -83,7 +82,7 @@ export default function IncidentVoteFeedbackModal({
               ) : null}
 
               <AppButton
-                title={status === "success" ? "Oke" : "Tutup"}
+                title={status === "success" ? "OK" : "Close"}
                 variant={canOpenSettings ? "secondary" : "primary"}
                 size="md"
                 fullWidth
@@ -100,8 +99,8 @@ export default function IncidentVoteFeedbackModal({
 function getStatusMeta(status: VoteFeedbackStatus, message?: string) {
   if (status === "checking") {
     return {
-      title: "Mengecek lokasi",
-      description: "Sebentar, kami memastikan posisi Anda dekat laporan.",
+      title: "Checking location",
+      description: "One moment, we are checking that you are near the report.",
       iconName: "locate" as const,
       color: colors.info,
       backgroundColor: colors.infoSoft,
@@ -110,8 +109,8 @@ function getStatusMeta(status: VoteFeedbackStatus, message?: string) {
 
   if (status === "success") {
     return {
-      title: "Penilaian tersimpan",
-      description: "Terima kasih, sinyal akurasi laporan sudah diperbarui.",
+      title: "Rating saved",
+      description: "Thank you, the report accuracy signal has been updated.",
       iconName: "checkmark-circle" as const,
       color: colors.success,
       backgroundColor: colors.successSoft,
@@ -120,8 +119,8 @@ function getStatusMeta(status: VoteFeedbackStatus, message?: string) {
 
   if (status === "location_denied") {
     return {
-      title: "Lokasi belum diizinkan",
-      description: "Aktifkan izin lokasi untuk menilai akurasi laporan.",
+      title: "Location not allowed",
+      description: "Enable location permission to rate report accuracy.",
       iconName: "location-outline" as const,
       color: colors.warningDark,
       backgroundColor: colors.warningSoft,
@@ -130,8 +129,8 @@ function getStatusMeta(status: VoteFeedbackStatus, message?: string) {
 
   if (status === "location_off") {
     return {
-      title: "Lokasi tidak aktif",
-      description: "Nyalakan lokasi perangkat untuk menilai laporan.",
+      title: "Location is off",
+      description: "Turn on device location to rate this report.",
       iconName: "navigate-outline" as const,
       color: colors.warningDark,
       backgroundColor: colors.warningSoft,
@@ -140,8 +139,8 @@ function getStatusMeta(status: VoteFeedbackStatus, message?: string) {
 
   if (status === "too_far") {
     return {
-      title: "Terlalu jauh",
-      description: "Anda terlalu jauh dari lokasi laporan untuk menilai akurasi.",
+      title: "Too far",
+      description: "You are too far from the report location to rate accuracy.",
       iconName: "alert-circle-outline" as const,
       color: colors.danger,
       backgroundColor: colors.dangerSoft,
@@ -149,8 +148,8 @@ function getStatusMeta(status: VoteFeedbackStatus, message?: string) {
   }
 
   return {
-    title: "Gagal menilai",
-    description: message || "Terjadi kesalahan. Coba lagi nanti.",
+    title: "Could not rate",
+    description: message || "Something went wrong. Try again later.",
     iconName: "close-circle-outline" as const,
     color: colors.danger,
     backgroundColor: colors.dangerSoft,

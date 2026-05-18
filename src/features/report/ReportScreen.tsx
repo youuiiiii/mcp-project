@@ -4,47 +4,46 @@ import { StyleSheet, Text, View } from "react-native";
 import AppButton from "../../components/ui/AppButton";
 import AppScreen from "../../components/ui/AppScreen";
 import StatusBadge from "../../components/ui/StatusBadge";
+import { useI18n } from "../../i18n";
 import { colors } from "../../theme/colors";
 import { shadow, spacing } from "../../theme/layout";
 import { typography } from "../../theme/typography";
-import CategorySelector from "./components/CategorySelector";
+import ImpactQuestionSelector from "./components/ImpactQuestionSelector";
+import IncidentKindSelector from "./components/IncidentKindSelector";
 import ReportDetailsFields from "./components/ReportDetailsFields";
 import ReportEvidenceSection from "./components/ReportEvidenceSection";
 import ReportLocationNotice from "./components/ReportLocationNotice";
-import SeveritySelector from "./components/SeveritySelector";
-import SubcategorySelector from "./components/SubcategorySelector";
 import { useReportForm } from "./hooks/useReportForm";
 
 export default function ReportScreen() {
   const form = useReportForm();
+  const { t } = useI18n();
 
   return (
     <AppScreen keyboardAvoiding contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <StatusBadge label="Community Report" variant="danger" size="sm" />
-        <Text style={styles.title}>Report Incident</Text>
-        <Text style={styles.subtitle}>
-          Laporkan kejadian dari lokasi Anda saat ini. Setelah terkirim,
-          laporan akan muncul sebagai pin di Map.
-        </Text>
+        <StatusBadge
+          label={t("report.header.badge")}
+          variant="danger"
+          size="sm"
+        />
+        <Text style={styles.title}>{t("report.header.title")}</Text>
+        <Text style={styles.subtitle}>{t("report.header.subtitle")}</Text>
       </View>
 
       <ReportLocationNotice />
 
-      <CategorySelector
-        selectedCategory={form.category}
+      <IncidentKindSelector
+        selectedKind={form.kind}
         disabled={form.loading}
-        onSelectCategory={form.setCategory}
+        onSelectKind={form.setKind}
       />
 
-      {form.category === "missing_lost" && (
-        <SubcategorySelector
-          category={form.category}
-          selectedSubcategory={form.subcategory}
-          disabled={form.loading}
-          onSelectSubcategory={form.setSubcategory}
-        />
-      )}
+      <ImpactQuestionSelector
+        answers={form.impactAnswers}
+        disabled={form.loading}
+        onToggleAnswer={form.toggleImpactAnswer}
+      />
 
       <ReportDetailsFields
         title={form.title}
@@ -52,12 +51,6 @@ export default function ReportScreen() {
         disabled={form.loading}
         onChangeTitle={form.setTitle}
         onChangeDescription={form.setDescription}
-      />
-
-      <SeveritySelector
-        selectedSeverity={form.severity}
-        disabled={form.loading}
-        onSelectSeverity={form.setSeverity}
       />
 
       <ReportEvidenceSection
@@ -69,12 +62,14 @@ export default function ReportScreen() {
       />
 
       <AppButton
-        title={form.loading ? "Mengirim..." : "Submit Report"}
+        title={
+          form.loading ? t("report.submit.loading") : t("report.submit.idle")
+        }
         variant="danger"
         size="lg"
         fullWidth
         loading={form.loading}
-        disabled={form.loading}
+        disabled={!form.canSubmit}
         onPress={form.handleSubmit}
         style={styles.submitButton}
         leftIcon={

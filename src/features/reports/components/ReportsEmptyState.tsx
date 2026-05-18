@@ -14,10 +14,10 @@ export default function ReportsEmptyState() {
         <Ionicons name="document-text-outline" size={28} color={colors.info} />
       </IconBadge>
 
-      <Text style={styles.title}>Tidak ada laporan</Text>
+      <Text style={styles.title}>No reports found</Text>
 
       <Text style={styles.message}>
-        Belum ada laporan yang cocok dengan filter atau pencarian saat ini.
+        No reports match the current filter or search query.
       </Text>
     </AppCard>
   );

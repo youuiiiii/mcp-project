@@ -4,27 +4,43 @@ import { type Href, useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert } from "react-native";
 
+import {
+  calculateIncidentUrgency,
+  DEFAULT_IMPACT_ANSWERS,
+  getReportKindOption,
+  IMPACT_QUESTION_OPTIONS,
+  type ReportKindOption,
+} from "../../../constants/reportTaxonomy";
 import { useAuth } from "../../../contexts/AuthContext";
+import { type TFunction, useI18n } from "../../../i18n";
 import { uploadImageAsync } from "../../../services/cloudinaryService";
-import { createIncidentReport } from "../../../services/incidentService";
+import {
+  createIncidentReport,
+  findNearbyActiveIncidentCandidates,
+  type NearbyIncidentCandidate,
+} from "../../../services/incidentService";
 import type {
-  IncidentCategory,
-  IncidentSeverity,
-  IncidentSubcategory,
+  IncidentImpactAnswers,
+  IncidentImpactKey,
+  IncidentKind,
 } from "../../../types/incident";
+import { formatDistance } from "../../../utils/geo";
 
 const MAP_ROUTE = "/(tabs)/map" as Href;
 
 const LOCATION_MAX_ACCURACY_METERS = 80;
 const MAX_REPORT_PHOTOS = 4;
+const DUPLICATE_CHECK_RADIUS_METERS = 150;
 
 export const useReportForm = () => {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useI18n();
 
-  const [category, setCategory] = useState<IncidentCategory | null>(null);
-  const [subcategory, setSubcategory] = useState<IncidentSubcategory | null>(null);
-  const [severity, setSeverity] = useState<IncidentSeverity>("medium");
+  const [kind, setKind] = useState<IncidentKind | null>(null);
+  const [impactAnswers, setImpactAnswers] = useState<IncidentImpactAnswers>({
+    ...DEFAULT_IMPACT_ANSWERS,
+  });
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [photoUris, setPhotoUris] = useState<string[]>([]);
@@ -35,18 +51,21 @@ export const useReportForm = () => {
 
   const canSubmit = Boolean(
     user &&
-      category &&
-      cleanTitle.length >= 5 &&
-      cleanDescription.length >= 10 &&
+      kind &&
       photoUris.length >= 1 &&
       photoUris.length <= MAX_REPORT_PHOTOS &&
       !loading
   );
 
-  // Reset subcategory when category changes
-  const handleSetCategory = (cat: IncidentCategory) => {
-    setCategory(cat);
-    setSubcategory(null);
+  const handleSetKind = (nextKind: IncidentKind) => {
+    setKind(nextKind);
+  };
+
+  const toggleImpactAnswer = (key: IncidentImpactKey) => {
+    setImpactAnswers((current) => ({
+      ...current,
+      [key]: current[key] !== true,
+    }));
   };
 
   const appendPhotos = (uris: string[]) => {
@@ -59,13 +78,19 @@ export const useReportForm = () => {
   const takePhoto = async () => {
     if (loading) return;
     if (photoUris.length >= MAX_REPORT_PHOTOS) {
-      Alert.alert("Maksimal Foto", "Maksimal 4 foto untuk satu laporan.");
+      Alert.alert(
+        t("report.validation.photoLimit.title"),
+        t("common.photoLimit", { max: MAX_REPORT_PHOTOS })
+      );
       return;
     }
     try {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert("Izin Kamera Dibutuhkan", "Aktifkan izin kamera untuk mengambil foto bukti.");
+        Alert.alert(
+          t("report.validation.cameraPermission.title"),
+          t("report.validation.cameraPermission.message")
+        );
         return;
       }
       const result = await ImagePicker.launchCameraAsync({
@@ -76,25 +101,39 @@ export const useReportForm = () => {
       if (result.canceled) return;
       const assetUri = result.assets?.[0]?.uri;
       if (!assetUri) {
-        Alert.alert("Foto Tidak Valid", "Gagal membaca hasil foto.");
+        Alert.alert(
+          t("report.validation.invalidPhoto.title"),
+          t("report.validation.invalidCapturedPhoto.message")
+        );
         return;
       }
       appendPhotos([assetUri]);
     } catch (error) {
-      Alert.alert("Gagal Membuka Kamera", error instanceof Error ? error.message : "Terjadi kesalahan saat membuka kamera.");
+      Alert.alert(
+        t("report.error.openCamera.title"),
+        error instanceof Error
+          ? error.message
+          : t("report.error.openCamera.fallback")
+      );
     }
   };
 
   const pickFromGallery = async () => {
     if (loading) return;
     if (photoUris.length >= MAX_REPORT_PHOTOS) {
-      Alert.alert("Maksimal Foto", "Maksimal 4 foto untuk satu laporan.");
+      Alert.alert(
+        t("report.validation.photoLimit.title"),
+        t("common.photoLimit", { max: MAX_REPORT_PHOTOS })
+      );
       return;
     }
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert("Izin Galeri Dibutuhkan", "Aktifkan izin galeri untuk memilih foto bukti.");
+        Alert.alert(
+          t("report.validation.galleryPermission.title"),
+          t("report.validation.galleryPermission.message")
+        );
         return;
       }
       const remainingSlots = MAX_REPORT_PHOTOS - photoUris.length;
@@ -106,14 +145,24 @@ export const useReportForm = () => {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
       });
       if (result.canceled) return;
-      const uris = result.assets.map((asset) => asset.uri).filter((uri): uri is string => Boolean(uri));
+      const uris = result.assets
+        .map((asset) => asset.uri)
+        .filter((uri): uri is string => Boolean(uri));
       if (uris.length === 0) {
-        Alert.alert("Foto Tidak Valid", "Gagal membaca gambar dari galeri.");
+        Alert.alert(
+          t("report.validation.invalidPhoto.title"),
+          t("report.validation.invalidSelectedPhoto.message")
+        );
         return;
       }
       appendPhotos(uris);
     } catch (error) {
-      Alert.alert("Gagal Membuka Galeri", error instanceof Error ? error.message : "Terjadi kesalahan saat membuka galeri.");
+      Alert.alert(
+        t("report.error.openGallery.title"),
+        error instanceof Error
+          ? error.message
+          : t("report.error.openGallery.fallback")
+      );
     }
   };
 
@@ -122,9 +171,8 @@ export const useReportForm = () => {
   };
 
   const resetForm = () => {
-    setCategory(null);
-    setSubcategory(null);
-    setSeverity("medium");
+    setKind(null);
+    setImpactAnswers({ ...DEFAULT_IMPACT_ANSWERS });
     setTitle("");
     setDescription("");
     setPhotoUris([]);
@@ -132,27 +180,31 @@ export const useReportForm = () => {
 
   const validateForm = () => {
     if (!user) {
-      Alert.alert("Belum Login", "Silakan login terlebih dahulu.");
+      Alert.alert(
+        t("report.validation.loginRequired.title"),
+        t("report.validation.loginRequired.message")
+      );
       return false;
     }
-    if (!category) {
-      Alert.alert("Kategori Belum Dipilih", "Pilih kategori kejadian dulu.");
-      return false;
-    }
-    if (cleanTitle.length < 5) {
-      Alert.alert("Judul Terlalu Pendek", "Judul minimal 5 karakter.");
-      return false;
-    }
-    if (cleanDescription.length < 10) {
-      Alert.alert("Deskripsi Terlalu Pendek", "Deskripsi minimal 10 karakter.");
+    if (!kind) {
+      Alert.alert(
+        t("report.validation.kindRequired.title"),
+        t("report.validation.kindRequired.message")
+      );
       return false;
     }
     if (photoUris.length < 1) {
-      Alert.alert("Foto Wajib Ada", "Tambahkan minimal 1 foto kejadian.");
+      Alert.alert(
+        t("report.validation.photoRequired.title"),
+        t("report.validation.photoRequired.message")
+      );
       return false;
     }
     if (photoUris.length > MAX_REPORT_PHOTOS) {
-      Alert.alert("Maksimal Foto", "Maksimal 4 foto untuk satu laporan.");
+      Alert.alert(
+        t("report.validation.photoLimit.title"),
+        t("common.photoLimit", { max: MAX_REPORT_PHOTOS })
+      );
       return false;
     }
     return true;
@@ -160,67 +212,138 @@ export const useReportForm = () => {
 
   const handleSubmit = async () => {
     try {
-      if (!validateForm() || !user || !category) return;
+      if (!validateForm() || !user || !kind) return;
       setLoading(true);
+      const kindOption = getReportKindOption(kind);
+
+      if (!kindOption) {
+        Alert.alert(
+          t("report.validation.kindRequired.title"),
+          t("report.validation.kindRequired.message")
+        );
+        return;
+      }
+
+      const urgency = calculateIncidentUrgency({
+        kind,
+        impactAnswers,
+      });
+      const reportDraft = buildReportDraft({
+        cleanTitle,
+        cleanDescription,
+        impactAnswers,
+        kindOption,
+        t,
+      });
 
       const permission = await Location.requestForegroundPermissionsAsync();
       if (permission.status !== "granted") {
-        Alert.alert("Izin Lokasi Dibutuhkan", "Aktifkan izin lokasi agar laporan bisa dikirim.");
+        Alert.alert(
+          t("report.validation.locationPermission.title"),
+          t("report.validation.locationPermission.message")
+        );
         return;
       }
 
-      const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
       const accuracy = location.coords.accuracy ?? 999;
 
       if (accuracy > LOCATION_MAX_ACCURACY_METERS) {
-        Alert.alert("Akurasi Lokasi Rendah", `Akurasi lokasi kamu sekitar ${Math.round(accuracy)} meter. Coba aktifkan GPS/high accuracy lalu kirim ulang.`);
+        Alert.alert(
+          t("report.validation.lowAccuracy.title"),
+          t("report.validation.lowAccuracy.message", {
+            accuracy: Math.round(accuracy),
+          })
+        );
         return;
       }
 
+      const nearbyCandidates = await findNearbyActiveIncidentCandidates({
+        category: kindOption.legacyCategory,
+        subcategory: kindOption.legacySubcategory,
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        radiusMeters: DUPLICATE_CHECK_RADIUS_METERS,
+      });
+
+      if (nearbyCandidates.length > 0) {
+        const shouldCreateNewReport = await confirmNewReportDespiteDuplicate(
+          nearbyCandidates[0],
+          t
+        );
+
+        if (!shouldCreateNewReport) {
+          router.push(MAP_ROUTE);
+          return;
+        }
+      }
+
       const uploadedImageUrls = await Promise.all(
-        photoUris.map((photoUri) => uploadImageAsync(photoUri, "incident-images"))
+        photoUris.map((photoUri) =>
+          uploadImageAsync(photoUri, "incident-images")
+        )
       );
 
       if (uploadedImageUrls.length < 1) {
-        Alert.alert("Upload Gagal", "Minimal 1 foto bukti wajib berhasil diunggah.");
+        Alert.alert(
+          t("report.validation.uploadFailed.title"),
+          t("report.validation.uploadFailed.message")
+        );
         return;
       }
 
       await createIncidentReport({
-        category,
-        subcategory: subcategory ?? null,
-        type: subcategory ?? null,
-        title: cleanTitle,
-        description: cleanDescription,
-        severity,
+        category: kindOption.legacyCategory,
+        subcategory: kindOption.legacySubcategory,
+        domain: kindOption.domain,
+        kind,
+        impactAnswers,
+        urgencyScore: urgency.score,
+        urgencyLevel: urgency.level,
+        title: reportDraft.title,
+        description: reportDraft.description,
+        severity: urgency.severity,
         imageUri: uploadedImageUrls[0],
         imageUris: uploadedImageUrls,
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
+        locationAccuracyMeters: Math.round(accuracy),
         address: null,
         reportedBy: user.displayName || user.email || "Anonymous",
+        reporterUid: user.uid,
         reporterEmail: user.email ?? null,
       });
 
-      Alert.alert("Laporan Terkirim", "Laporan berhasil dikirim ke Map.", [
-        { text: "Lihat Map", onPress: () => { resetForm(); router.push(MAP_ROUTE); } },
-        { text: "Buat Lagi", onPress: resetForm },
+      Alert.alert(t("report.success.title"), t("report.success.message"), [
+        {
+          text: t("report.success.viewMap"),
+          onPress: () => {
+            resetForm();
+            router.push(MAP_ROUTE);
+          },
+        },
+        { text: t("report.success.createAnother"), onPress: resetForm },
       ]);
     } catch (error) {
       console.error("Create report error:", error);
-      Alert.alert("Gagal Mengirim Laporan", error instanceof Error ? error.message : "Terjadi kesalahan saat mengirim laporan.");
+      Alert.alert(
+        t("report.error.send.title"),
+        error instanceof Error
+          ? error.message
+          : t("report.error.send.fallback")
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return {
-    category,
-    setCategory: handleSetCategory,
-    subcategory,
-    setSubcategory,
-    severity,
-    setSeverity,
+    kind,
+    setKind: handleSetKind,
+    impactAnswers,
+    toggleImpactAnswer,
     title,
     setTitle,
     description,
@@ -235,3 +358,62 @@ export const useReportForm = () => {
     handleSubmit,
   };
 };
+
+function buildReportDraft({
+  cleanTitle,
+  cleanDescription,
+  impactAnswers,
+  kindOption,
+  t,
+}: {
+  cleanTitle: string;
+  cleanDescription: string;
+  impactAnswers: IncidentImpactAnswers;
+  kindOption: ReportKindOption;
+  t: TFunction;
+}) {
+  const kindLabel = t(kindOption.labelKey);
+  const title = cleanTitle || kindOption.defaultTitle;
+  const selectedImpacts = IMPACT_QUESTION_OPTIONS.filter((item) => {
+    return impactAnswers[item.value] === true;
+  }).map((item) => t(item.labelKey));
+  const impactSentence =
+    selectedImpacts.length > 0
+      ? `Current impact: ${selectedImpacts.join(", ")}.`
+      : "No additional impact flags selected.";
+  const description =
+    cleanDescription ||
+    `${kindLabel} reported from the current location. ${impactSentence}`;
+
+  return {
+    title,
+    description,
+  };
+}
+
+function confirmNewReportDespiteDuplicate(
+  candidate: NearbyIncidentCandidate,
+  t: TFunction
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    Alert.alert(
+      t("report.duplicate.title"),
+      t("report.duplicate.message", {
+        title: candidate.incident.title,
+        distance: formatDistance(candidate.distanceMeters),
+      }),
+      [
+        {
+          text: t("report.duplicate.reviewMap"),
+          style: "cancel",
+          onPress: () => resolve(false),
+        },
+        {
+          text: t("report.duplicate.submitNew"),
+          style: "destructive",
+          onPress: () => resolve(true),
+        },
+      ]
+    );
+  });
+}

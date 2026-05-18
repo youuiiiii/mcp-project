@@ -1,7 +1,7 @@
 import { StyleSheet, TextInput, View } from "react-native";
 
 import SectionHeader from "../../../components/ui/SectionHeader";
-import StatusBadge from "../../../components/ui/StatusBadge";
+import { useI18n } from "../../../i18n";
 import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
 
@@ -20,46 +20,33 @@ export default function ReportDetailsFields({
   onChangeTitle,
   onChangeDescription,
 }: ReportDetailsFieldsProps) {
-  const cleanTitleLength = title.trim().length;
-  const cleanDescriptionLength = description.trim().length;
+  const { t } = useI18n();
 
   return (
     <View style={styles.section}>
       <SectionHeader
-        title="2. Detail Kejadian"
-        subtitle="Judul dan deskripsi adalah sumber detail utama laporan."
+        title={t("report.details.title")}
+        subtitle={t("report.details.subtitle")}
       />
 
       <TextInput
         value={title}
         onChangeText={onChangeTitle}
         editable={!disabled}
-        placeholder="Contoh: Pohon tumbang menutup jalan utama"
+        placeholder={t("report.details.titlePlaceholder")}
         placeholderTextColor={colors.textSoft}
         style={styles.input}
-      />
-
-      <StatusBadge
-        label={`${cleanTitleLength}/5 minimum karakter`}
-        variant={cleanTitleLength >= 5 ? "success" : "neutral"}
-        size="sm"
       />
 
       <TextInput
         value={description}
         onChangeText={onChangeDescription}
         editable={!disabled}
-        placeholder="Jelaskan situasi, kondisi sekitar, dampak, dan hal penting yang perlu diketahui."
+        placeholder={t("report.details.descriptionPlaceholder")}
         placeholderTextColor={colors.textSoft}
         multiline
         textAlignVertical="top"
         style={[styles.input, styles.textArea]}
-      />
-
-      <StatusBadge
-        label={`${cleanDescriptionLength}/10 minimum karakter`}
-        variant={cleanDescriptionLength >= 10 ? "success" : "neutral"}
-        size="sm"
       />
     </View>
   );

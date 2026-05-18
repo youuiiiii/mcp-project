@@ -38,7 +38,7 @@ export default function ReportsScreen() {
   if (loading) {
     return (
       <AppScreen scroll={false} contentContainerStyle={styles.loadingContainer}>
-        <LoadingState message="Memuat laporan..." />
+        <LoadingState message="Loading reports..." />
       </AppScreen>
     );
   }
@@ -61,7 +61,7 @@ export default function ReportsScreen() {
             </IconBadge>
 
             <View style={styles.errorContent}>
-              <Text style={styles.errorTitle}>Gagal memuat data</Text>
+              <Text style={styles.errorTitle}>Could not load data</Text>
               <Text style={styles.errorMessage}>{errorMessage}</Text>
             </View>
           </AppCard>
@@ -69,8 +69,8 @@ export default function ReportsScreen() {
 
         <View style={styles.section}>
           <SectionHeader
-            title="Daftar Laporan"
-            subtitle={`${filteredReports.length} laporan ditampilkan`}
+            title="Report List"
+            subtitle={`${filteredReports.length} reports shown`}
             style={styles.sectionHeader}
           />
 
