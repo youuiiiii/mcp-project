@@ -120,6 +120,14 @@ export const INCIDENT_CATEGORIES = {
     lightColor: "#EDE9FE",
     description: "Missing people, lost items, or missing vehicles.",
   },
+  other: {
+    label: "Other / Not Sure",
+    shortLabel: "Other",
+    iconName: "help-circle",
+    color: "#475569",
+    lightColor: "#F1F5F9",
+    description: "Reports that do not fit the main incident types yet.",
+  },
 } as const satisfies Record<IncidentCategory, IncidentCategoryMeta>;
 
 export const INCIDENT_TYPES = {
@@ -370,6 +378,14 @@ export const INCIDENT_TYPES = {
     iconName: "car-outline",
     color: "#6D28D9",
     lightColor: "#EDE9FE",
+  },
+  other_incident: {
+    category: "other",
+    label: "Other Incident",
+    shortLabel: "Other",
+    iconName: "help-circle",
+    color: "#475569",
+    lightColor: "#F1F5F9",
   },
 } as const satisfies Record<IncidentSubcategory, IncidentMeta>;
 

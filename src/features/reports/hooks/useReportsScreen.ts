@@ -12,7 +12,7 @@ export const REPORT_FILTER_OPTIONS: readonly {
 }[] = [
   {
     value: "all",
-    label: "Semua",
+    label: "All",
   },
   {
     value: "active",
@@ -24,7 +24,7 @@ export const REPORT_FILTER_OPTIONS: readonly {
   },
   {
     value: "high",
-    label: "High Severity",
+    label: "High Urgency",
   },
 ];
 
@@ -94,7 +94,9 @@ export const useReportsScreen = () => {
         return false;
       }
 
-      if (selectedFilter === "high" && report.severity !== "high") {
+      const urgencyLevel = report.urgencyLevel ?? report.severity;
+
+      if (selectedFilter === "high" && urgencyLevel !== "high") {
         return false;
       }
 
@@ -111,8 +113,12 @@ export const useReportsScreen = () => {
         report.title,
         report.description,
         report.category,
+        report.domain,
+        report.kind,
         report.status,
         report.severity,
+        report.urgencyLevel,
+        report.urgencyScore,
         report.verificationStatus,
         report.latestCommunityUpdateType,
         meta.label,
@@ -132,7 +138,9 @@ export const useReportsScreen = () => {
       total: reports.length,
       active: reports.filter((item) => item.status === "active").length,
       resolved: reports.filter((item) => item.status === "resolved").length,
-      highSeverity: reports.filter((item) => item.severity === "high").length,
+      highSeverity: reports.filter((item) => {
+        return (item.urgencyLevel ?? item.severity) === "high";
+      }).length,
     };
   }, [reports]);
 

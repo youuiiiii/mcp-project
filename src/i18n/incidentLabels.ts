@@ -13,6 +13,7 @@ const CATEGORY_LABEL_KEYS: Record<IncidentCategory, TranslationKey> = {
   security_public_order: "incident.category.security_public_order.label",
   medical_rescue: "incident.category.medical_rescue.label",
   missing_lost: "incident.category.missing_lost.label",
+  other: "incident.category.other.label",
 };
 
 const CATEGORY_SHORT_KEYS: Record<IncidentCategory, TranslationKey> = {
@@ -22,6 +23,7 @@ const CATEGORY_SHORT_KEYS: Record<IncidentCategory, TranslationKey> = {
   security_public_order: "incident.category.security_public_order.short",
   medical_rescue: "incident.category.medical_rescue.short",
   missing_lost: "incident.category.missing_lost.short",
+  other: "incident.category.other.short",
 };
 
 const CATEGORY_DESCRIPTION_KEYS: Record<IncidentCategory, TranslationKey> = {
@@ -32,6 +34,7 @@ const CATEGORY_DESCRIPTION_KEYS: Record<IncidentCategory, TranslationKey> = {
   security_public_order: "incident.category.security_public_order.description",
   medical_rescue: "incident.category.medical_rescue.description",
   missing_lost: "incident.category.missing_lost.description",
+  other: "incident.category.other.description",
 };
 
 const SUBCATEGORY_LABEL_KEYS: Record<IncidentSubcategory, TranslationKey> = {
@@ -66,6 +69,7 @@ const SUBCATEGORY_LABEL_KEYS: Record<IncidentSubcategory, TranslationKey> = {
   missing_person: "incident.subcategory.missing_person.label",
   missing_item: "incident.subcategory.missing_item.label",
   missing_vehicle: "incident.subcategory.missing_vehicle.label",
+  other_incident: "incident.subcategory.other_incident.label",
 };
 
 const SUBCATEGORY_SHORT_KEYS: Record<IncidentSubcategory, TranslationKey> = {
@@ -100,6 +104,7 @@ const SUBCATEGORY_SHORT_KEYS: Record<IncidentSubcategory, TranslationKey> = {
   missing_person: "incident.subcategory.missing_person.short",
   missing_item: "incident.subcategory.missing_item.short",
   missing_vehicle: "incident.subcategory.missing_vehicle.short",
+  other_incident: "incident.subcategory.other_incident.short",
 };
 
 const SEVERITY_LABEL_KEYS: Record<IncidentSeverity, TranslationKey> = {

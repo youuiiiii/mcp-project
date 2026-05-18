@@ -21,6 +21,7 @@ export const INCIDENT_STALE_AFTER_HOURS_BY_CATEGORY = {
   security_public_order: 3,
   medical_rescue: 2,
   missing_lost: 4,
+  other: 6,
 } as const satisfies Record<IncidentCategory, number>;
 
 const formatInactiveDuration = (hours: number): string => {

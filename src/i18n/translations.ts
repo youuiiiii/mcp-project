@@ -26,13 +26,18 @@ export const en = {
   "report.subcategory.title": "2. Subcategory",
   "report.subcategory.subtitle":
     "Choose a more specific incident type when useful.",
-  "report.details.title": "3. Incident Details",
+  "report.kind.title": "1. What happened?",
+  "report.kind.subtitle":
+    "Pick the closest match. SIGAP uses this to route, filter, and de-duplicate reports.",
+  "report.impact.title": "2. Current impact",
+  "report.impact.subtitle":
+    "Tap what is true right now. These answers calculate urgency automatically.",
+  "report.details.title": "3. Add context",
   "report.details.subtitle":
-    "A clear title and description help nearby users understand the situation.",
-  "report.details.titlePlaceholder":
-    "Example: Fallen tree blocking the main road",
+    "Optional, but useful if there is something nearby people should know.",
+  "report.details.titlePlaceholder": "Optional headline",
   "report.details.descriptionPlaceholder":
-    "Describe the situation, nearby conditions, impact, and anything important people should know.",
+    "Add a short note, landmarks, affected direction, or anything important.",
   "report.details.minimumCharacters": "{count}/{min} minimum characters",
   "report.severity.title": "4. Severity",
   "report.severity.subtitle": "Choose how urgent the current situation is.",
@@ -51,6 +56,9 @@ export const en = {
   "report.validation.categoryRequired.title": "Category Required",
   "report.validation.categoryRequired.message":
     "Choose the incident category first.",
+  "report.validation.kindRequired.title": "Report Type Required",
+  "report.validation.kindRequired.message":
+    "Choose what happened before submitting.",
   "report.validation.subcategoryRequired.title": "Incident Type Required",
   "report.validation.subcategoryRequired.message":
     "Choose the specific incident type before submitting.",
@@ -129,6 +137,10 @@ export const en = {
   "incident.category.missing_lost.short": "Missing",
   "incident.category.missing_lost.description":
     "Missing people, lost items, or missing vehicles.",
+  "incident.category.other.label": "Other / Not Sure",
+  "incident.category.other.short": "Other",
+  "incident.category.other.description":
+    "Reports that do not fit the main incident types yet.",
 
   "incident.subcategory.flood.label": "Flood",
   "incident.subcategory.flood.short": "Flood",
@@ -192,6 +204,57 @@ export const en = {
   "incident.subcategory.missing_item.short": "Item",
   "incident.subcategory.missing_vehicle.label": "Missing Vehicle",
   "incident.subcategory.missing_vehicle.short": "Vehicle",
+  "incident.subcategory.other_incident.label": "Other Incident",
+  "incident.subcategory.other_incident.short": "Other",
+
+  "report.kind.roadBlockedOrCrash.label": "Road blocked / crash",
+  "report.kind.roadBlockedOrCrash.short": "Road",
+  "report.kind.roadBlockedOrCrash.helper":
+    "Accident, fallen tree, damaged road, blocked access, or traffic hazard.",
+  "report.kind.floodOrWeather.label": "Flood / weather hazard",
+  "report.kind.floodOrWeather.short": "Weather",
+  "report.kind.floodOrWeather.helper":
+    "Flood, strong wind, landslide, earthquake impact, or weather danger.",
+  "report.kind.fireOrSmoke.label": "Fire / smoke",
+  "report.kind.fireOrSmoke.short": "Fire",
+  "report.kind.fireOrSmoke.helper":
+    "Visible fire, heavy smoke, electrical fire, vehicle fire, or land fire.",
+  "report.kind.publicSafety.label": "Public safety issue",
+  "report.kind.publicSafety.short": "Safety",
+  "report.kind.publicSafety.helper":
+    "Fight, theft, risky crowd, disturbance, or safety concern.",
+  "report.kind.medicalOrRescue.label": "Medical / rescue needed",
+  "report.kind.medicalOrRescue.short": "Rescue",
+  "report.kind.medicalOrRescue.helper":
+    "Injury, fainting, drowning, evacuation, or urgent help needed.",
+  "report.kind.missingPerson.label": "Missing person",
+  "report.kind.missingPerson.short": "Missing",
+  "report.kind.missingPerson.helper":
+    "Someone is missing and community visibility may help.",
+  "report.kind.lostItemOrVehicle.label": "Lost item / vehicle",
+  "report.kind.lostItemOrVehicle.short": "Lost",
+  "report.kind.lostItemOrVehicle.helper":
+    "Lost bag, wallet, important item, bicycle, motorcycle, or vehicle.",
+  "report.kind.otherIncident.label": "Not sure / other",
+  "report.kind.otherIncident.short": "Other",
+  "report.kind.otherIncident.helper":
+    "Use this when the report does not match the options above.",
+
+  "report.impact.peopleInDanger.label": "People may be in danger",
+  "report.impact.peopleInDanger.helper":
+    "Someone could be hurt or needs people nearby to stay alert.",
+  "report.impact.accessBlocked.label": "Road or access is blocked",
+  "report.impact.accessBlocked.helper":
+    "Vehicles, pedestrians, or responders may have trouble passing.",
+  "report.impact.needsEmergencyHelp.label": "Emergency help may be needed",
+  "report.impact.needsEmergencyHelp.helper":
+    "Responder, medical, rescue, security, or official help may be needed.",
+  "report.impact.stillHappening.label": "It is still happening now",
+  "report.impact.stillHappening.helper":
+    "Turn this off if the situation already looks over or cleared.",
+  "report.impact.locationIsExact.label": "The location is exact",
+  "report.impact.locationIsExact.helper":
+    "Leave this on if you are at or very close to the incident.",
 
   "incident.severity.low.label": "Low",
   "incident.severity.low.description":
@@ -235,13 +298,18 @@ export const id: TranslationResources = {
   "report.subcategory.title": "2. Subkategori",
   "report.subcategory.subtitle":
     "Pilih jenis insiden yang lebih spesifik jika diperlukan.",
-  "report.details.title": "3. Detail Insiden",
+  "report.kind.title": "1. Apa yang terjadi?",
+  "report.kind.subtitle":
+    "Pilih yang paling mendekati. SIGAP memakai ini untuk rute, filter, dan deteksi laporan duplikat.",
+  "report.impact.title": "2. Dampak saat ini",
+  "report.impact.subtitle":
+    "Pilih kondisi yang benar saat ini. Jawaban ini menghitung urgensi secara otomatis.",
+  "report.details.title": "3. Tambahkan konteks",
   "report.details.subtitle":
-    "Judul dan deskripsi yang jelas membantu pengguna sekitar memahami situasi.",
-  "report.details.titlePlaceholder":
-    "Contoh: Pohon tumbang menutup jalan utama",
+    "Opsional, tetapi berguna jika ada hal yang perlu diketahui orang sekitar.",
+  "report.details.titlePlaceholder": "Judul opsional",
   "report.details.descriptionPlaceholder":
-    "Jelaskan situasi, kondisi sekitar, dampak, dan hal penting yang perlu diketahui orang lain.",
+    "Tambahkan catatan singkat, patokan lokasi, arah terdampak, atau hal penting.",
   "report.details.minimumCharacters": "{count}/{min} karakter minimum",
   "report.severity.title": "4. Tingkat Urgensi",
   "report.severity.subtitle": "Pilih seberapa mendesak situasi saat ini.",
@@ -259,6 +327,9 @@ export const id: TranslationResources = {
     "Silakan login sebelum mengirim laporan.",
   "report.validation.categoryRequired.title": "Kategori Diperlukan",
   "report.validation.categoryRequired.message": "Pilih kategori insiden dulu.",
+  "report.validation.kindRequired.title": "Jenis Laporan Diperlukan",
+  "report.validation.kindRequired.message":
+    "Pilih apa yang terjadi sebelum mengirim laporan.",
   "report.validation.subcategoryRequired.title": "Jenis Insiden Diperlukan",
   "report.validation.subcategoryRequired.message":
     "Pilih jenis insiden yang spesifik sebelum mengirim.",
@@ -339,6 +410,10 @@ export const id: TranslationResources = {
   "incident.category.missing_lost.short": "Hilang",
   "incident.category.missing_lost.description":
     "Orang hilang, barang hilang, atau kendaraan hilang.",
+  "incident.category.other.label": "Lainnya / Tidak Yakin",
+  "incident.category.other.short": "Lainnya",
+  "incident.category.other.description":
+    "Laporan yang belum cocok dengan jenis insiden utama.",
 
   "incident.subcategory.flood.label": "Banjir",
   "incident.subcategory.flood.short": "Banjir",
@@ -402,6 +477,57 @@ export const id: TranslationResources = {
   "incident.subcategory.missing_item.short": "Barang",
   "incident.subcategory.missing_vehicle.label": "Kendaraan Hilang",
   "incident.subcategory.missing_vehicle.short": "Kendaraan",
+  "incident.subcategory.other_incident.label": "Insiden Lainnya",
+  "incident.subcategory.other_incident.short": "Lainnya",
+
+  "report.kind.roadBlockedOrCrash.label": "Jalan terhalang / kecelakaan",
+  "report.kind.roadBlockedOrCrash.short": "Jalan",
+  "report.kind.roadBlockedOrCrash.helper":
+    "Kecelakaan, pohon tumbang, jalan rusak, akses tertutup, atau bahaya lalu lintas.",
+  "report.kind.floodOrWeather.label": "Banjir / bahaya cuaca",
+  "report.kind.floodOrWeather.short": "Cuaca",
+  "report.kind.floodOrWeather.helper":
+    "Banjir, angin kencang, longsor, dampak gempa, atau bahaya cuaca.",
+  "report.kind.fireOrSmoke.label": "Api / asap",
+  "report.kind.fireOrSmoke.short": "Api",
+  "report.kind.fireOrSmoke.helper":
+    "Api terlihat, asap tebal, kebakaran listrik, kendaraan, atau lahan.",
+  "report.kind.publicSafety.label": "Masalah keamanan publik",
+  "report.kind.publicSafety.short": "Keamanan",
+  "report.kind.publicSafety.helper":
+    "Perkelahian, pencurian, kerumunan berisiko, gangguan, atau kekhawatiran keamanan.",
+  "report.kind.medicalOrRescue.label": "Butuh medis / penyelamatan",
+  "report.kind.medicalOrRescue.short": "Rescue",
+  "report.kind.medicalOrRescue.helper":
+    "Cedera, pingsan, tenggelam, evakuasi, atau bantuan mendesak.",
+  "report.kind.missingPerson.label": "Orang hilang",
+  "report.kind.missingPerson.short": "Hilang",
+  "report.kind.missingPerson.helper":
+    "Seseorang hilang dan visibilitas komunitas dapat membantu.",
+  "report.kind.lostItemOrVehicle.label": "Barang / kendaraan hilang",
+  "report.kind.lostItemOrVehicle.short": "Hilang",
+  "report.kind.lostItemOrVehicle.helper":
+    "Tas, dompet, barang penting, sepeda, motor, atau kendaraan hilang.",
+  "report.kind.otherIncident.label": "Tidak yakin / lainnya",
+  "report.kind.otherIncident.short": "Lainnya",
+  "report.kind.otherIncident.helper":
+    "Gunakan ini jika laporan tidak cocok dengan pilihan di atas.",
+
+  "report.impact.peopleInDanger.label": "Orang mungkin dalam bahaya",
+  "report.impact.peopleInDanger.helper":
+    "Seseorang mungkin terluka atau orang sekitar perlu waspada.",
+  "report.impact.accessBlocked.label": "Jalan atau akses terhalang",
+  "report.impact.accessBlocked.helper":
+    "Kendaraan, pejalan kaki, atau petugas mungkin sulit lewat.",
+  "report.impact.needsEmergencyHelp.label": "Mungkin butuh bantuan darurat",
+  "report.impact.needsEmergencyHelp.helper":
+    "Petugas, medis, rescue, keamanan, atau bantuan resmi mungkin dibutuhkan.",
+  "report.impact.stillHappening.label": "Masih terjadi sekarang",
+  "report.impact.stillHappening.helper":
+    "Matikan jika situasi tampaknya sudah selesai atau bersih.",
+  "report.impact.locationIsExact.label": "Lokasi sudah tepat",
+  "report.impact.locationIsExact.helper":
+    "Biarkan aktif jika Anda berada di atau sangat dekat dengan insiden.",
 
   "incident.severity.low.label": "Rendah",
   "incident.severity.low.description":

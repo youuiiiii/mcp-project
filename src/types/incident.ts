@@ -4,7 +4,8 @@ export type IncidentCategory =
   | "accident_infrastructure"
   | "security_public_order"
   | "medical_rescue"
-  | "missing_lost";
+  | "missing_lost"
+  | "other";
 
 export type IncidentSubcategory =
   | "flood"
@@ -37,7 +38,8 @@ export type IncidentSubcategory =
   | "evacuation_needed"
   | "missing_person"
   | "missing_item"
-  | "missing_vehicle";
+  | "missing_vehicle"
+  | "other_incident";
 
 /**
  * Legacy alias.
@@ -50,6 +52,38 @@ export type IncidentType = IncidentSubcategory;
 export type IncidentStatus = "active" | "resolved";
 
 export type IncidentSeverity = "low" | "medium" | "high";
+
+export type IncidentDomain =
+  | "traffic_access"
+  | "weather_disaster"
+  | "fire_smoke"
+  | "public_safety"
+  | "medical_rescue"
+  | "lost_found"
+  | "other";
+
+export type IncidentKind =
+  | "road_blocked_or_crash"
+  | "flood_or_weather"
+  | "fire_or_smoke"
+  | "public_safety"
+  | "medical_or_rescue"
+  | "missing_person"
+  | "lost_item_or_vehicle"
+  | "other_incident";
+
+export type IncidentImpactKey =
+  | "people_in_danger"
+  | "access_blocked"
+  | "needs_emergency_help"
+  | "still_happening"
+  | "location_is_exact";
+
+export type IncidentImpactAnswers = Partial<
+  Record<IncidentImpactKey, boolean>
+>;
+
+export type IncidentUrgencyLevel = IncidentSeverity;
 
 export type VerificationStatus = "pending" | "verified" | "disputed";
 
@@ -132,6 +166,11 @@ export type IncidentReport = {
   category: IncidentCategory;
   subcategory?: IncidentSubcategory | null;
   type?: IncidentType | null;
+  domain?: IncidentDomain | null;
+  kind?: IncidentKind | null;
+  impactAnswers?: IncidentImpactAnswers;
+  urgencyScore?: number;
+  urgencyLevel?: IncidentUrgencyLevel;
   title: string;
   description: string;
   latitude: number;
@@ -222,6 +261,11 @@ export type CreateIncidentPayload = {
   category: IncidentCategory;
   subcategory?: IncidentSubcategory | null;
   type?: IncidentType | null;
+  domain?: IncidentDomain | null;
+  kind?: IncidentKind | null;
+  impactAnswers?: IncidentImpactAnswers;
+  urgencyScore?: number;
+  urgencyLevel?: IncidentUrgencyLevel;
   title: string;
   description: string;
   latitude: number;

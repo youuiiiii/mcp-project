@@ -55,7 +55,7 @@ export default function ReportsHeader({
       color: colors.success,
     },
     {
-      label: "High",
+      label: "High urgency",
       value: summary.highSeverity,
       iconName: "alert-circle",
       color: colors.warningDark,

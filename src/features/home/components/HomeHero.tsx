@@ -78,7 +78,7 @@ export default function HomeHero({
         <SummaryItem
           iconName="warning"
           value={highSeverityCount}
-          label="Severity tinggi"
+          label="High urgency"
           color={colors.danger}
         />
       </View>

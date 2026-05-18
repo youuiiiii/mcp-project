@@ -155,7 +155,7 @@ function LatestReportCard({
         </View>
 
         <Text style={styles.reportMeta} numberOfLines={1}>
-          {meta.label} - {getSeverityLabel(report.severity)}
+          {meta.label} - {getUrgencyLabel(report)}
         </Text>
 
         <Text style={styles.reportDescription} numberOfLines={2}>
@@ -166,16 +166,22 @@ function LatestReportCard({
   );
 }
 
-function getSeverityLabel(severity: IncidentReport["severity"]) {
-  if (severity === "high") {
-    return "High severity";
+function getUrgencyLabel(report: IncidentReport) {
+  const urgency = report.urgencyLevel ?? report.severity;
+
+  if (typeof report.urgencyScore === "number") {
+    return `Urgency ${report.urgencyScore}`;
   }
 
-  if (severity === "medium") {
-    return "Medium severity";
+  if (urgency === "high") {
+    return "High urgency";
   }
 
-  return "Low severity";
+  if (urgency === "medium") {
+    return "Medium urgency";
+  }
+
+  return "Low urgency";
 }
 
 function getConfidenceVariant(

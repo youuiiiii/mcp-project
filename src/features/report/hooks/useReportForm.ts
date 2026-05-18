@@ -4,6 +4,13 @@ import { type Href, useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert } from "react-native";
 
+import {
+  calculateIncidentUrgency,
+  DEFAULT_IMPACT_ANSWERS,
+  getReportKindOption,
+  IMPACT_QUESTION_OPTIONS,
+  type ReportKindOption,
+} from "../../../constants/reportTaxonomy";
 import { useAuth } from "../../../contexts/AuthContext";
 import { type TFunction, useI18n } from "../../../i18n";
 import { uploadImageAsync } from "../../../services/cloudinaryService";
@@ -13,9 +20,9 @@ import {
   type NearbyIncidentCandidate,
 } from "../../../services/incidentService";
 import type {
-  IncidentCategory,
-  IncidentSeverity,
-  IncidentSubcategory,
+  IncidentImpactAnswers,
+  IncidentImpactKey,
+  IncidentKind,
 } from "../../../types/incident";
 import { formatDistance } from "../../../utils/geo";
 
@@ -30,10 +37,10 @@ export const useReportForm = () => {
   const { user } = useAuth();
   const { t } = useI18n();
 
-  const [category, setCategory] = useState<IncidentCategory | null>(null);
-  const [subcategory, setSubcategory] =
-    useState<IncidentSubcategory | null>(null);
-  const [severity, setSeverity] = useState<IncidentSeverity>("medium");
+  const [kind, setKind] = useState<IncidentKind | null>(null);
+  const [impactAnswers, setImpactAnswers] = useState<IncidentImpactAnswers>({
+    ...DEFAULT_IMPACT_ANSWERS,
+  });
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [photoUris, setPhotoUris] = useState<string[]>([]);
@@ -44,18 +51,21 @@ export const useReportForm = () => {
 
   const canSubmit = Boolean(
     user &&
-      category &&
-      subcategory &&
-      cleanTitle.length >= 5 &&
-      cleanDescription.length >= 10 &&
+      kind &&
       photoUris.length >= 1 &&
       photoUris.length <= MAX_REPORT_PHOTOS &&
       !loading
   );
 
-  const handleSetCategory = (cat: IncidentCategory) => {
-    setCategory(cat);
-    setSubcategory(null);
+  const handleSetKind = (nextKind: IncidentKind) => {
+    setKind(nextKind);
+  };
+
+  const toggleImpactAnswer = (key: IncidentImpactKey) => {
+    setImpactAnswers((current) => ({
+      ...current,
+      [key]: current[key] !== true,
+    }));
   };
 
   const appendPhotos = (uris: string[]) => {
@@ -161,9 +171,8 @@ export const useReportForm = () => {
   };
 
   const resetForm = () => {
-    setCategory(null);
-    setSubcategory(null);
-    setSeverity("medium");
+    setKind(null);
+    setImpactAnswers({ ...DEFAULT_IMPACT_ANSWERS });
     setTitle("");
     setDescription("");
     setPhotoUris([]);
@@ -177,31 +186,10 @@ export const useReportForm = () => {
       );
       return false;
     }
-    if (!category) {
+    if (!kind) {
       Alert.alert(
-        t("report.validation.categoryRequired.title"),
-        t("report.validation.categoryRequired.message")
-      );
-      return false;
-    }
-    if (!subcategory) {
-      Alert.alert(
-        t("report.validation.subcategoryRequired.title"),
-        t("report.validation.subcategoryRequired.message")
-      );
-      return false;
-    }
-    if (cleanTitle.length < 5) {
-      Alert.alert(
-        t("report.validation.titleTooShort.title"),
-        t("report.validation.titleTooShort.message", { min: 5 })
-      );
-      return false;
-    }
-    if (cleanDescription.length < 10) {
-      Alert.alert(
-        t("report.validation.descriptionTooShort.title"),
-        t("report.validation.descriptionTooShort.message", { min: 10 })
+        t("report.validation.kindRequired.title"),
+        t("report.validation.kindRequired.message")
       );
       return false;
     }
@@ -224,8 +212,29 @@ export const useReportForm = () => {
 
   const handleSubmit = async () => {
     try {
-      if (!validateForm() || !user || !category || !subcategory) return;
+      if (!validateForm() || !user || !kind) return;
       setLoading(true);
+      const kindOption = getReportKindOption(kind);
+
+      if (!kindOption) {
+        Alert.alert(
+          t("report.validation.kindRequired.title"),
+          t("report.validation.kindRequired.message")
+        );
+        return;
+      }
+
+      const urgency = calculateIncidentUrgency({
+        kind,
+        impactAnswers,
+      });
+      const reportDraft = buildReportDraft({
+        cleanTitle,
+        cleanDescription,
+        impactAnswers,
+        kindOption,
+        t,
+      });
 
       const permission = await Location.requestForegroundPermissionsAsync();
       if (permission.status !== "granted") {
@@ -252,8 +261,8 @@ export const useReportForm = () => {
       }
 
       const nearbyCandidates = await findNearbyActiveIncidentCandidates({
-        category,
-        subcategory,
+        category: kindOption.legacyCategory,
+        subcategory: kindOption.legacySubcategory,
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
         radiusMeters: DUPLICATE_CHECK_RADIUS_METERS,
@@ -286,11 +295,16 @@ export const useReportForm = () => {
       }
 
       await createIncidentReport({
-        category,
-        subcategory,
-        title: cleanTitle,
-        description: cleanDescription,
-        severity,
+        category: kindOption.legacyCategory,
+        subcategory: kindOption.legacySubcategory,
+        domain: kindOption.domain,
+        kind,
+        impactAnswers,
+        urgencyScore: urgency.score,
+        urgencyLevel: urgency.level,
+        title: reportDraft.title,
+        description: reportDraft.description,
+        severity: urgency.severity,
         imageUri: uploadedImageUrls[0],
         imageUris: uploadedImageUrls,
         latitude: location.coords.latitude,
@@ -326,12 +340,10 @@ export const useReportForm = () => {
   };
 
   return {
-    category,
-    setCategory: handleSetCategory,
-    subcategory,
-    setSubcategory,
-    severity,
-    setSeverity,
+    kind,
+    setKind: handleSetKind,
+    impactAnswers,
+    toggleImpactAnswer,
     title,
     setTitle,
     description,
@@ -346,6 +358,38 @@ export const useReportForm = () => {
     handleSubmit,
   };
 };
+
+function buildReportDraft({
+  cleanTitle,
+  cleanDescription,
+  impactAnswers,
+  kindOption,
+  t,
+}: {
+  cleanTitle: string;
+  cleanDescription: string;
+  impactAnswers: IncidentImpactAnswers;
+  kindOption: ReportKindOption;
+  t: TFunction;
+}) {
+  const kindLabel = t(kindOption.labelKey);
+  const title = cleanTitle || kindOption.defaultTitle;
+  const selectedImpacts = IMPACT_QUESTION_OPTIONS.filter((item) => {
+    return impactAnswers[item.value] === true;
+  }).map((item) => t(item.labelKey));
+  const impactSentence =
+    selectedImpacts.length > 0
+      ? `Current impact: ${selectedImpacts.join(", ")}.`
+      : "No additional impact flags selected.";
+  const description =
+    cleanDescription ||
+    `${kindLabel} reported from the current location. ${impactSentence}`;
+
+  return {
+    title,
+    description,
+  };
+}
 
 function confirmNewReportDespiteDuplicate(
   candidate: NearbyIncidentCandidate,

@@ -59,7 +59,10 @@ export function useHomeScreen() {
 
   const highSeverityReports = useMemo(() => {
     return reports.filter((report) => {
-      return report.status === "active" && report.severity === "high";
+      return (
+        report.status === "active" &&
+        (report.urgencyLevel ?? report.severity) === "high"
+      );
     });
   }, [reports]);
 

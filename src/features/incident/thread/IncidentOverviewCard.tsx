@@ -33,6 +33,11 @@ export default function IncidentOverviewCard({
   const author = incident.reportedBy || incident.reporterEmail || "Anonymous";
   const confidence = getIncidentConfidenceMeta(incident);
   const freshness = getIncidentFreshnessMeta(incident);
+  const urgencyLevel = incident.urgencyLevel ?? incident.severity;
+  const urgencyLabel =
+    typeof incident.urgencyScore === "number"
+      ? `Urgency ${incident.urgencyScore}`
+      : `${getUrgencyLevelLabel(urgencyLevel)} urgency`;
   const latestUpdate = incident.latestCommunityUpdateType
     ? getCommunityUpdateMeta(incident.latestCommunityUpdateType)
     : null;
@@ -86,8 +91,8 @@ export default function IncidentOverviewCard({
           />
 
           <StatusBadge
-            label={getSeverityLabel(incident.severity)}
-            variant={getSeverityVariant(incident.severity)}
+            label={urgencyLabel}
+            variant={getUrgencyVariant(urgencyLevel)}
             size="sm"
           />
         </View>
@@ -183,26 +188,26 @@ export default function IncidentOverviewCard({
   );
 }
 
-function getSeverityLabel(severity: IncidentReport["severity"]) {
-  if (severity === "high") {
+function getUrgencyLevelLabel(urgency: NonNullable<IncidentReport["urgencyLevel"]>) {
+  if (urgency === "high") {
     return "High";
   }
 
-  if (severity === "medium") {
+  if (urgency === "medium") {
     return "Medium";
   }
 
   return "Low";
 }
 
-function getSeverityVariant(
-  severity: IncidentReport["severity"]
+function getUrgencyVariant(
+  urgency: NonNullable<IncidentReport["urgencyLevel"]>
 ): "success" | "warning" | "danger" {
-  if (severity === "high") {
+  if (urgency === "high") {
     return "danger";
   }
 
-  if (severity === "medium") {
+  if (urgency === "medium") {
     return "warning";
   }
 

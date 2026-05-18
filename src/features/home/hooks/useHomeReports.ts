@@ -34,7 +34,9 @@ export const useHomeReports = () => {
   }, [reports]);
 
   const highSeverityReports = useMemo(() => {
-    return reports.filter((report) => report.severity === "high");
+    return reports.filter((report) => {
+      return (report.urgencyLevel ?? report.severity) === "high";
+    });
   }, [reports]);
 
   const latestReports = useMemo(() => {

@@ -146,7 +146,9 @@ export default function AnalyticsScreen() {
   }, [reports]);
 
   const highSeverityReports = useMemo(() => {
-    return reports.filter((report) => report.severity === "high");
+    return reports.filter((report) => {
+      return (report.urgencyLevel ?? report.severity) === "high";
+    });
   }, [reports]);
 
   const trustCounts = useMemo(() => {
@@ -223,7 +225,7 @@ export default function AnalyticsScreen() {
         variant: "success",
       },
       {
-        label: "High Severity",
+        label: "High Urgency",
         value: highSeverityReports.length,
         iconName: "alert-circle",
         color: colors.warningDark,
@@ -254,7 +256,7 @@ export default function AnalyticsScreen() {
       {
         label: "Avg. Resolution",
         value: averageResolutionHours,
-        text: "durasi penyelesaian",
+        text: "resolution duration",
         iconName: "time",
       },
     ];
@@ -298,7 +300,7 @@ export default function AnalyticsScreen() {
         <Text style={styles.title}>Incident Insights</Text>
 
         <Text style={styles.subtitle}>
-          Monitor category distribution, severity, status, community validation,
+          Monitor category distribution, urgency, status, community validation,
           and report activity in real time.
         </Text>
       </View>
@@ -340,9 +342,9 @@ export default function AnalyticsScreen() {
           />
 
           <DistributionSection
-            title="Severity Distribution"
-            subtitle="Report composition by impact level"
-            emptyText="No severity data yet."
+            title="Urgency Distribution"
+            subtitle="Report composition by computed urgency level"
+            emptyText="No urgency data yet."
             items={severityDistribution}
           />
 
@@ -422,7 +424,7 @@ function buildSeverityDistribution(reports: IncidentReport[]): DistributionItem[
 
   return SEVERITY_OPTIONS.map((option) => {
     const count = reports.filter((report) => {
-      return report.severity === option.value;
+      return (report.urgencyLevel ?? report.severity) === option.value;
     }).length;
 
     return {
@@ -597,7 +599,8 @@ function LatestReportCard({ report }: { report: IncidentReport }) {
         </Text>
 
         <Text style={styles.latestSubtitle} numberOfLines={1}>
-          {meta.label} - {SEVERITY_LABEL_BY_VALUE[report.severity]}
+          {meta.label} -{" "}
+          {SEVERITY_LABEL_BY_VALUE[report.urgencyLevel ?? report.severity]}
         </Text>
       </View>
 

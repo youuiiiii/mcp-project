@@ -358,11 +358,11 @@ function ModerationTicketCard({
               />
 
               <StatusBadge
-                label={incident.severity}
+                label={`Urgency ${incident.urgencyScore ?? incident.urgencyLevel ?? incident.severity}`}
                 variant={
-                  incident.severity === "high"
+                  (incident.urgencyLevel ?? incident.severity) === "high"
                     ? "danger"
-                    : incident.severity === "medium"
+                    : (incident.urgencyLevel ?? incident.severity) === "medium"
                       ? "warning"
                       : "success"
                 }

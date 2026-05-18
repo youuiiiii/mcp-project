@@ -22,11 +22,11 @@ const STATUS_LABEL = {
   resolved: "Resolved",
 } as const satisfies Record<IncidentReport["status"], string>;
 
-const SEVERITY_LABEL = {
+const URGENCY_LABEL = {
   low: "Low",
   medium: "Medium",
   high: "High",
-} as const satisfies Record<IncidentReport["severity"], string>;
+} as const satisfies Record<NonNullable<IncidentReport["urgencyLevel"]>, string>;
 
 export default function IncidentCard({
   incident,
@@ -38,6 +38,11 @@ export default function IncidentCard({
     subcategory: incident.subcategory ?? incident.type,
   });
   const confidence = getIncidentConfidenceMeta(incident);
+  const urgencyLevel = incident.urgencyLevel ?? incident.severity;
+  const urgencyLabel =
+    typeof incident.urgencyScore === "number"
+      ? `Urgency ${incident.urgencyScore}`
+      : `${URGENCY_LABEL[urgencyLevel]} urgency`;
 
   const handleShare = () => {
     shareIncident({
@@ -94,8 +99,8 @@ export default function IncidentCard({
 
       <View style={styles.footer}>
         <StatusBadge
-          label={SEVERITY_LABEL[incident.severity]}
-          variant={getSeverityVariant(incident.severity)}
+          label={urgencyLabel}
+          variant={getUrgencyVariant(urgencyLevel)}
           size="sm"
         />
 
@@ -148,14 +153,14 @@ function getStatusVariant(
   return "neutral";
 }
 
-function getSeverityVariant(
-  severity: IncidentReport["severity"]
+function getUrgencyVariant(
+  urgency: NonNullable<IncidentReport["urgencyLevel"]>
 ): StatusBadgeVariant {
-  if (severity === "high") {
+  if (urgency === "high") {
     return "danger";
   }
 
-  if (severity === "medium") {
+  if (urgency === "medium") {
     return "warning";
   }
 

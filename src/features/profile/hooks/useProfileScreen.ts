@@ -107,9 +107,9 @@ export const useProfileScreen = () => {
       resolvedReports: userReports.filter(
         (report) => report.status === "resolved"
       ).length,
-      highSeverityReports: userReports.filter(
-        (report) => report.severity === "high"
-      ).length,
+      highSeverityReports: userReports.filter((report) => {
+        return (report.urgencyLevel ?? report.severity) === "high";
+      }).length,
     };
   }, [userReports]);
 

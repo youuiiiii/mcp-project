@@ -23,6 +23,13 @@ import {
   isIncidentCategory,
   isIncidentType,
 } from "../constants/incident";
+import {
+  getUrgencyLevelFromScore,
+  IMPACT_QUESTION_OPTIONS,
+  isIncidentDomain,
+  isIncidentImpactKey,
+  isIncidentKind,
+} from "../constants/reportTaxonomy";
 import { db } from "../services/firebase";
 import {
   CreateIncidentAccuracyVotePayload,
@@ -36,12 +43,15 @@ import {
   IncidentCategory,
   IncidentConditionStatus,
   IncidentContentReport,
+  IncidentDomain,
+  IncidentImpactAnswers,
   IncidentReply,
   IncidentReport,
   IncidentSeverity,
   IncidentStatus,
   IncidentSubcategory,
   IncidentType,
+  IncidentUrgencyLevel,
   IncidentVerification,
   ModerationStatus,
   ProximityStatus,
@@ -143,6 +153,58 @@ const normalizeCommunityUpdateType = (value: unknown): CommunityUpdateType => {
   }
 
   return "additional_info";
+};
+
+const normalizeIncidentDomain = (value: unknown): IncidentDomain | null => {
+  return isIncidentDomain(value) ? value : null;
+};
+
+const normalizeIncidentKind = (value: unknown): IncidentReport["kind"] => {
+  return isIncidentKind(value) ? value : null;
+};
+
+const normalizeImpactAnswers = (value: unknown): IncidentImpactAnswers => {
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+
+  const source = value as Partial<Record<string, unknown>>;
+
+  return IMPACT_QUESTION_OPTIONS.reduce<IncidentImpactAnswers>(
+    (answers, item) => {
+      const rawAnswer = source[item.value];
+
+      if (isIncidentImpactKey(item.value) && typeof rawAnswer === "boolean") {
+        answers[item.value] = rawAnswer;
+      }
+
+      return answers;
+    },
+    {}
+  );
+};
+
+const normalizeUrgencyScore = (value: unknown): number | undefined => {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return undefined;
+  }
+
+  return Math.min(100, Math.max(0, Math.round(value)));
+};
+
+const normalizeUrgencyLevel = (
+  value: unknown,
+  score?: number
+): IncidentUrgencyLevel | undefined => {
+  if (value === "low" || value === "medium" || value === "high") {
+    return value;
+  }
+
+  if (typeof score === "number") {
+    return getUrgencyLevelFromScore(score);
+  }
+
+  return undefined;
 };
 
 const toDate = (value: unknown): Date | undefined => {
@@ -387,6 +449,7 @@ const mapIncidentDocument = (
 
   const coverImageUri = normalizeNullableString(data.imageUri);
   const storedImageUris = normalizeStringArray(data.imageUris);
+  const urgencyScore = normalizeUrgencyScore(data.urgencyScore);
 
   return {
     id: snapshot.id,
@@ -394,6 +457,11 @@ const mapIncidentDocument = (
     category,
     subcategory,
     type,
+    domain: normalizeIncidentDomain(data.domain),
+    kind: normalizeIncidentKind(data.kind),
+    impactAnswers: normalizeImpactAnswers(data.impactAnswers),
+    urgencyScore,
+    urgencyLevel: normalizeUrgencyLevel(data.urgencyLevel, urgencyScore),
 
     title: normalizeNullableString(data.title) ?? "Untitled report",
     description: normalizeNullableString(data.description) ?? "",
@@ -842,6 +910,21 @@ export const createIncidentReport = async (
     throw new Error("The subcategory does not match the selected category.");
   }
 
+  const domain = normalizeIncidentDomain(payload.domain);
+  const kind = normalizeIncidentKind(payload.kind);
+
+  if (payload.domain && !domain) {
+    throw new Error("Invalid report domain.");
+  }
+
+  if (payload.kind && !kind) {
+    throw new Error("Invalid report type.");
+  }
+
+  const urgencyScore = normalizeUrgencyScore(payload.urgencyScore);
+  const urgencyLevel = normalizeUrgencyLevel(payload.urgencyLevel, urgencyScore);
+  const impactAnswers = normalizeImpactAnswers(payload.impactAnswers);
+
   const docRef = await addDoc(collection(db, REPORTS_COLLECTION), {
     category: payload.category,
 
@@ -852,6 +935,11 @@ export const createIncidentReport = async (
      */
     subcategory,
     type: null,
+    domain,
+    kind,
+    impactAnswers,
+    urgencyScore: urgencyScore ?? null,
+    urgencyLevel: urgencyLevel ?? null,
 
     title,
     description,

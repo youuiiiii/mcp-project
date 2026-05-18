@@ -1,7 +1,6 @@
 import { StyleSheet, TextInput, View } from "react-native";
 
 import SectionHeader from "../../../components/ui/SectionHeader";
-import StatusBadge from "../../../components/ui/StatusBadge";
 import { useI18n } from "../../../i18n";
 import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
@@ -22,8 +21,6 @@ export default function ReportDetailsFields({
   onChangeDescription,
 }: ReportDetailsFieldsProps) {
   const { t } = useI18n();
-  const cleanTitleLength = title.trim().length;
-  const cleanDescriptionLength = description.trim().length;
 
   return (
     <View style={styles.section}>
@@ -41,15 +38,6 @@ export default function ReportDetailsFields({
         style={styles.input}
       />
 
-      <StatusBadge
-        label={t("report.details.minimumCharacters", {
-          count: cleanTitleLength,
-          min: 5,
-        })}
-        variant={cleanTitleLength >= 5 ? "success" : "neutral"}
-        size="sm"
-      />
-
       <TextInput
         value={description}
         onChangeText={onChangeDescription}
@@ -59,15 +47,6 @@ export default function ReportDetailsFields({
         multiline
         textAlignVertical="top"
         style={[styles.input, styles.textArea]}
-      />
-
-      <StatusBadge
-        label={t("report.details.minimumCharacters", {
-          count: cleanDescriptionLength,
-          min: 10,
-        })}
-        variant={cleanDescriptionLength >= 10 ? "success" : "neutral"}
-        size="sm"
       />
     </View>
   );

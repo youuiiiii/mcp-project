@@ -8,12 +8,11 @@ import { useI18n } from "../../i18n";
 import { colors } from "../../theme/colors";
 import { shadow, spacing } from "../../theme/layout";
 import { typography } from "../../theme/typography";
-import CategorySelector from "./components/CategorySelector";
+import ImpactQuestionSelector from "./components/ImpactQuestionSelector";
+import IncidentKindSelector from "./components/IncidentKindSelector";
 import ReportDetailsFields from "./components/ReportDetailsFields";
 import ReportEvidenceSection from "./components/ReportEvidenceSection";
 import ReportLocationNotice from "./components/ReportLocationNotice";
-import SeveritySelector from "./components/SeveritySelector";
-import SubcategorySelector from "./components/SubcategorySelector";
 import { useReportForm } from "./hooks/useReportForm";
 
 export default function ReportScreen() {
@@ -34,20 +33,17 @@ export default function ReportScreen() {
 
       <ReportLocationNotice />
 
-      <CategorySelector
-        selectedCategory={form.category}
+      <IncidentKindSelector
+        selectedKind={form.kind}
         disabled={form.loading}
-        onSelectCategory={form.setCategory}
+        onSelectKind={form.setKind}
       />
 
-      {form.category ? (
-        <SubcategorySelector
-          category={form.category}
-          selectedSubcategory={form.subcategory}
-          disabled={form.loading}
-          onSelectSubcategory={form.setSubcategory}
-        />
-      ) : null}
+      <ImpactQuestionSelector
+        answers={form.impactAnswers}
+        disabled={form.loading}
+        onToggleAnswer={form.toggleImpactAnswer}
+      />
 
       <ReportDetailsFields
         title={form.title}
@@ -55,12 +51,6 @@ export default function ReportScreen() {
         disabled={form.loading}
         onChangeTitle={form.setTitle}
         onChangeDescription={form.setDescription}
-      />
-
-      <SeveritySelector
-        selectedSeverity={form.severity}
-        disabled={form.loading}
-        onSelectSeverity={form.setSeverity}
       />
 
       <ReportEvidenceSection

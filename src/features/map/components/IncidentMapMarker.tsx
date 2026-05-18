@@ -28,7 +28,7 @@ function IncidentMapMarker({ incident, onPress }: IncidentMapMarkerProps) {
       }}
       pinColor={markerColor}
       title={incident.title}
-      description={`${meta.label} - ${getSeverityLabel(incident.severity)}`}
+      description={`${meta.label} - ${getUrgencyLabel(incident)}`}
       onPress={() => onPress(incident)}
     />
   );
@@ -36,14 +36,20 @@ function IncidentMapMarker({ incident, onPress }: IncidentMapMarkerProps) {
 
 export default memo(IncidentMapMarker);
 
-function getSeverityLabel(severity: IncidentReport["severity"]) {
-  if (severity === "high") {
-    return "High severity";
+function getUrgencyLabel(incident: IncidentReport) {
+  const urgency = incident.urgencyLevel ?? incident.severity;
+
+  if (typeof incident.urgencyScore === "number") {
+    return `Urgency ${incident.urgencyScore}`;
   }
 
-  if (severity === "medium") {
-    return "Medium severity";
+  if (urgency === "high") {
+    return "High urgency";
   }
 
-  return "Low severity";
+  if (urgency === "medium") {
+    return "Medium urgency";
+  }
+
+  return "Low urgency";
 }
