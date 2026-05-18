@@ -1,8 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import StatusBadge from "../../../components/ui/StatusBadge";
 import { getIncidentDisplayMeta } from "../../../constants/incident";
+import IncidentImpactSummary from "../components/IncidentImpactSummary";
+import IncidentImageGallery from "../components/IncidentImageGallery";
 import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
 import { typography } from "../../../theme/typography";
@@ -97,6 +99,20 @@ export default function IncidentOverviewCard({
           />
         </View>
 
+        <Text style={styles.title}>{incident.title}</Text>
+
+        <Text style={styles.description}>
+          {incident.description || "No description provided."}
+        </Text>
+
+        <IncidentImpactSummary impactAnswers={incident.impactAnswers} />
+
+        <IncidentImageGallery
+          imageUri={incident.imageUri}
+          imageUris={incident.imageUris}
+          variant="detail"
+        />
+
         <View
           style={[
             styles.signalNotice,
@@ -153,16 +169,6 @@ export default function IncidentOverviewCard({
             </View>
           </View>
         </View>
-
-        <Text style={styles.title}>{incident.title}</Text>
-
-        <Text style={styles.description}>
-          {incident.description || "No description provided."}
-        </Text>
-
-        {incident.imageUri ? (
-          <Image source={{ uri: incident.imageUri }} style={styles.image} />
-        ) : null}
 
         <Text style={styles.disclaimer}>
           This report comes from the community and may not be official
@@ -366,13 +372,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontWeight: "500",
     color: "#475569",
-  },
-  image: {
-    marginTop: spacing.md,
-    width: "100%",
-    height: 210,
-    borderRadius: radius.xl,
-    backgroundColor: colors.border,
   },
   disclaimer: {
     marginTop: spacing.md,

@@ -70,9 +70,8 @@ export default function ResolveIncidentModal({
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
+        allowsEditing: false,
         quality: 0.7,
-        aspect: [4, 3],
       });
 
       if (result.canceled) {
@@ -111,9 +110,8 @@ export default function ResolveIncidentModal({
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        allowsEditing: true,
+        allowsEditing: false,
         quality: 0.7,
-        aspect: [4, 3],
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
       });
 
@@ -223,7 +221,7 @@ export default function ResolveIncidentModal({
         "Could Not Resolve Report",
         error instanceof Error
           ? error.message
-          : "Terjadi kesalahan saat menyimpan bukti selesai."
+          : "Something went wrong while saving the resolution evidence."
       );
     } finally {
       setSubmitting(false);
@@ -234,7 +232,7 @@ export default function ResolveIncidentModal({
     <IncidentModalShell
       visible={visible}
       title="Resolution Validation"
-      subtitle="Upload gambar terbaru agar status selesai bisa dipercaya."
+      subtitle="Upload a fresh image so the resolved status can be trusted."
       submitting={submitting}
       onClose={handleClose}
       footer={

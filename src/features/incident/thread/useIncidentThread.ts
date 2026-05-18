@@ -2,7 +2,7 @@ import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Linking, Platform } from "react-native";
+import { Alert, Linking, Platform } from "react-native";
 
 import { getIncidentDisplayMeta } from "../../../constants/incident";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -23,6 +23,7 @@ import type {
   IncidentVerification,
 } from "../../../types/incident";
 import { getIncidentProximity } from "../../../utils/proximity";
+import { getCommunityUpdateMeta } from "./threadLabels";
 import type { VoteFeedbackStatus } from "./IncidentVoteFeedbackModal";
 
 type UseIncidentThreadParams = {
@@ -194,7 +195,8 @@ export function useIncidentThread({
     };
   }, [accuracyVotes, actorKey]);
 
-  const replyIsValid = replyText.trim().length >= 3;
+  const replyIsValid =
+    replyText.trim().length >= 3 || Boolean(replyImageUri);
 
   const closeThread = () => {
     setReplyText("");
@@ -209,27 +211,80 @@ export function useIncidentThread({
       return;
     }
 
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (!permission.granted) {
+      if (!permission.granted) {
+        Alert.alert(
+          "Gallery Permission Needed",
+          "Enable gallery permission to add an image update."
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: false,
+        quality: 0.75,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const assetUri = result.assets?.[0]?.uri;
+
+      if (assetUri) {
+        setReplyImageUri(assetUri);
+      }
+    } catch (error) {
+      Alert.alert(
+        "Could Not Open Gallery",
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while opening the gallery."
+      );
+    }
+  };
+
+  const takeReplyPhoto = async () => {
+    if (replySubmitting) {
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.75,
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    });
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
 
-    if (result.canceled) {
-      return;
-    }
+      if (!permission.granted) {
+        Alert.alert(
+          "Camera Permission Needed",
+          "Enable camera permission to capture an image update."
+        );
+        return;
+      }
 
-    const assetUri = result.assets?.[0]?.uri;
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: false,
+        quality: 0.75,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      });
 
-    if (assetUri) {
-      setReplyImageUri(assetUri);
+      if (result.canceled) {
+        return;
+      }
+
+      const assetUri = result.assets?.[0]?.uri;
+
+      if (assetUri) {
+        setReplyImageUri(assetUri);
+      }
+    } catch (error) {
+      Alert.alert(
+        "Could Not Open Camera",
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while opening the camera."
+      );
     }
   };
 
@@ -368,8 +423,13 @@ export function useIncidentThread({
       }
 
       const cleanReply = replyText.trim();
+      const fallbackReply = replyingTo
+        ? "Shared an image."
+        : getCommunityUpdateMeta(selectedUpdateType).label;
+      const replyMessage =
+        cleanReply.length >= 3 ? cleanReply : replyImageUri ? fallbackReply : "";
 
-      if (cleanReply.length < 3) {
+      if (replyMessage.length < 3) {
         return;
       }
 
@@ -385,7 +445,7 @@ export function useIncidentThread({
 
       await createIncidentReply({
         reportId: incident.id,
-        message: cleanReply,
+        message: replyMessage,
         imageUri: uploadedImageUrl,
         parentReplyId,
         replyToUserName: replyingTo?.userName ?? replyingTo?.userEmail ?? null,
@@ -403,6 +463,12 @@ export function useIncidentThread({
       Haptics.selectionAsync().catch(() => {});
     } catch (error) {
       console.error("Submit reply error:", error);
+      Alert.alert(
+        "Could Not Send Update",
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while sending the update."
+      );
     } finally {
       setReplySubmitting(false);
     }
@@ -453,6 +519,7 @@ export function useIncidentThread({
     submitAccuracy,
 
     pickReplyImage,
+    takeReplyPhoto,
     removeReplyImage,
     startReplyTo,
     cancelReplyTo,

@@ -28,6 +28,7 @@ type IncidentReplyComposerProps = {
   selectedUpdateType: CommunityUpdateType;
   onChangeReplyText: (value: string) => void;
   onChangeUpdateType: (value: CommunityUpdateType) => void;
+  onTakePhoto: () => void;
   onPickImage: () => void;
   onRemoveImage: () => void;
   onCancelReplyTo: () => void;
@@ -43,6 +44,7 @@ export default function IncidentReplyComposer({
   selectedUpdateType,
   onChangeReplyText,
   onChangeUpdateType,
+  onTakePhoto,
   onPickImage,
   onRemoveImage,
   onCancelReplyTo,
@@ -142,6 +144,18 @@ export default function IncidentReplyComposer({
       ) : null}
 
       <View style={styles.inputRow}>
+        <Pressable
+          disabled={replySubmitting}
+          onPress={onTakePhoto}
+          style={({ pressed }) => [
+            styles.imageButton,
+            pressed && styles.pressed,
+            replySubmitting && styles.disabled,
+          ]}
+        >
+          <Ionicons name="camera-outline" size={20} color={colors.textMuted} />
+        </Pressable>
+
         <Pressable
           disabled={replySubmitting}
           onPress={onPickImage}

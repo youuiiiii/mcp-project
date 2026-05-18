@@ -148,7 +148,7 @@ function LatestReportCard({
           </Text>
 
           <StatusBadge
-            label={`${confidence.shortLabel} ${confidence.score}`}
+            label={`Confidence ${confidence.score}`}
             variant={getConfidenceVariant(confidence.level)}
             size="sm"
           />

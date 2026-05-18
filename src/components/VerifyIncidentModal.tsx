@@ -193,9 +193,8 @@ export default function VerifyIncidentModal({
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
+        allowsEditing: false,
         quality: 0.7,
-        aspect: [4, 3],
       });
 
       if (result.canceled) {
@@ -234,9 +233,8 @@ export default function VerifyIncidentModal({
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        allowsEditing: true,
+        allowsEditing: false,
         quality: 0.7,
-        aspect: [4, 3],
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
       });
 

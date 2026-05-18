@@ -175,6 +175,7 @@ export default function IncidentThreadModal({
           repliesCount={thread.replies.length}
           onChangeReplyText={thread.setReplyText}
           onChangeUpdateType={thread.setSelectedUpdateType}
+          onTakePhoto={thread.takeReplyPhoto}
           onPickImage={thread.pickReplyImage}
           onRemoveImage={thread.removeReplyImage}
           onCancelReplyTo={thread.cancelReplyTo}
