@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 import AppButton from "../../components/ui/AppButton";
 import AppScreen from "../../components/ui/AppScreen";
 import StatusBadge from "../../components/ui/StatusBadge";
+import { useI18n } from "../../i18n";
 import { colors } from "../../theme/colors";
 import { shadow, spacing } from "../../theme/layout";
 import { typography } from "../../theme/typography";
@@ -17,16 +18,18 @@ import { useReportForm } from "./hooks/useReportForm";
 
 export default function ReportScreen() {
   const form = useReportForm();
+  const { t } = useI18n();
 
   return (
     <AppScreen keyboardAvoiding contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <StatusBadge label="Community Report" variant="danger" size="sm" />
-        <Text style={styles.title}>Report Incident</Text>
-        <Text style={styles.subtitle}>
-          Send a report from your current location. Before publishing, SIGAP
-          checks for similar active incidents nearby.
-        </Text>
+        <StatusBadge
+          label={t("report.header.badge")}
+          variant="danger"
+          size="sm"
+        />
+        <Text style={styles.title}>{t("report.header.title")}</Text>
+        <Text style={styles.subtitle}>{t("report.header.subtitle")}</Text>
       </View>
 
       <ReportLocationNotice />
@@ -37,14 +40,14 @@ export default function ReportScreen() {
         onSelectCategory={form.setCategory}
       />
 
-      {form.category === "missing_lost" && (
+      {form.category ? (
         <SubcategorySelector
           category={form.category}
           selectedSubcategory={form.subcategory}
           disabled={form.loading}
           onSelectSubcategory={form.setSubcategory}
         />
-      )}
+      ) : null}
 
       <ReportDetailsFields
         title={form.title}
@@ -69,12 +72,14 @@ export default function ReportScreen() {
       />
 
       <AppButton
-        title={form.loading ? "Sending..." : "Submit Report"}
+        title={
+          form.loading ? t("report.submit.loading") : t("report.submit.idle")
+        }
         variant="danger"
         size="lg"
         fullWidth
         loading={form.loading}
-        disabled={form.loading}
+        disabled={!form.canSubmit}
         onPress={form.handleSubmit}
         style={styles.submitButton}
         leftIcon={

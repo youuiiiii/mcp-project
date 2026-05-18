@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Alert } from "react-native";
 
 import { useAuth } from "../../../contexts/AuthContext";
+import { type TFunction, useI18n } from "../../../i18n";
 import { uploadImageAsync } from "../../../services/cloudinaryService";
 import {
   createIncidentReport,
@@ -27,9 +28,11 @@ const DUPLICATE_CHECK_RADIUS_METERS = 150;
 export const useReportForm = () => {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useI18n();
 
   const [category, setCategory] = useState<IncidentCategory | null>(null);
-  const [subcategory, setSubcategory] = useState<IncidentSubcategory | null>(null);
+  const [subcategory, setSubcategory] =
+    useState<IncidentSubcategory | null>(null);
   const [severity, setSeverity] = useState<IncidentSeverity>("medium");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -42,6 +45,7 @@ export const useReportForm = () => {
   const canSubmit = Boolean(
     user &&
       category &&
+      subcategory &&
       cleanTitle.length >= 5 &&
       cleanDescription.length >= 10 &&
       photoUris.length >= 1 &&
@@ -64,15 +68,18 @@ export const useReportForm = () => {
   const takePhoto = async () => {
     if (loading) return;
     if (photoUris.length >= MAX_REPORT_PHOTOS) {
-      Alert.alert("Photo Limit", "You can add up to 4 photos per report.");
+      Alert.alert(
+        t("report.validation.photoLimit.title"),
+        t("common.photoLimit", { max: MAX_REPORT_PHOTOS })
+      );
       return;
     }
     try {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
         Alert.alert(
-          "Camera Permission Needed",
-          "Enable camera permission to take evidence photos."
+          t("report.validation.cameraPermission.title"),
+          t("report.validation.cameraPermission.message")
         );
         return;
       }
@@ -84,16 +91,19 @@ export const useReportForm = () => {
       if (result.canceled) return;
       const assetUri = result.assets?.[0]?.uri;
       if (!assetUri) {
-        Alert.alert("Invalid Photo", "Could not read the captured photo.");
+        Alert.alert(
+          t("report.validation.invalidPhoto.title"),
+          t("report.validation.invalidCapturedPhoto.message")
+        );
         return;
       }
       appendPhotos([assetUri]);
     } catch (error) {
       Alert.alert(
-        "Could Not Open Camera",
+        t("report.error.openCamera.title"),
         error instanceof Error
           ? error.message
-          : "Something went wrong while opening the camera."
+          : t("report.error.openCamera.fallback")
       );
     }
   };
@@ -101,15 +111,18 @@ export const useReportForm = () => {
   const pickFromGallery = async () => {
     if (loading) return;
     if (photoUris.length >= MAX_REPORT_PHOTOS) {
-      Alert.alert("Photo Limit", "You can add up to 4 photos per report.");
+      Alert.alert(
+        t("report.validation.photoLimit.title"),
+        t("common.photoLimit", { max: MAX_REPORT_PHOTOS })
+      );
       return;
     }
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
         Alert.alert(
-          "Gallery Permission Needed",
-          "Enable gallery permission to choose evidence photos."
+          t("report.validation.galleryPermission.title"),
+          t("report.validation.galleryPermission.message")
         );
         return;
       }
@@ -122,18 +135,23 @@ export const useReportForm = () => {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
       });
       if (result.canceled) return;
-      const uris = result.assets.map((asset) => asset.uri).filter((uri): uri is string => Boolean(uri));
+      const uris = result.assets
+        .map((asset) => asset.uri)
+        .filter((uri): uri is string => Boolean(uri));
       if (uris.length === 0) {
-        Alert.alert("Invalid Photo", "Could not read the selected image.");
+        Alert.alert(
+          t("report.validation.invalidPhoto.title"),
+          t("report.validation.invalidSelectedPhoto.message")
+        );
         return;
       }
       appendPhotos(uris);
     } catch (error) {
       Alert.alert(
-        "Could Not Open Gallery",
+        t("report.error.openGallery.title"),
         error instanceof Error
           ? error.message
-          : "Something went wrong while opening the gallery."
+          : t("report.error.openGallery.fallback")
       );
     }
   };
@@ -153,30 +171,52 @@ export const useReportForm = () => {
 
   const validateForm = () => {
     if (!user) {
-      Alert.alert("Login Required", "Please log in before sending a report.");
+      Alert.alert(
+        t("report.validation.loginRequired.title"),
+        t("report.validation.loginRequired.message")
+      );
       return false;
     }
     if (!category) {
-      Alert.alert("Category Required", "Choose the incident category first.");
+      Alert.alert(
+        t("report.validation.categoryRequired.title"),
+        t("report.validation.categoryRequired.message")
+      );
+      return false;
+    }
+    if (!subcategory) {
+      Alert.alert(
+        t("report.validation.subcategoryRequired.title"),
+        t("report.validation.subcategoryRequired.message")
+      );
       return false;
     }
     if (cleanTitle.length < 5) {
-      Alert.alert("Title Too Short", "The title must be at least 5 characters.");
+      Alert.alert(
+        t("report.validation.titleTooShort.title"),
+        t("report.validation.titleTooShort.message", { min: 5 })
+      );
       return false;
     }
     if (cleanDescription.length < 10) {
       Alert.alert(
-        "Description Too Short",
-        "The description must be at least 10 characters."
+        t("report.validation.descriptionTooShort.title"),
+        t("report.validation.descriptionTooShort.message", { min: 10 })
       );
       return false;
     }
     if (photoUris.length < 1) {
-      Alert.alert("Photo Required", "Add at least 1 incident photo.");
+      Alert.alert(
+        t("report.validation.photoRequired.title"),
+        t("report.validation.photoRequired.message")
+      );
       return false;
     }
     if (photoUris.length > MAX_REPORT_PHOTOS) {
-      Alert.alert("Photo Limit", "You can add up to 4 photos per report.");
+      Alert.alert(
+        t("report.validation.photoLimit.title"),
+        t("common.photoLimit", { max: MAX_REPORT_PHOTOS })
+      );
       return false;
     }
     return true;
@@ -184,27 +224,29 @@ export const useReportForm = () => {
 
   const handleSubmit = async () => {
     try {
-      if (!validateForm() || !user || !category) return;
+      if (!validateForm() || !user || !category || !subcategory) return;
       setLoading(true);
 
       const permission = await Location.requestForegroundPermissionsAsync();
       if (permission.status !== "granted") {
         Alert.alert(
-          "Location Permission Needed",
-          "Enable location permission so this report can be placed on the map."
+          t("report.validation.locationPermission.title"),
+          t("report.validation.locationPermission.message")
         );
         return;
       }
 
-      const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
       const accuracy = location.coords.accuracy ?? 999;
 
       if (accuracy > LOCATION_MAX_ACCURACY_METERS) {
         Alert.alert(
-          "Low Location Accuracy",
-          `Your location accuracy is about ${Math.round(
-            accuracy
-          )} meters. Turn on high accuracy/GPS and try again.`
+          t("report.validation.lowAccuracy.title"),
+          t("report.validation.lowAccuracy.message", {
+            accuracy: Math.round(accuracy),
+          })
         );
         return;
       }
@@ -219,7 +261,8 @@ export const useReportForm = () => {
 
       if (nearbyCandidates.length > 0) {
         const shouldCreateNewReport = await confirmNewReportDespiteDuplicate(
-          nearbyCandidates[0]
+          nearbyCandidates[0],
+          t
         );
 
         if (!shouldCreateNewReport) {
@@ -229,21 +272,22 @@ export const useReportForm = () => {
       }
 
       const uploadedImageUrls = await Promise.all(
-        photoUris.map((photoUri) => uploadImageAsync(photoUri, "incident-images"))
+        photoUris.map((photoUri) =>
+          uploadImageAsync(photoUri, "incident-images")
+        )
       );
 
       if (uploadedImageUrls.length < 1) {
         Alert.alert(
-          "Upload Failed",
-          "At least 1 evidence photo must upload successfully."
+          t("report.validation.uploadFailed.title"),
+          t("report.validation.uploadFailed.message")
         );
         return;
       }
 
       await createIncidentReport({
         category,
-        subcategory: subcategory ?? null,
-        type: subcategory ?? null,
+        subcategory,
         title: cleanTitle,
         description: cleanDescription,
         severity,
@@ -251,28 +295,30 @@ export const useReportForm = () => {
         imageUris: uploadedImageUrls,
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
+        locationAccuracyMeters: Math.round(accuracy),
         address: null,
         reportedBy: user.displayName || user.email || "Anonymous",
+        reporterUid: user.uid,
         reporterEmail: user.email ?? null,
       });
 
-      Alert.alert("Report Sent", "Your report has been added to the map.", [
+      Alert.alert(t("report.success.title"), t("report.success.message"), [
         {
-          text: "View Map",
+          text: t("report.success.viewMap"),
           onPress: () => {
             resetForm();
             router.push(MAP_ROUTE);
           },
         },
-        { text: "Create Another", onPress: resetForm },
+        { text: t("report.success.createAnother"), onPress: resetForm },
       ]);
     } catch (error) {
       console.error("Create report error:", error);
       Alert.alert(
-        "Could Not Send Report",
+        t("report.error.send.title"),
         error instanceof Error
           ? error.message
-          : "Something went wrong while sending the report."
+          : t("report.error.send.fallback")
       );
     } finally {
       setLoading(false);
@@ -302,22 +348,24 @@ export const useReportForm = () => {
 };
 
 function confirmNewReportDespiteDuplicate(
-  candidate: NearbyIncidentCandidate
+  candidate: NearbyIncidentCandidate,
+  t: TFunction
 ): Promise<boolean> {
   return new Promise((resolve) => {
     Alert.alert(
-      "Similar Incident Nearby",
-      `"${candidate.incident.title}" is about ${formatDistance(
-        candidate.distanceMeters
-      )} away. Updating the existing incident usually keeps the map cleaner.`,
+      t("report.duplicate.title"),
+      t("report.duplicate.message", {
+        title: candidate.incident.title,
+        distance: formatDistance(candidate.distanceMeters),
+      }),
       [
         {
-          text: "Review Map",
+          text: t("report.duplicate.reviewMap"),
           style: "cancel",
           onPress: () => resolve(false),
         },
         {
-          text: "Submit New",
+          text: t("report.duplicate.submitNew"),
           style: "destructive",
           onPress: () => resolve(true),
         },

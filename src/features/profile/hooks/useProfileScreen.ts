@@ -74,12 +74,18 @@ export const useProfileScreen = () => {
   }, [displayName]);
 
   const userReports = useMemo(() => {
+    const uidKey = normalizeText(user?.uid);
     const emailKey = normalizeText(user?.email);
     const nameKey = normalizeText(user?.displayName);
 
     return reports.filter((report) => {
+      const reporterUid = normalizeText(report.reporterUid);
       const reporterEmail = normalizeText(report.reporterEmail);
       const reportedBy = normalizeText(report.reportedBy);
+
+      if (uidKey && reporterUid === uidKey) {
+        return true;
+      }
 
       if (emailKey) {
         return reporterEmail === emailKey || reportedBy === emailKey;
@@ -91,7 +97,7 @@ export const useProfileScreen = () => {
 
       return false;
     });
-  }, [reports, user?.email, user?.displayName]);
+  }, [reports, user?.uid, user?.email, user?.displayName]);
 
   const stats = useMemo<ProfileStats>(() => {
     return {

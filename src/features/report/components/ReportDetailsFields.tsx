@@ -2,6 +2,7 @@ import { StyleSheet, TextInput, View } from "react-native";
 
 import SectionHeader from "../../../components/ui/SectionHeader";
 import StatusBadge from "../../../components/ui/StatusBadge";
+import { useI18n } from "../../../i18n";
 import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
 
@@ -20,27 +21,31 @@ export default function ReportDetailsFields({
   onChangeTitle,
   onChangeDescription,
 }: ReportDetailsFieldsProps) {
+  const { t } = useI18n();
   const cleanTitleLength = title.trim().length;
   const cleanDescriptionLength = description.trim().length;
 
   return (
     <View style={styles.section}>
       <SectionHeader
-        title="2. Incident Details"
-        subtitle="A clear title and description help nearby users understand the situation."
+        title={t("report.details.title")}
+        subtitle={t("report.details.subtitle")}
       />
 
       <TextInput
         value={title}
         onChangeText={onChangeTitle}
         editable={!disabled}
-        placeholder="Example: Fallen tree blocking the main road"
+        placeholder={t("report.details.titlePlaceholder")}
         placeholderTextColor={colors.textSoft}
         style={styles.input}
       />
 
       <StatusBadge
-        label={`${cleanTitleLength}/5 minimum characters`}
+        label={t("report.details.minimumCharacters", {
+          count: cleanTitleLength,
+          min: 5,
+        })}
         variant={cleanTitleLength >= 5 ? "success" : "neutral"}
         size="sm"
       />
@@ -49,7 +54,7 @@ export default function ReportDetailsFields({
         value={description}
         onChangeText={onChangeDescription}
         editable={!disabled}
-        placeholder="Describe the situation, nearby conditions, impact, and anything important people should know."
+        placeholder={t("report.details.descriptionPlaceholder")}
         placeholderTextColor={colors.textSoft}
         multiline
         textAlignVertical="top"
@@ -57,7 +62,10 @@ export default function ReportDetailsFields({
       />
 
       <StatusBadge
-        label={`${cleanDescriptionLength}/10 minimum characters`}
+        label={t("report.details.minimumCharacters", {
+          count: cleanDescriptionLength,
+          min: 10,
+        })}
         variant={cleanDescriptionLength >= 10 ? "success" : "neutral"}
         size="sm"
       />

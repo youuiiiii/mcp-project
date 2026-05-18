@@ -142,7 +142,9 @@ export type IncidentReport = {
   imageUris?: string[];
   address?: string | null;
   reportedBy?: string | null;
+  reporterUid?: string | null;
   reporterEmail?: string | null;
+  locationAccuracyMeters?: number | null;
   verificationStatus?: VerificationStatus;
   verificationCount?: number;
   disputeCount?: number;
@@ -229,7 +231,9 @@ export type CreateIncidentPayload = {
   imageUris?: string[];
   address?: string | null;
   reportedBy?: string | null;
+  reporterUid?: string | null;
   reporterEmail?: string | null;
+  locationAccuracyMeters?: number | null;
 };
 
 export type CreateIncidentVerificationPayload = {

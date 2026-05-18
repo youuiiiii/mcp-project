@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import SectionHeader from "../../../components/ui/SectionHeader";
 import { getSubcategoriesByCategory } from "../../../constants/incident";
+import { getIncidentSubcategoryLabel, useI18n } from "../../../i18n";
 import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
 import type { IncidentCategory, IncidentSubcategory } from "../../../types/incident";
@@ -20,6 +21,7 @@ export default function SubcategorySelector({
   disabled = false,
   onSelectSubcategory,
 }: SubcategorySelectorProps) {
+  const { t } = useI18n();
   const options = getSubcategoriesByCategory(category);
 
   if (options.length === 0) return null;
@@ -27,8 +29,8 @@ export default function SubcategorySelector({
   return (
     <View style={styles.section}>
       <SectionHeader
-        title="2. Subcategory"
-        subtitle="Choose a more specific incident type when useful."
+        title={t("report.subcategory.title")}
+        subtitle={t("report.subcategory.subtitle")}
       />
 
       <ScrollView
@@ -38,6 +40,7 @@ export default function SubcategorySelector({
       >
         {options.map((item) => {
           const active = selectedSubcategory === item.value;
+          const label = getIncidentSubcategoryLabel(t, item.value);
 
           return (
             <Pressable
@@ -58,7 +61,7 @@ export default function SubcategorySelector({
                 />
               </View>
               <Text style={[styles.chipLabel, active && { color: item.color }]}>
-                {item.label}
+                {label}
               </Text>
             </Pressable>
           );

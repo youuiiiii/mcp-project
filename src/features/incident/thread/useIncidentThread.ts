@@ -137,6 +137,7 @@ export function useIncidentThread({
     }
 
     return (
+      incident.reporterUid === user.uid ||
       incident.reporterEmail === user.email ||
       incident.reportedBy === user.displayName ||
       incident.reportedBy === user.email

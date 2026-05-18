@@ -3,6 +3,11 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import SectionHeader from "../../../components/ui/SectionHeader";
 import { INCIDENT_CATEGORY_OPTIONS } from "../../../constants/incident";
+import {
+  getIncidentCategoryLabel,
+  getIncidentCategoryShortLabel,
+  useI18n,
+} from "../../../i18n";
 import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
 import type { IncidentCategory } from "../../../types/incident";
@@ -18,16 +23,20 @@ export default function CategorySelector({
   disabled = false,
   onSelectCategory,
 }: CategorySelectorProps) {
+  const { t } = useI18n();
+
   return (
     <View style={styles.section}>
       <SectionHeader
-        title="1. Category"
-        subtitle="Choose the main type of incident."
+        title={t("report.category.title")}
+        subtitle={t("report.category.subtitle")}
       />
 
       <View style={styles.list}>
         {INCIDENT_CATEGORY_OPTIONS.map((item) => {
           const active = selectedCategory === item.value;
+          const label = getIncidentCategoryLabel(t, item.value);
+          const shortLabel = getIncidentCategoryShortLabel(t, item.value);
 
           return (
             <Pressable
@@ -68,11 +77,11 @@ export default function CategorySelector({
                   ]}
                   numberOfLines={1}
                 >
-                  {item.label}
+                  {label}
                 </Text>
 
                 <Text style={styles.description} numberOfLines={1}>
-                  {item.shortLabel || item.label}
+                  {shortLabel}
                 </Text>
               </View>
 

@@ -134,7 +134,7 @@ export default function VerifyIncidentModal({
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const actorKey = user?.email ?? user?.uid ?? null;
+  const actorKey = user?.uid ?? user?.email ?? null;
 
   const conditionOptions = useMemo(() => {
     if (verificationType === "invalid") {
@@ -297,12 +297,24 @@ export default function VerifyIncidentModal({
       return false;
     }
 
-    const isOwnIncident =
-      incident.reporterEmail === actorKey || incident.reportedBy === actorKey;
+    const actorAliases = [user?.uid, user?.email, user?.displayName].filter(
+      (item): item is string => Boolean(item)
+    );
 
-    const hasVerified =
-      incident.verifiedBy?.includes(actorKey) ||
-      incident.disputedBy?.includes(actorKey);
+    const isOwnIncident = actorAliases.some((item) => {
+      return (
+        incident.reporterUid === item ||
+        incident.reporterEmail === item ||
+        incident.reportedBy === item
+      );
+    });
+
+    const hasVerified = actorAliases.some((item) => {
+      return (
+        incident.verifiedBy?.includes(item) ||
+        incident.disputedBy?.includes(item)
+      );
+    });
 
     if (verificationType !== "condition_update" && isOwnIncident) {
       Alert.alert(

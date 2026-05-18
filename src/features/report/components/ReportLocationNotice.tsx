@@ -3,11 +3,14 @@ import { StyleSheet, Text, View } from "react-native";
 
 import AppCard from "../../../components/ui/AppCard";
 import IconBadge from "../../../components/ui/IconBadge";
+import { useI18n } from "../../../i18n";
 import { colors } from "../../../theme/colors";
 import { spacing } from "../../../theme/layout";
 import { typography } from "../../../theme/typography";
 
 export default function ReportLocationNotice() {
+  const { t } = useI18n();
+
   return (
     <AppCard variant="muted" style={styles.card}>
       <IconBadge variant="info" size="md" rounded={false}>
@@ -15,11 +18,10 @@ export default function ReportLocationNotice() {
       </IconBadge>
 
       <View style={styles.content}>
-        <Text style={styles.title}>Automatic report location</Text>
+        <Text style={styles.title}>{t("report.location.title")}</Text>
 
         <Text style={styles.description}>
-          When you submit, SIGAP uses your current location. Make sure you are
-          near the incident and location permission is enabled.
+          {t("report.location.description")}
         </Text>
       </View>
     </AppCard>

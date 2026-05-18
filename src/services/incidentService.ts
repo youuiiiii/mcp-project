@@ -412,7 +412,11 @@ const mapIncidentDocument = (
 
     address: normalizeNullableString(data.address),
     reportedBy: normalizeNullableString(data.reportedBy),
+    reporterUid: normalizeNullableString(data.reporterUid),
     reporterEmail: normalizeNullableString(data.reporterEmail),
+    locationAccuracyMeters: normalizeNullableNumber(
+      data.locationAccuracyMeters
+    ),
 
     verificationStatus: normalizeVerificationStatus(data.verificationStatus),
     verificationCount: normalizeCount(data.verificationCount),
@@ -809,6 +813,14 @@ export const createIncidentReport = async (
     throw new Error("Invalid report location.");
   }
 
+  const rawLocationAccuracyMeters = normalizeNullableNumber(
+    payload.locationAccuracyMeters
+  );
+  const locationAccuracyMeters =
+    rawLocationAccuracyMeters === null
+      ? null
+      : Math.max(0, Math.round(rawLocationAccuracyMeters));
+
   if (!imageUri) {
     throw new Error("At least one report photo is required.");
   }
@@ -853,7 +865,9 @@ export const createIncidentReport = async (
 
     address: normalizeNullableString(payload.address),
     reportedBy: normalizeNullableString(payload.reportedBy) ?? "Anonymous",
+    reporterUid: normalizeNullableString(payload.reporterUid),
     reporterEmail: normalizeNullableString(payload.reporterEmail),
+    locationAccuracyMeters,
 
     verificationStatus: "pending",
     verificationCount: 0,
