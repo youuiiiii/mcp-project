@@ -57,8 +57,8 @@ export default function TabsLayout() {
       {/* INCIDENTS */}
       <Tabs.Screen
         name="incidents"
-        options={{
-          title: t("tabs.map"),
+         options={{
+          title: "Reports",
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
               name={focused ? "list" : "list-outline"}
@@ -124,7 +124,6 @@ export default function TabsLayout() {
         }}
       />
 
-      <Tabs.Screen name="reports" options={{ href: null }} />
       <Tabs.Screen name="analytics" options={{ href: null }} />
       <Tabs.Screen name="education" options={{ href: null }} />
       <Tabs.Screen name="detail" options={{ href: null }} />
