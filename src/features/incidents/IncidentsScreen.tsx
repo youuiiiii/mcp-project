@@ -2,6 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
 import IncidentThreadModal from "../../components/IncidentThreadModal";
+import ResolveIncidentModal from "../../components/ResolveIncidentModal";
+import VerifyIncidentModal from "../../components/VerifyIncidentModal";
 import AppCard from "../../components/ui/AppCard";
 import AppScreen from "../../components/ui/AppScreen";
 import IconBadge from "../../components/ui/IconBadge";
@@ -11,15 +13,15 @@ import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/layout";
 import { typography } from "../../theme/typography";
 import IncidentsHeader from "./components/IncidentsHeader";
-import ReportList from "../reports/components/ReportList";
-import { useReportsScreen } from "../reports/hooks/useReportsScreen";
+import IncidentList from "./components/IncidentList";
+import { useIncidentsScreen } from "./hooks/useIncidentsScreen";
 
 export default function IncidentsScreen() {
   const {
     loading,
     errorMessage,
 
-    filteredReports,
+    filteredIncidents,
     summary,
 
     searchQuery,
@@ -28,17 +30,25 @@ export default function IncidentsScreen() {
     setSelectedFilter,
 
     selectedIncident,
+    selectedVerifyIncident,
+    selectedResolveIncident,
 
     isThreadModalVisible,
+    isVerifyModalVisible,
+    isResolveModalVisible,
 
     handleOpenIncident,
     handleCloseThreadModal,
-  } = useReportsScreen();
+    handleOpenVerifyModal,
+    handleCloseVerifyModal,
+    handleOpenResolveModal,
+    handleCloseResolveModal,
+  } = useIncidentsScreen();
 
   if (loading) {
     return (
       <AppScreen scroll={false} contentContainerStyle={styles.loadingContainer}>
-        <LoadingState message="Memuat incidents..." />
+        <LoadingState message="Loading incidents..." />
       </AppScreen>
     );
   }
@@ -61,7 +71,7 @@ export default function IncidentsScreen() {
             </IconBadge>
 
             <View style={styles.errorContent}>
-              <Text style={styles.errorTitle}>Gagal memuat incident</Text>
+              <Text style={styles.errorTitle}>Could not load incidents</Text>
               <Text style={styles.errorMessage}>{errorMessage}</Text>
             </View>
           </AppCard>
@@ -69,13 +79,13 @@ export default function IncidentsScreen() {
 
         <View style={styles.section}>
           <SectionHeader
-            title="Semua Incident"
-            subtitle={`${filteredReports.length} incident ditampilkan`}
+            title="All Incidents"
+            subtitle={`${filteredIncidents.length} incidents shown`}
             style={styles.sectionHeader}
           />
 
-          <ReportList
-            reports={filteredReports}
+          <IncidentList
+            incidents={filteredIncidents}
             onOpenIncident={handleOpenIncident}
           />
         </View>
@@ -85,6 +95,20 @@ export default function IncidentsScreen() {
         visible={isThreadModalVisible}
         incident={selectedIncident}
         onClose={handleCloseThreadModal}
+        onOpenVerify={handleOpenVerifyModal}
+        onOpenResolve={handleOpenResolveModal}
+      />
+
+      <VerifyIncidentModal
+        visible={isVerifyModalVisible}
+        incident={selectedVerifyIncident}
+        onClose={handleCloseVerifyModal}
+      />
+
+      <ResolveIncidentModal
+        visible={isResolveModalVisible}
+        incident={selectedResolveIncident}
+        onClose={handleCloseResolveModal}
       />
     </>
   );

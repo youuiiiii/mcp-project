@@ -57,8 +57,8 @@ export default function TabsLayout() {
       {/* INCIDENTS */}
       <Tabs.Screen
         name="incidents"
-         options={{
-          title: "Reports",
+        options={{
+          title: "Incidents",
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
               name={focused ? "list" : "list-outline"}

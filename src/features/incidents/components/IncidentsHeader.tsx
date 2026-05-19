@@ -15,17 +15,17 @@ import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
 import { typography } from "../../../theme/typography";
 import {
-  REPORT_FILTER_OPTIONS,
-  type ReportFilter,
-  type ReportsSummary,
-} from "../../reports/hooks/useReportsScreen";
+  INCIDENT_FILTER_OPTIONS,
+  type IncidentFilter,
+  type IncidentsSummary,
+} from "../hooks/useIncidentsScreen";
 
 type IncidentsHeaderProps = {
-  summary: ReportsSummary;
+  summary: IncidentsSummary;
   searchQuery: string;
-  selectedFilter: ReportFilter;
+  selectedFilter: IncidentFilter;
   onSearchChange: (value: string) => void;
-  onFilterChange: (value: ReportFilter) => void;
+  onFilterChange: (value: IncidentFilter) => void;
 };
 
 type SummaryItem = {
@@ -50,19 +50,19 @@ export default function IncidentsHeader({
       color: colors.info,
     },
     {
-      label: "Aktif",
+      label: "Active",
       value: summary.active,
       iconName: "radio",
       color: colors.danger,
     },
     {
-      label: "Selesai",
+      label: "Resolved",
       value: summary.resolved,
       iconName: "checkmark-circle",
       color: colors.success,
     },
     {
-      label: "Prioritas",
+      label: "High urgency",
       value: summary.highSeverity,
       iconName: "alert-circle",
       color: colors.warningDark,
@@ -77,7 +77,8 @@ export default function IncidentsHeader({
         <Text style={styles.title}>Incidents</Text>
 
         <Text style={styles.subtitle}>
-          Semua incident yang dilaporkan pengguna ditampilkan di sini.
+          Monitor community incidents, open detail threads, verify reports, and
+          resolve confirmed incidents.
         </Text>
       </View>
 
@@ -101,7 +102,7 @@ export default function IncidentsHeader({
           <TextInput
             value={searchQuery}
             onChangeText={onSearchChange}
-            placeholder="Cari incident, kategori, status, atau pelapor..."
+            placeholder="Search incidents, categories, status, or reporter..."
             placeholderTextColor={colors.textSoft}
             style={styles.searchInput}
           />
@@ -113,7 +114,7 @@ export default function IncidentsHeader({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.filterRow}
       >
-        {REPORT_FILTER_OPTIONS.map((filter) => {
+        {INCIDENT_FILTER_OPTIONS.map((filter) => {
           const active = selectedFilter === filter.value;
 
           return (

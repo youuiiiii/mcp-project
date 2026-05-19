@@ -3,24 +3,24 @@ import { StyleSheet, View } from "react-native";
 import IncidentCard from "../../../components/IncidentCard";
 import { spacing } from "../../../theme/layout";
 import type { IncidentReport } from "../../../types/incident";
-import ReportsEmptyState from "./ReportsEmptyState";
+import IncidentsEmptyState from "./IncidentsEmptyState";
 
-type ReportListProps = {
-  reports: IncidentReport[];
+type IncidentListProps = {
+  incidents: IncidentReport[];
   onOpenIncident: (incident: IncidentReport) => void;
 };
 
-export default function ReportList({
-  reports,
+export default function IncidentList({
+  incidents,
   onOpenIncident,
-}: ReportListProps) {
-  if (reports.length === 0) {
-    return <ReportsEmptyState />;
+}: IncidentListProps) {
+  if (incidents.length === 0) {
+    return <IncidentsEmptyState />;
   }
 
   return (
     <View style={styles.list}>
-      {reports.map((incident) => (
+      {incidents.map((incident) => (
         <IncidentCard
           key={incident.id}
           incident={incident}

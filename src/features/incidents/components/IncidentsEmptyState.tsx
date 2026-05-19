@@ -7,17 +7,17 @@ import { colors } from "../../../theme/colors";
 import { spacing } from "../../../theme/layout";
 import { typography } from "../../../theme/typography";
 
-export default function ReportsEmptyState() {
+export default function IncidentsEmptyState() {
   return (
     <AppCard style={styles.card}>
       <IconBadge variant="neutral" size="lg" rounded={false}>
         <Ionicons name="document-text-outline" size={28} color={colors.info} />
       </IconBadge>
 
-      <Text style={styles.title}>No reports found</Text>
+      <Text style={styles.title}>No incidents found</Text>
 
       <Text style={styles.message}>
-        No reports match the current filter or search query.
+        No incidents match the current filter or search query.
       </Text>
     </AppCard>
   );

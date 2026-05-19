@@ -4,7 +4,7 @@ import { getIncidentDisplayMeta } from "../../../constants/incident";
 import { subscribeToIncidents } from "../../../services/incidentService";
 import type { IncidentReport } from "../../../types/incident";
 
-export type ReportFilter =
+export type IncidentFilter =
   | "all"
   | "active"
   | "resolved"
@@ -12,8 +12,8 @@ export type ReportFilter =
   | "medium"
   | "low";
 
-export const REPORT_FILTER_OPTIONS: readonly {
-  value: ReportFilter;
+export const INCIDENT_FILTER_OPTIONS: readonly {
+  value: IncidentFilter;
   label: string;
 }[] = [
   {
@@ -34,34 +34,36 @@ export const REPORT_FILTER_OPTIONS: readonly {
   },
   {
     value: "medium",
-    label: "Severity Sedang",
+    label: "Medium Urgency",
   },
   {
     value: "low",
-    label: "Severity Rendah",
+    label: "Low Urgency",
   },
 ];
 
-export type ReportsSummary = {
+export type IncidentsSummary = {
   total: number;
   active: number;
   resolved: number;
   highSeverity: number;
 };
 
-export const useReportsScreen = () => {
-  const [reports, setReports] = useState<IncidentReport[]>([]);
+export const useIncidentsScreen = () => {
+  const [incidents, setIncidents] = useState<IncidentReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState<ReportFilter>("all");
+  const [selectedFilter, setSelectedFilter] = useState<IncidentFilter>("all");
 
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(
     null
   );
+
   const [selectedVerifyIncident, setSelectedVerifyIncident] =
     useState<IncidentReport | null>(null);
+
   const [selectedResolveIncident, setSelectedResolveIncident] =
     useState<IncidentReport | null>(null);
 
@@ -74,13 +76,13 @@ export const useReportsScreen = () => {
 
     const unsubscribe = subscribeToIncidents(
       (items) => {
-        setReports(items);
+        setIncidents(items);
         setErrorMessage(null);
         setLoading(false);
       },
       (error) => {
-        console.error("Reports screen error:", error);
-        setErrorMessage(error.message || "Could not load reports.");
+        console.error("Incidents screen error:", error);
+        setErrorMessage(error.message || "Could not load incidents.");
         setLoading(false);
       }
     );
@@ -93,32 +95,32 @@ export const useReportsScreen = () => {
       return null;
     }
 
-    return reports.find((item) => item.id === selectedIncidentId) ?? null;
-  }, [reports, selectedIncidentId]);
+    return incidents.find((item) => item.id === selectedIncidentId) ?? null;
+  }, [incidents, selectedIncidentId]);
 
-  const filteredReports = useMemo(() => {
+  const filteredIncidents = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    return reports.filter((report) => {
-      if (selectedFilter === "active" && report.status !== "active") {
+    return incidents.filter((incident) => {
+      if (selectedFilter === "active" && incident.status !== "active") {
         return false;
       }
 
-      if (selectedFilter === "resolved" && report.status !== "resolved") {
+      if (selectedFilter === "resolved" && incident.status !== "resolved") {
         return false;
       }
 
-      const urgencyLevel = report.urgencyLevel ?? report.severity;
+      const urgencyLevel = incident.urgencyLevel ?? incident.severity;
 
       if (selectedFilter === "high" && urgencyLevel !== "high") {
         return false;
       }
 
-      if (selectedFilter === "medium" && report.severity !== "medium") {
+      if (selectedFilter === "medium" && urgencyLevel !== "medium") {
         return false;
       }
 
-      if (selectedFilter === "low" && report.severity !== "low") {
+      if (selectedFilter === "low" && urgencyLevel !== "low") {
         return false;
       }
 
@@ -127,25 +129,25 @@ export const useReportsScreen = () => {
       }
 
       const meta = getIncidentDisplayMeta({
-        category: report.category,
-        subcategory: report.subcategory ?? report.type,
+        category: incident.category,
+        subcategory: incident.subcategory ?? incident.type,
       });
 
       const searchableText = [
-        report.title,
-        report.description,
-        report.category,
-        report.domain,
-        report.kind,
-        report.status,
-        report.severity,
-        report.urgencyLevel,
-        report.urgencyScore,
-        report.verificationStatus,
-        report.latestCommunityUpdateType,
+        incident.title,
+        incident.description,
+        incident.category,
+        incident.domain,
+        incident.kind,
+        incident.status,
+        incident.severity,
+        incident.urgencyLevel,
+        incident.urgencyScore,
+        incident.verificationStatus,
+        incident.latestCommunityUpdateType,
         meta.label,
-        report.reportedBy,
-        report.reporterEmail,
+        incident.reportedBy,
+        incident.reporterEmail,
       ]
         .filter(Boolean)
         .join(" ")
@@ -153,18 +155,18 @@ export const useReportsScreen = () => {
 
       return searchableText.includes(normalizedQuery);
     });
-  }, [reports, searchQuery, selectedFilter]);
+  }, [incidents, searchQuery, selectedFilter]);
 
-  const summary = useMemo<ReportsSummary>(() => {
+  const summary = useMemo<IncidentsSummary>(() => {
     return {
-      total: reports.length,
-      active: reports.filter((item) => item.status === "active").length,
-      resolved: reports.filter((item) => item.status === "resolved").length,
-      highSeverity: reports.filter((item) => {
+      total: incidents.length,
+      active: incidents.filter((item) => item.status === "active").length,
+      resolved: incidents.filter((item) => item.status === "resolved").length,
+      highSeverity: incidents.filter((item) => {
         return (item.urgencyLevel ?? item.severity) === "high";
       }).length,
     };
-  }, [reports]);
+  }, [incidents]);
 
   const handleOpenIncident = (incident: IncidentReport) => {
     setSelectedIncidentId(incident.id);
@@ -200,8 +202,8 @@ export const useReportsScreen = () => {
     loading,
     errorMessage,
 
-    reports,
-    filteredReports,
+    incidents,
+    filteredIncidents,
     summary,
 
     searchQuery,

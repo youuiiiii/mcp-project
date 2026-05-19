@@ -1,4 +1,4 @@
-import IncidentsScreen from "../../src/features/incidents/IncidentsScreen";
+import IncidentsScreen from "@/features/incidents/IncidentsScreen";
 
 export default function IncidentsRoute() {
   return <IncidentsScreen />;
