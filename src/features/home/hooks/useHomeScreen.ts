@@ -43,7 +43,7 @@ export function useHomeScreen() {
       },
       (error) => {
         console.error("Home reports error:", error);
-        setErrorMessage(error.message || "Gagal memuat laporan terbaru.");
+        setErrorMessage(error.message || "Could not load latest reports.");
         setLoadingReports(false);
       }
     );
@@ -59,7 +59,10 @@ export function useHomeScreen() {
 
   const highSeverityReports = useMemo(() => {
     return reports.filter((report) => {
-      return report.status === "active" && report.severity === "high";
+      return (
+        report.status === "active" &&
+        (report.urgencyLevel ?? report.severity) === "high"
+      );
     });
   }, [reports]);
 

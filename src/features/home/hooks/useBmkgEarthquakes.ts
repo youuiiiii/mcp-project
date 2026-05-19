@@ -37,7 +37,7 @@ export const useBmkgEarthquakes = () => {
       setEarthquakeErrorMessage(
         error instanceof Error
           ? error.message
-          : "Gagal memuat data gempa BMKG."
+          : "Could not load BMKG earthquake data."
       );
     } finally {
       setLoadingEarthquakes(false);

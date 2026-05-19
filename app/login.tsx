@@ -12,7 +12,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useAuth } from "../src/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const HOME_ROUTE = "/(tabs)" as Href;
 const REGISTER_ROUTE = "/register" as Href;
@@ -35,12 +35,12 @@ export default function LoginScreen() {
       const cleanEmail = email.trim().toLowerCase();
 
       if (!cleanEmail) {
-        Alert.alert("Email wajib diisi", "Masukkan email akun Anda.");
+        Alert.alert("Email Required", "Enter your account email.");
         return;
       }
 
       if (!password) {
-        Alert.alert("Password wajib diisi", "Masukkan password akun Anda.");
+        Alert.alert("Password Required", "Enter your account password.");
         return;
       }
 
@@ -51,8 +51,8 @@ export default function LoginScreen() {
       router.replace(HOME_ROUTE);
     } catch (error) {
       Alert.alert(
-        "Login Gagal",
-        error instanceof Error ? error.message : "Email atau password salah."
+        "Login Failed",
+        error instanceof Error ? error.message : "The email or password is incorrect."
       );
     } finally {
       setSubmitting(false);
@@ -80,11 +80,10 @@ export default function LoginScreen() {
             <Text style={styles.badgeText}>INCIDENT READY APP</Text>
           </View>
 
-          <Text style={styles.title}>Masuk Akun</Text>
+          <Text style={styles.title}>Sign In</Text>
 
           <Text style={styles.subtitle}>
-            Login untuk melaporkan kejadian, memantau crisis map, dan memakai
-            fitur SOS.
+            Log in to report incidents, monitor the crisis map, and use SOS.
           </Text>
 
           <View style={styles.form}>
@@ -107,7 +106,7 @@ export default function LoginScreen() {
               <TextInput
                 value={password}
                 onChangeText={setPassword}
-                placeholder="Masukkan password"
+                placeholder="Enter your password"
                 placeholderTextColor="#94A3B8"
                 secureTextEntry
                 style={styles.input}
@@ -127,17 +126,17 @@ export default function LoginScreen() {
               {submitting ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.buttonText}>Masuk</Text>
+                <Text style={styles.buttonText}>Sign In</Text>
               )}
             </Pressable>
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Belum punya akun?</Text>
+            <Text style={styles.footerText}>Do not have an account?</Text>
 
             <Link href={REGISTER_ROUTE} asChild>
               <Pressable disabled={submitting}>
-                <Text style={styles.footerLink}> Daftar sekarang</Text>
+                <Text style={styles.footerLink}> Create one</Text>
               </Pressable>
             </Link>
           </View>

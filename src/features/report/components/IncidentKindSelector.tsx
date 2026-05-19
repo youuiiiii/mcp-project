@@ -2,53 +2,48 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import SectionHeader from "../../../components/ui/SectionHeader";
-import { INCIDENT_CATEGORY_OPTIONS } from "../../../constants/incident";
-import {
-  getIncidentCategoryLabel,
-  getIncidentCategoryShortLabel,
-  useI18n,
-} from "../../../i18n";
+import { REPORT_KIND_OPTIONS } from "../../../constants/reportTaxonomy";
+import { useI18n } from "../../../i18n";
 import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
-import type { IncidentCategory } from "../../../types/incident";
+import type { IncidentKind } from "../../../types/incident";
 
-type CategorySelectorProps = {
-  selectedCategory: IncidentCategory | null;
+type IncidentKindSelectorProps = {
+  selectedKind: IncidentKind | null;
   disabled?: boolean;
-  onSelectCategory: (category: IncidentCategory) => void;
+  onSelectKind: (kind: IncidentKind) => void;
 };
 
-export default function CategorySelector({
-  selectedCategory,
+export default function IncidentKindSelector({
+  selectedKind,
   disabled = false,
-  onSelectCategory,
-}: CategorySelectorProps) {
+  onSelectKind,
+}: IncidentKindSelectorProps) {
   const { t } = useI18n();
 
   return (
     <View style={styles.section}>
       <SectionHeader
-        title={t("report.category.title")}
-        subtitle={t("report.category.subtitle")}
+        title={t("report.kind.title")}
+        subtitle={t("report.kind.subtitle")}
       />
 
       <View style={styles.list}>
-        {INCIDENT_CATEGORY_OPTIONS.map((item) => {
-          const active = selectedCategory === item.value;
-          const label = getIncidentCategoryLabel(t, item.value);
-          const shortLabel = getIncidentCategoryShortLabel(t, item.value);
+        {REPORT_KIND_OPTIONS.map((item) => {
+          const active = selectedKind === item.value;
 
           return (
             <Pressable
               key={item.value}
               disabled={disabled}
-              onPress={() => onSelectCategory(item.value)}
+              onPress={() => onSelectKind(item.value)}
               style={({ pressed }) => [
                 styles.row,
                 active && {
                   borderColor: item.color,
                   backgroundColor: item.lightColor,
                 },
+                disabled && styles.disabled,
                 pressed && styles.pressed,
               ]}
             >
@@ -69,19 +64,14 @@ export default function CategorySelector({
 
               <View style={styles.textGroup}>
                 <Text
-                  style={[
-                    styles.label,
-                    active && {
-                      color: item.color,
-                    },
-                  ]}
+                  style={[styles.label, active && { color: item.color }]}
                   numberOfLines={1}
                 >
-                  {label}
+                  {t(item.labelKey)}
                 </Text>
 
-                <Text style={styles.description} numberOfLines={1}>
-                  {shortLabel}
+                <Text style={styles.helper} numberOfLines={2}>
+                  {t(item.helperKey)}
                 </Text>
               </View>
 
@@ -106,7 +96,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   row: {
-    minHeight: 68,
+    minHeight: 74,
     borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border,
@@ -116,6 +106,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
+  },
+  disabled: {
+    opacity: 0.55,
   },
   pressed: {
     opacity: 0.86,
@@ -133,12 +126,13 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: "800",
+    fontWeight: "900",
     color: colors.text,
   },
-  description: {
+  helper: {
     marginTop: 2,
     fontSize: 11,
+    lineHeight: 15,
     fontWeight: "600",
     color: colors.textMuted,
   },

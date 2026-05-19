@@ -6,6 +6,7 @@ import { colors } from "../theme/colors";
 import { radius, spacing } from "../theme/layout";
 import { typography } from "../theme/typography";
 import type { IncidentReport } from "../types/incident";
+import { getIncidentConfidenceMeta } from "../utils/incidentConfidence";
 import { shareIncident } from "../utils/shareIncident";
 import AppCard from "./ui/AppCard";
 import IconBadge from "./ui/IconBadge";
@@ -17,15 +18,15 @@ type IncidentCardProps = {
 };
 
 const STATUS_LABEL = {
-  active: "Aktif",
-  resolved: "Selesai",
+  active: "Active",
+  resolved: "Resolved",
 } as const satisfies Record<IncidentReport["status"], string>;
 
-const SEVERITY_LABEL = {
-  low: "Rendah",
-  medium: "Sedang",
-  high: "Tinggi",
-} as const satisfies Record<IncidentReport["severity"], string>;
+const URGENCY_LABEL = {
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+} as const satisfies Record<NonNullable<IncidentReport["urgencyLevel"]>, string>;
 
 export default function IncidentCard({
   incident,
@@ -36,6 +37,12 @@ export default function IncidentCard({
     category: incident.category,
     subcategory: incident.subcategory ?? incident.type,
   });
+  const confidence = getIncidentConfidenceMeta(incident);
+  const urgencyLevel = incident.urgencyLevel ?? incident.severity;
+  const urgencyLabel =
+    typeof incident.urgencyScore === "number"
+      ? `Urgency ${incident.urgencyScore}`
+      : `${URGENCY_LABEL[urgencyLevel]} urgency`;
 
   const handleShare = () => {
     shareIncident({
@@ -68,7 +75,7 @@ export default function IncidentCard({
 
         <View style={styles.headerContent}>
           <Text style={styles.title} numberOfLines={1}>
-            {incident.title || "Laporan tanpa judul"}
+            {incident.title || "Untitled report"}
           </Text>
 
           <Text style={styles.category} numberOfLines={1}>
@@ -76,14 +83,14 @@ export default function IncidentCard({
           </Text>
         </View>
         <StatusBadge
-          label={STATUS_LABEL[incident.status]}
-          variant={getStatusVariant(incident.status)}
+          label={`${confidence.shortLabel} ${confidence.score}`}
+          variant={getConfidenceVariant(confidence.level)}
           size="sm"
         />
       </View>
 
       <Text style={styles.description} numberOfLines={2}>
-        {incident.description || "Tidak ada deskripsi."}
+        {incident.description || "No description provided."}
       </Text>
 
       {showImage && incident.imageUri ? (
@@ -92,8 +99,14 @@ export default function IncidentCard({
 
       <View style={styles.footer}>
         <StatusBadge
-          label={SEVERITY_LABEL[incident.severity]}
-          variant={getSeverityVariant(incident.severity)}
+          label={urgencyLabel}
+          variant={getUrgencyVariant(urgencyLevel)}
+          size="sm"
+        />
+
+        <StatusBadge
+          label={STATUS_LABEL[incident.status]}
+          variant={getStatusVariant(incident.status)}
           size="sm"
         />
 
@@ -114,7 +127,7 @@ export default function IncidentCard({
 
 function formatDate(date?: Date): string {
   if (!date) {
-    return "Waktu tidak tersedia";
+    return "Time unavailable";
   }
 
   return date.toLocaleString("id-ID", {
@@ -140,18 +153,36 @@ function getStatusVariant(
   return "neutral";
 }
 
-function getSeverityVariant(
-  severity: IncidentReport["severity"]
+function getUrgencyVariant(
+  urgency: NonNullable<IncidentReport["urgencyLevel"]>
 ): StatusBadgeVariant {
-  if (severity === "high") {
+  if (urgency === "high") {
     return "danger";
   }
 
-  if (severity === "medium") {
+  if (urgency === "medium") {
     return "warning";
   }
 
   return "success";
+}
+
+function getConfidenceVariant(
+  level: ReturnType<typeof getIncidentConfidenceMeta>["level"]
+): StatusBadgeVariant {
+  if (level === "confirmed" || level === "resolved") {
+    return "success";
+  }
+
+  if (level === "questioned") {
+    return "danger";
+  }
+
+  if (level === "credible") {
+    return "info";
+  }
+
+  return "warning";
 }
 
 const styles = StyleSheet.create({

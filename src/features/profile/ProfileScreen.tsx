@@ -85,6 +85,12 @@ export default function ProfileScreen() {
         />
         <AppCard style={styles.accountCard}>
           <AccountRow iconName="person-outline" label="Name" value={displayName} />
+          <AccountRow
+            iconName="person-outline"
+            label="Name"
+            value={displayName}
+          />
+
           <View style={styles.divider} />
           <AccountRow iconName="mail-outline" label="Email" value={userEmail} />
         </AppCard>
@@ -95,6 +101,29 @@ export default function ProfileScreen() {
           <SectionHeader
             title="Moderator"
             subtitle="Review content reports from community."
+      <View style={styles.section}>
+        <SectionHeader
+          title="Moderator"
+          subtitle="Review content reports from the community."
+        />
+
+        <AppCard style={styles.moderatorCard}>
+          <View style={styles.moderatorIcon}>
+            <Ionicons name="shield-checkmark" size={22} color={colors.info} />
+          </View>
+
+          <View style={styles.moderatorText}>
+            <Text style={styles.moderatorTitle}>Moderation Queue</Text>
+            <Text style={styles.moderatorDescription}>
+              Review reported content and hide problematic reports.
+            </Text>
+          </View>
+
+          <AppButton
+            title="Open"
+            variant="secondary"
+            size="sm"
+            onPress={openModeration}
           />
           <AppCard style={styles.moderatorCard}>
             <View style={styles.moderatorIcon}>
@@ -444,4 +473,5 @@ const styles = StyleSheet.create({
   modalBtnLogout: {
     flex: 1,
   },
+});
 });

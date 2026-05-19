@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "project",
-    "slug": "project",
+    "name": "SIGAP",
+    "slug": "incident-ready-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "project",
+    "scheme": "sigap",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

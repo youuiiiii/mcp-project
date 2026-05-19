@@ -21,7 +21,7 @@ export const useHomeReports = () => {
       },
       (error) => {
         console.error("Home reports error:", error);
-        setReportsErrorMessage(error.message || "Gagal memuat laporan.");
+        setReportsErrorMessage(error.message || "Could not load reports.");
         setLoadingReports(false);
       }
     );
@@ -34,7 +34,9 @@ export const useHomeReports = () => {
   }, [reports]);
 
   const highSeverityReports = useMemo(() => {
-    return reports.filter((report) => report.severity === "high");
+    return reports.filter((report) => {
+      return (report.urgencyLevel ?? report.severity) === "high";
+    });
   }, [reports]);
 
   const latestReports = useMemo(() => {

@@ -4,7 +4,8 @@ export type IncidentCategory =
   | "accident_infrastructure"
   | "security_public_order"
   | "medical_rescue"
-  | "missing_lost";
+  | "missing_lost"
+  | "other";
 
 export type IncidentSubcategory =
   | "flood"
@@ -37,19 +38,52 @@ export type IncidentSubcategory =
   | "evacuation_needed"
   | "missing_person"
   | "missing_item"
-  | "missing_vehicle";
+  | "missing_vehicle"
+  | "other_incident";
 
 /**
  * Legacy alias.
  *
- * Jangan dipakai untuk flow baru.
- * Field ini dipertahankan sementara supaya data lama / komponen lama tidak crash.
+ * Do not use this for new flows.
+ * Kept temporarily so older data and older components do not crash.
  */
 export type IncidentType = IncidentSubcategory;
 
 export type IncidentStatus = "active" | "resolved";
 
 export type IncidentSeverity = "low" | "medium" | "high";
+
+export type IncidentDomain =
+  | "traffic_access"
+  | "weather_disaster"
+  | "fire_smoke"
+  | "public_safety"
+  | "medical_rescue"
+  | "lost_found"
+  | "other";
+
+export type IncidentKind =
+  | "road_blocked_or_crash"
+  | "flood_or_weather"
+  | "fire_or_smoke"
+  | "public_safety"
+  | "medical_or_rescue"
+  | "missing_person"
+  | "lost_item_or_vehicle"
+  | "other_incident";
+
+export type IncidentImpactKey =
+  | "people_in_danger"
+  | "access_blocked"
+  | "needs_emergency_help"
+  | "still_happening"
+  | "location_is_exact";
+
+export type IncidentImpactAnswers = Partial<
+  Record<IncidentImpactKey, boolean>
+>;
+
+export type IncidentUrgencyLevel = IncidentSeverity;
 
 export type VerificationStatus = "pending" | "verified" | "disputed";
 
@@ -132,6 +166,11 @@ export type IncidentReport = {
   category: IncidentCategory;
   subcategory?: IncidentSubcategory | null;
   type?: IncidentType | null;
+  domain?: IncidentDomain | null;
+  kind?: IncidentKind | null;
+  impactAnswers?: IncidentImpactAnswers;
+  urgencyScore?: number;
+  urgencyLevel?: IncidentUrgencyLevel;
   title: string;
   description: string;
   latitude: number;
@@ -142,7 +181,9 @@ export type IncidentReport = {
   imageUris?: string[];
   address?: string | null;
   reportedBy?: string | null;
+  reporterUid?: string | null;
   reporterEmail?: string | null;
+  locationAccuracyMeters?: number | null;
   verificationStatus?: VerificationStatus;
   verificationCount?: number;
   disputeCount?: number;
@@ -150,6 +191,9 @@ export type IncidentReport = {
   replyCount?: number;
   verifiedBy?: string[];
   disputedBy?: string[];
+  accurateCount?: number;
+  inaccurateCount?: number;
+  latestAccuracyVoteAt?: Date;
   trustStatus?: TrustStatus;
   moderationStatus?: ModerationStatus;
   moderationReason?: string | null;
@@ -158,6 +202,9 @@ export type IncidentReport = {
   createdAt?: Date;
   updatedAt?: Date;
   latestActivityAt?: Date;
+  latestCommunityUpdateType?: CommunityUpdateType | null;
+  latestCommunityUpdateAt?: Date;
+  conditionUpdateCount?: number;
   resolvedImageUri?: string | null;
   resolutionNote?: string | null;
   resolvedBy?: string | null;
@@ -214,6 +261,11 @@ export type CreateIncidentPayload = {
   category: IncidentCategory;
   subcategory?: IncidentSubcategory | null;
   type?: IncidentType | null;
+  domain?: IncidentDomain | null;
+  kind?: IncidentKind | null;
+  impactAnswers?: IncidentImpactAnswers;
+  urgencyScore?: number;
+  urgencyLevel?: IncidentUrgencyLevel;
   title: string;
   description: string;
   latitude: number;
@@ -223,7 +275,9 @@ export type CreateIncidentPayload = {
   imageUris?: string[];
   address?: string | null;
   reportedBy?: string | null;
+  reporterUid?: string | null;
   reporterEmail?: string | null;
+  locationAccuracyMeters?: number | null;
 };
 
 export type CreateIncidentVerificationPayload = {

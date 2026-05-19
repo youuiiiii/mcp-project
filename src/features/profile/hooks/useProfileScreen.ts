@@ -53,7 +53,7 @@ export const useProfileScreen = () => {
       },
       (error) => {
         console.error("Profile reports error:", error);
-        setErrorMessage(error.message || "Gagal memuat data laporan.");
+        setErrorMessage(error.message || "Could not load report data.");
         setLoading(false);
       }
     );
@@ -74,12 +74,18 @@ export const useProfileScreen = () => {
   }, [displayName]);
 
   const userReports = useMemo(() => {
+    const uidKey = normalizeText(user?.uid);
     const emailKey = normalizeText(user?.email);
     const nameKey = normalizeText(user?.displayName);
 
     return reports.filter((report) => {
+      const reporterUid = normalizeText(report.reporterUid);
       const reporterEmail = normalizeText(report.reporterEmail);
       const reportedBy = normalizeText(report.reportedBy);
+
+      if (uidKey && reporterUid === uidKey) {
+        return true;
+      }
 
       if (emailKey) {
         return reporterEmail === emailKey || reportedBy === emailKey;
@@ -91,7 +97,7 @@ export const useProfileScreen = () => {
 
       return false;
     });
-  }, [reports, user?.email, user?.displayName]);
+  }, [reports, user?.uid, user?.email, user?.displayName]);
 
   const stats = useMemo<ProfileStats>(() => {
     return {
@@ -101,16 +107,16 @@ export const useProfileScreen = () => {
       resolvedReports: userReports.filter(
         (report) => report.status === "resolved"
       ).length,
-      highSeverityReports: userReports.filter(
-        (report) => report.severity === "high"
-      ).length,
+      highSeverityReports: userReports.filter((report) => {
+        return (report.urgencyLevel ?? report.severity) === "high";
+      }).length,
     };
   }, [userReports]);
 
   const handleLogout = () => {
-    Alert.alert("Logout", "Keluar dari akun ini?", [
+    Alert.alert("Logout", "Log out of this account?", [
       {
-        text: "Batal",
+        text: "Cancel",
         style: "cancel",
       },
       {
@@ -122,7 +128,7 @@ export const useProfileScreen = () => {
             router.replace(LOGIN_ROUTE);
           } catch (error) {
             console.error("Logout error:", error);
-            Alert.alert("Logout Gagal", "Terjadi kesalahan saat logout.");
+            Alert.alert("Logout Failed", "Something went wrong while logging out.");
           }
         },
       },

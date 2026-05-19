@@ -1,4 +1,4 @@
-import EarthquakeDetailScreen from "../../src/features/earthquake/EarthquakeDetailScreen";
+import EarthquakeDetailScreen from "@/features/earthquake/EarthquakeDetailScreen";
 
 export default function EarthquakeDetailRoute() {
   return <EarthquakeDetailScreen />;

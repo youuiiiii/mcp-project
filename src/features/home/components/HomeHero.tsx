@@ -59,11 +59,11 @@ export default function HomeHero({
       <View style={styles.messageBlock}>
         <StatusBadge label="Live Monitoring" variant="success" size="sm" />
 
-        <Text style={styles.title}>Pantau laporan warga di sekitar Anda</Text>
+        <Text style={styles.title}>Monitor community reports around you</Text>
 
         <Text style={styles.subtitle}>
-          Buka map untuk melihat pin kejadian, atau buat laporan dari lokasi
-          Anda saat ini.
+          Open the map to see incident pins, or create a report from your
+          current location.
         </Text>
       </View>
 
@@ -71,14 +71,14 @@ export default function HomeHero({
         <SummaryItem
           iconName="map"
           value={activeCount}
-          label="Aktif"
+          label="Active"
           color={colors.info}
         />
 
         <SummaryItem
           iconName="warning"
           value={highSeverityCount}
-          label="Severity tinggi"
+          label="High urgency"
           color={colors.danger}
         />
       </View>

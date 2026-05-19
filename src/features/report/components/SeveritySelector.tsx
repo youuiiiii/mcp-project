@@ -4,6 +4,11 @@ import { StyleSheet, Text, View } from "react-native";
 import AppCard from "../../../components/ui/AppCard";
 import SectionHeader from "../../../components/ui/SectionHeader";
 import { SEVERITY_OPTIONS } from "../../../constants/incident";
+import {
+  getIncidentSeverityDescription,
+  getIncidentSeverityLabel,
+  useI18n,
+} from "../../../i18n";
 import { colors } from "../../../theme/colors";
 import { spacing } from "../../../theme/layout";
 import type { IncidentSeverity } from "../../../types/incident";
@@ -19,16 +24,20 @@ export default function SeveritySelector({
   disabled = false,
   onSelectSeverity,
 }: SeveritySelectorProps) {
+  const { t } = useI18n();
+
   return (
     <View style={styles.section}>
       <SectionHeader
-        title="3. Severity"
-        subtitle="Pilih seberapa mendesak kondisi saat ini."
+        title={t("report.severity.title")}
+        subtitle={t("report.severity.subtitle")}
       />
 
       <View style={styles.row}>
         {SEVERITY_OPTIONS.map((item) => {
           const active = selectedSeverity === item.value;
+          const label = getIncidentSeverityLabel(t, item.value);
+          const description = getIncidentSeverityDescription(t, item.value);
 
           return (
             <AppCard
@@ -50,7 +59,7 @@ export default function SeveritySelector({
               />
 
               <Text style={[styles.label, active && styles.labelActive]}>
-                {item.label}
+                {label}
               </Text>
 
               <Text
@@ -59,7 +68,7 @@ export default function SeveritySelector({
                   active && styles.descriptionActive,
                 ]}
               >
-                {item.description}
+                {description}
               </Text>
             </AppCard>
           );

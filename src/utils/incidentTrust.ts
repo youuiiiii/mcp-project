@@ -22,31 +22,31 @@ const DISPUTED_THRESHOLD = 2;
 export const INCIDENT_TRUST_META = {
   pending: {
     level: "pending",
-    label: "Menunggu Verifikasi",
+    label: "Needs Verification",
     shortLabel: "Pending",
     description:
-      "Laporan masih membutuhkan verifikasi atau bukti tambahan dari warga sekitar.",
+      "This report still needs verification or additional evidence from nearby users.",
   },
   verified: {
     level: "verified",
-    label: "Terverifikasi Komunitas",
+    label: "Community Verified",
     shortLabel: "Verified",
     description:
-      "Laporan sudah mendapat verifikasi valid yang cukup dari warga sekitar.",
+      "This report has enough valid confirmations from nearby users.",
   },
   disputed: {
     level: "disputed",
-    label: "Dipertanyakan",
+    label: "Questioned",
     shortLabel: "Disputed",
     description:
-      "Ada cukup laporan balik yang menyatakan kondisi tidak sesuai atau tidak ditemukan.",
+      "There are enough counter-signals saying the condition is inaccurate or not found.",
   },
   resolved: {
     level: "resolved",
-    label: "Selesai",
+    label: "Resolved",
     shortLabel: "Resolved",
     description:
-      "Laporan sudah ditandai selesai dengan bukti dan catatan penyelesaian.",
+      "This report has been marked resolved with evidence and resolution notes.",
   },
 } as const satisfies Record<IncidentTrustLevel, IncidentTrustMeta>;
 
@@ -114,10 +114,10 @@ export const formatIncidentTrustSummary = (
   summary: IncidentTrustSummary
 ): string => {
   return [
-    `Verifikasi valid: ${summary.verificationCount}`,
-    `Tidak sesuai: ${summary.disputeCount}`,
-    `Bukti foto: ${summary.evidenceCount}`,
-    `Diskusi: ${summary.replyCount}`,
+    `Valid confirmations: ${summary.verificationCount}`,
+    `Disputes: ${summary.disputeCount}`,
+    `Evidence photos: ${summary.evidenceCount}`,
+    `Discussions: ${summary.replyCount}`,
   ].join("\n");
 };
 
