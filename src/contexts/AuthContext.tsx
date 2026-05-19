@@ -28,6 +28,7 @@ type AuthContextValue = {
   roleSource: UserRoleSource;
   roleLoading: boolean;
   isModerator: boolean;
+  profileRevision: number;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   updateUserProfile: (payload: {
@@ -50,6 +51,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [roleSource, setRoleSource] = useState<UserRoleSource>("default");
   const [roleLoading, setRoleLoading] = useState(false);
   const [isModerator, setIsModerator] = useState(false);
+  const [profileRevision, setProfileRevision] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -148,12 +150,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       roleSource,
       roleLoading,
       isModerator,
+      profileRevision,
       login,
       register,
       updateUserProfile,
       logout,
     }),
-    [user, loading, role, roleSource, roleLoading, isModerator]
+    [user, loading, role, roleSource, roleLoading, isModerator, profileRevision]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

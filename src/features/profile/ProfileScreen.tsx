@@ -3,6 +3,7 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  Modal,
   Pressable,
   StyleSheet,
   Text,
@@ -45,7 +46,6 @@ export default function ProfileScreen() {
   const { isModerator, roleLoading } = useAuth();
   const roleLabel = isModerator ? "Moderator" : "Community Reporter";
   const [isEditingName, setIsEditingName] = useState(false);
-  const isModerator = isModeratorEmail(userEmail);
   const profileImageUri = draftPhotoUri ?? photoURL;
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 
@@ -53,7 +53,6 @@ export default function ProfileScreen() {
     router.push("/moderation" as Href);
   };
 
-  if (loading || roleLoading) {
   const cancelEditName = () => {
     setDraftName(displayName);
     setIsEditingName(false);
@@ -73,7 +72,7 @@ export default function ProfileScreen() {
     setIsEditingName(false);
   };
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
       <AppScreen scroll={false} contentContainerStyle={styles.loadingContainer}>
         <LoadingState message="Loading profile..." />
@@ -162,11 +161,7 @@ export default function ProfileScreen() {
         </AppCard>
       </View>
 
-      {isModerator ? (
-        <View style={styles.section}>
-          <SectionHeader
-            title="Moderator"
-            subtitle="Review content reports from community."
+    {isModerator ? (
       <View style={styles.section}>
         <SectionHeader
           title="Moderator"
@@ -191,25 +186,9 @@ export default function ProfileScreen() {
             size="sm"
             onPress={openModeration}
           />
-          <AppCard style={styles.moderatorCard}>
-            <View style={styles.moderatorIcon}>
-              <Ionicons name="shield-checkmark" size={22} color={colors.info} />
-            </View>
-            <View style={styles.moderatorText}>
-              <Text style={styles.moderatorTitle}>Moderation Queue</Text>
-              <Text style={styles.moderatorDescription}>
-                Review reported content and hide problematic reports.
-              </Text>
-            </View>
-            <AppButton
-              title="Open"
-              variant="secondary"
-              size="sm"
-              onPress={openModeration}
-            />
-          </AppCard>
-        </View>
-      ) : null}
+        </AppCard>
+      </View>
+    ) : null}
 
       <AppButton
         title="Logout"
@@ -683,5 +662,4 @@ const styles = StyleSheet.create({
   modalBtnLogout: {
     flex: 1,
   },
-});
 });

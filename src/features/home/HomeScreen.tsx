@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import HomeEarthquakeSection from "./components/HomeEarthquakeSection";
 import { useBmkgEarthquakes } from "./hooks/useBmkgEarthquakes";
-
 import EarthquakeAlertModal from "../../components/EarthquakeAlertModal";
 import IncidentThreadModal from "../../components/IncidentThreadModal";
 import ResolveIncidentModal from "../../components/ResolveIncidentModal";
@@ -14,7 +13,7 @@ import EmptyState from "../../components/ui/EmptyState";
 import IconBadge from "../../components/ui/IconBadge";
 import LoadingState from "../../components/ui/LoadingState";
 import SectionHeader from "../../components/ui/SectionHeader";
-import StatusBadge from "../../components/ui/StatusBadge";
+import StatusBadge, { type StatusBadgeVariant } from "../../components/ui/StatusBadge";
 import { getIncidentDisplayMeta } from "../../constants/incident";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/layout";
@@ -36,6 +35,18 @@ export default function HomeScreen() {
     useState<IncidentReport | null>(null);
   const [selectedResolveIncident, setSelectedResolveIncident] =
     useState<IncidentReport | null>(null);
+
+  const [alertVisible, setAlertVisible] = useState(false);
+
+  useEffect(() => {
+    const magnitude = Number.parseFloat(
+      earthquake.mainEarthquake?.Magnitude ?? "0"
+    );
+
+    if (magnitude >= ALERT_MAGNITUDE_THRESHOLD) {
+      setAlertVisible(true);
+    }
+  }, [earthquake.mainEarthquake]);
 
   const openIncidentThread = (incident: IncidentReport) => {
     setSelectedIncident(incident);
@@ -205,10 +216,40 @@ function LatestReportCard({
   );
 }
 
-function getSeverityLabel(severity: IncidentReport["severity"]) {
-  if (severity === "high") return "High severity";
-  if (severity === "medium") return "Medium severity";
-  return "Low severity";
+function getUrgencyLabel(incident: IncidentReport) {
+  const urgency = incident.urgencyLevel ?? incident.severity;
+
+  if (typeof incident.urgencyScore === "number") {
+    return `Urgency ${incident.urgencyScore}`;
+  }
+
+  if (urgency === "high") {
+    return "High urgency";
+  }
+
+  if (urgency === "medium") {
+    return "Medium urgency";
+  }
+
+  return "Low urgency";
+}
+
+function getConfidenceVariant(
+  level: ReturnType<typeof getIncidentConfidenceMeta>["level"]
+): StatusBadgeVariant {
+  if (level === "confirmed" || level === "resolved") {
+    return "success";
+  }
+
+  if (level === "questioned") {
+    return "danger";
+  }
+
+  if (level === "credible") {
+    return "info";
+  }
+
+  return "warning";
 }
 
 const styles = StyleSheet.create({
