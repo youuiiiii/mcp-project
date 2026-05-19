@@ -20,9 +20,11 @@ import {
   type NearbyIncidentCandidate,
 } from "../../../services/incidentService";
 import type {
+  Coordinate,
   IncidentImpactAnswers,
   IncidentImpactKey,
   IncidentKind,
+  ReportLocationDraft,
 } from "../../../types/incident";
 import { formatDistance } from "../../../utils/geo";
 
@@ -45,6 +47,11 @@ export const useReportForm = () => {
   const [description, setDescription] = useState("");
   const [photoUris, setPhotoUris] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingLocation, setLoadingLocation] = useState(false);
+  const [incidentLocation, setIncidentLocation] =
+    useState<ReportLocationDraft | null>(null);
+  const [reporterLocation, setReporterLocation] =
+    useState<ReportLocationDraft | null>(null);
 
   const cleanTitle = title.trim();
   const cleanDescription = description.trim();
@@ -72,6 +79,72 @@ export const useReportForm = () => {
     setPhotoUris((current) => {
       const merged = Array.from(new Set([...current, ...uris]));
       return merged.slice(0, MAX_REPORT_PHOTOS);
+    });
+  };
+
+  const requestCurrentLocation = async (): Promise<ReportLocationDraft | null> => {
+    const permission = await Location.requestForegroundPermissionsAsync();
+
+    if (permission.status !== "granted") {
+      Alert.alert(
+        t("report.validation.locationPermission.title"),
+        t("report.validation.locationPermission.message")
+      );
+      return null;
+    }
+
+    const location = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.High,
+    });
+    const accuracy = location.coords.accuracy ?? 999;
+
+    if (accuracy > LOCATION_MAX_ACCURACY_METERS) {
+      Alert.alert(
+        t("report.validation.lowAccuracy.title"),
+        t("report.validation.lowAccuracy.message", {
+          accuracy: Math.round(accuracy),
+        })
+      );
+      return null;
+    }
+
+    return {
+      latitude: location.coords.latitude,
+      longitude: location.coords.longitude,
+      accuracyMeters: Math.round(accuracy),
+      source: "current_location",
+    };
+  };
+
+  const useCurrentLocationForIncident = async (): Promise<ReportLocationDraft | null> => {
+    if (loading || loadingLocation) return null;
+
+    try {
+      setLoadingLocation(true);
+      const currentLocation = await requestCurrentLocation();
+
+      if (!currentLocation) return null;
+
+      setReporterLocation(currentLocation);
+      setIncidentLocation(currentLocation);
+      return currentLocation;
+    } catch (error) {
+      Alert.alert(
+        t("report.error.send.title"),
+        error instanceof Error ? error.message : t("report.error.send.fallback")
+      );
+      return null;
+    } finally {
+      setLoadingLocation(false);
+    }
+  };
+
+  const updateManualIncidentLocation = (coordinate: Coordinate) => {
+    setIncidentLocation({
+      latitude: coordinate.latitude,
+      longitude: coordinate.longitude,
+      accuracyMeters: null,
+      source: "manual_pin",
     });
   };
 
@@ -176,6 +249,8 @@ export const useReportForm = () => {
     setTitle("");
     setDescription("");
     setPhotoUris([]);
+    setIncidentLocation(null);
+    setReporterLocation(null);
   };
 
   const validateForm = () => {
@@ -224,6 +299,18 @@ export const useReportForm = () => {
         return;
       }
 
+      const currentReporterLocation = await requestCurrentLocation();
+
+      if (!currentReporterLocation) return;
+
+      const selectedIncidentLocation = incidentLocation ?? currentReporterLocation;
+
+      setReporterLocation(currentReporterLocation);
+
+      if (!incidentLocation) {
+        setIncidentLocation(currentReporterLocation);
+      }
+
       const urgency = calculateIncidentUrgency({
         kind,
         impactAnswers,
@@ -236,35 +323,11 @@ export const useReportForm = () => {
         t,
       });
 
-      const permission = await Location.requestForegroundPermissionsAsync();
-      if (permission.status !== "granted") {
-        Alert.alert(
-          t("report.validation.locationPermission.title"),
-          t("report.validation.locationPermission.message")
-        );
-        return;
-      }
-
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-      const accuracy = location.coords.accuracy ?? 999;
-
-      if (accuracy > LOCATION_MAX_ACCURACY_METERS) {
-        Alert.alert(
-          t("report.validation.lowAccuracy.title"),
-          t("report.validation.lowAccuracy.message", {
-            accuracy: Math.round(accuracy),
-          })
-        );
-        return;
-      }
-
       const nearbyCandidates = await findNearbyActiveIncidentCandidates({
         category: kindOption.legacyCategory,
         subcategory: kindOption.legacySubcategory,
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
+        latitude: selectedIncidentLocation.latitude,
+        longitude: selectedIncidentLocation.longitude,
         radiusMeters: DUPLICATE_CHECK_RADIUS_METERS,
       });
 
@@ -307,9 +370,12 @@ export const useReportForm = () => {
         severity: urgency.severity,
         imageUri: uploadedImageUrls[0],
         imageUris: uploadedImageUrls,
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        locationAccuracyMeters: Math.round(accuracy),
+        latitude: selectedIncidentLocation.latitude,
+        longitude: selectedIncidentLocation.longitude,
+        locationSource: selectedIncidentLocation.source,
+        reportedFromLatitude: currentReporterLocation.latitude,
+        reportedFromLongitude: currentReporterLocation.longitude,
+        locationAccuracyMeters: currentReporterLocation.accuracyMeters,
         address: null,
         reportedBy: user.displayName || user.email || "Anonymous",
         reporterUid: user.uid,
@@ -351,7 +417,12 @@ export const useReportForm = () => {
     photoUris,
     setPhotoUris,
     loading,
+    loadingLocation,
+    incidentLocation,
+    reporterLocation,
     canSubmit,
+    useCurrentLocationForIncident,
+    updateManualIncidentLocation,
     takePhoto,
     pickFromGallery,
     removePhoto,
@@ -383,7 +454,7 @@ function buildReportDraft({
       : "No additional impact flags selected.";
   const description =
     cleanDescription ||
-    `${kindLabel} reported from the current location. ${impactSentence}`;
+    `${kindLabel} reported near the selected map pin. ${impactSentence}`;
 
   return {
     title,

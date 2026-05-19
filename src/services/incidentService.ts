@@ -54,6 +54,7 @@ import {
   IncidentType,
   IncidentUrgencyLevel,
   IncidentVerification,
+  ReportLocationSource,
   ModerationStatus,
   ProximityStatus,
   ResolveIncidentPayload,
@@ -103,6 +104,16 @@ const normalizeNullableNumber = (value: unknown): number | null => {
   }
 
   return value;
+};
+
+const normalizeReportLocationSource = (
+  value: unknown
+): ReportLocationSource => {
+  if (value === "manual_pin" || value === "current_location") {
+    return value;
+  }
+
+  return "current_location";
 };
 
 const normalizeAccuracyVoteType = (
@@ -490,6 +501,9 @@ const mapIncidentDocument = (
     locationAccuracyMeters: normalizeNullableNumber(
       data.locationAccuracyMeters
     ),
+    locationSource: normalizeReportLocationSource(data.locationSource),
+    reportedFromLatitude: normalizeNullableNumber(data.reportedFromLatitude),
+    reportedFromLongitude: normalizeNullableNumber(data.reportedFromLongitude),
 
     verificationStatus: normalizeVerificationStatus(data.verificationStatus),
     verificationCount: normalizeCount(data.verificationCount),
@@ -919,6 +933,26 @@ export const createIncidentReport = async (
       ? null
       : Math.max(0, Math.round(rawLocationAccuracyMeters));
 
+  const locationSource = normalizeReportLocationSource(payload.locationSource);
+  const reportedFromLatitude =
+    payload.reportedFromLatitude === undefined ||
+    payload.reportedFromLatitude === null
+      ? null
+      : normalizeLatitude(payload.reportedFromLatitude);
+  const reportedFromLongitude =
+    payload.reportedFromLongitude === undefined ||
+    payload.reportedFromLongitude === null
+      ? null
+      : normalizeLongitude(payload.reportedFromLongitude);
+
+  if (payload.reportedFromLatitude != null && reportedFromLatitude === null) {
+    throw new Error("Invalid reporter latitude.");
+  }
+
+  if (payload.reportedFromLongitude != null && reportedFromLongitude === null) {
+    throw new Error("Invalid reporter longitude.");
+  }
+
   if (!imageUri) {
     throw new Error("At least one report photo is required.");
   }
@@ -986,6 +1020,9 @@ export const createIncidentReport = async (
     reporterUid: normalizeNullableString(payload.reporterUid),
     reporterEmail: normalizeNullableString(payload.reporterEmail),
     locationAccuracyMeters,
+    locationSource,
+    reportedFromLatitude,
+    reportedFromLongitude,
 
     verificationStatus: "pending",
     verificationCount: 0,

@@ -85,6 +85,8 @@ export type IncidentImpactAnswers = Partial<
 
 export type IncidentUrgencyLevel = IncidentSeverity;
 
+export type ReportLocationSource = "current_location" | "manual_pin";
+
 export type VerificationStatus = "pending" | "verified" | "disputed";
 
 export type VerificationType = "valid" | "invalid" | "condition_update";
@@ -131,6 +133,11 @@ export type IncidentContentReportTargetType =
 export type Coordinate = {
   latitude: number;
   longitude: number;
+};
+
+export type ReportLocationDraft = Coordinate & {
+  accuracyMeters: number | null;
+  source: ReportLocationSource;
 };
 
 export type ProximityStatus =
@@ -184,6 +191,9 @@ export type IncidentReport = {
   reporterUid?: string | null;
   reporterEmail?: string | null;
   locationAccuracyMeters?: number | null;
+  locationSource?: ReportLocationSource | null;
+  reportedFromLatitude?: number | null;
+  reportedFromLongitude?: number | null;
   verificationStatus?: VerificationStatus;
   verificationCount?: number;
   disputeCount?: number;
@@ -279,6 +289,9 @@ export type CreateIncidentPayload = {
   reporterUid?: string | null;
   reporterEmail?: string | null;
   locationAccuracyMeters?: number | null;
+  locationSource?: ReportLocationSource;
+  reportedFromLatitude?: number | null;
+  reportedFromLongitude?: number | null;
 };
 
 export type CreateIncidentVerificationPayload = {

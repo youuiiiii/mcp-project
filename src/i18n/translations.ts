@@ -13,13 +13,22 @@ export const en = {
   "report.header.badge": "Community Report",
   "report.header.title": "Report Incident",
   "report.header.subtitle":
-    "Send a report from your current location. Before publishing, SIGAP checks for similar active incidents nearby.",
+    "Start from your current location, adjust the incident pin if needed, then SIGAP checks for similar active incidents nearby.",
   "report.submit.idle": "Submit Report",
   "report.submit.loading": "Sending...",
 
-  "report.location.title": "Automatic report location",
+  "report.location.title": "Incident location",
   "report.location.description":
-    "When you submit, SIGAP uses your current location. Make sure you are near the incident and location permission is enabled.",
+    "SIGAP starts with your current location. If the incident happened somewhere else nearby, adjust the pin before submitting.",
+  "report.location.currentPin": "Using your current location as the incident pin.",
+  "report.location.manualPin": "Using an adjusted incident pin.",
+  "report.location.notSet": "No pin selected yet. SIGAP will use your current location when you submit.",
+  "report.location.accuracy": "GPS accuracy around {accuracy} m",
+  "report.location.useCurrent": "Use Current Location",
+  "report.location.adjustPin": "Adjust Pin",
+  "report.location.picker.title": "Adjust Incident Pin",
+  "report.location.picker.subtitle": "Tap the map or drag the marker to where the incident happened.",
+  "report.location.picker.save": "Save Pin",
 
   "report.category.title": "1. Category",
   "report.category.subtitle": "Choose the main type of incident.",
@@ -252,9 +261,9 @@ export const en = {
   "report.impact.stillHappening.label": "It is still happening now",
   "report.impact.stillHappening.helper":
     "Turn this off if the situation already looks over or cleared.",
-  "report.impact.locationIsExact.label": "The location is exact",
+  "report.impact.locationIsExact.label": "I am at or very close to the incident",
   "report.impact.locationIsExact.helper":
-    "Leave this on if you are at or very close to the incident.",
+    "Turn this on only if the selected pin really matches the incident location.",
 
   "incident.severity.low.label": "Low",
   "incident.severity.low.description":
@@ -285,13 +294,22 @@ export const id: TranslationResources = {
   "report.header.badge": "Laporan Komunitas",
   "report.header.title": "Laporkan Insiden",
   "report.header.subtitle":
-    "Kirim laporan dari lokasi Anda saat ini. Sebelum diterbitkan, SIGAP memeriksa insiden aktif serupa di sekitar.",
+    "Mulai dari lokasi Anda saat ini, sesuaikan pin insiden jika perlu, lalu SIGAP memeriksa insiden aktif serupa di sekitar.",
   "report.submit.idle": "Kirim Laporan",
   "report.submit.loading": "Mengirim...",
 
-  "report.location.title": "Lokasi laporan otomatis",
+  "report.location.title": "Lokasi insiden",
   "report.location.description":
-    "Saat Anda mengirim laporan, SIGAP memakai lokasi Anda saat ini. Pastikan Anda berada dekat insiden dan izin lokasi aktif.",
+    "SIGAP memulai dari lokasi Anda saat ini. Jika insiden terjadi di tempat lain yang masih dekat, sesuaikan pin sebelum mengirim.",
+  "report.location.currentPin": "Memakai lokasi Anda saat ini sebagai pin insiden.",
+  "report.location.manualPin": "Memakai pin insiden yang sudah disesuaikan.",
+  "report.location.notSet": "Belum ada pin dipilih. SIGAP akan memakai lokasi Anda saat mengirim.",
+  "report.location.accuracy": "Akurasi GPS sekitar {accuracy} m",
+  "report.location.useCurrent": "Pakai Lokasi Saat Ini",
+  "report.location.adjustPin": "Sesuaikan Pin",
+  "report.location.picker.title": "Sesuaikan Pin Insiden",
+  "report.location.picker.subtitle": "Ketuk peta atau geser marker ke lokasi insiden terjadi.",
+  "report.location.picker.save": "Simpan Pin",
 
   "report.category.title": "1. Kategori",
   "report.category.subtitle": "Pilih jenis utama insiden.",
@@ -525,9 +543,9 @@ export const id: TranslationResources = {
   "report.impact.stillHappening.label": "Masih terjadi sekarang",
   "report.impact.stillHappening.helper":
     "Matikan jika situasi tampaknya sudah selesai atau bersih.",
-  "report.impact.locationIsExact.label": "Lokasi sudah tepat",
+  "report.impact.locationIsExact.label": "Saya berada di atau sangat dekat dengan insiden",
   "report.impact.locationIsExact.helper":
-    "Biarkan aktif jika Anda berada di atau sangat dekat dengan insiden.",
+    "Aktifkan hanya jika pin yang dipilih benar-benar sesuai dengan lokasi insiden.",
 
   "incident.severity.low.label": "Rendah",
   "incident.severity.low.description":

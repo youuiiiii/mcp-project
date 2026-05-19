@@ -42,7 +42,7 @@ export const DEFAULT_IMPACT_ANSWERS: IncidentImpactAnswers = {
   access_blocked: false,
   needs_emergency_help: false,
   still_happening: true,
-  location_is_exact: true,
+  location_is_exact: false,
 };
 
 export const REPORT_KIND_OPTIONS: ReportKindOption[] = [
