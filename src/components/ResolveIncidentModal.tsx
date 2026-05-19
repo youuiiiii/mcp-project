@@ -32,15 +32,23 @@ export default function ResolveIncidentModal({
   onClose,
   onSuccess,
 }: ResolveIncidentModalProps) {
-  const { user } = useAuth();
+  const { user, isModerator, roleLoading } = useAuth();
 
   const [resolutionNote, setResolutionNote] = useState("");
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const canSubmit =
-    Boolean(incident && user && imageUri && resolutionNote.trim().length >= 10) &&
-    !submitting;
+  const actorKey = user?.uid ?? null;
+
+  const canSubmit = Boolean(
+    incident &&
+      user &&
+      actorKey &&
+      isModerator &&
+      !roleLoading &&
+      imageUri &&
+      resolutionNote.trim().length >= 10
+  ) && !submitting;
 
   const resetForm = () => {
     setResolutionNote("");
@@ -139,8 +147,24 @@ export default function ResolveIncidentModal({
   };
 
   const validateForm = () => {
-    if (!user) {
+    if (!user || !actorKey) {
       Alert.alert("Login Required", "Please log in first.");
+      return false;
+    }
+
+    if (roleLoading) {
+      Alert.alert(
+        "Checking Access",
+        "Wait until your moderator access has finished loading."
+      );
+      return false;
+    }
+
+    if (!isModerator) {
+      Alert.alert(
+        "Moderator Access Required",
+        "Only moderators can mark a report as resolved. Nearby users can use On-site Check instead."
+      );
       return false;
     }
 
@@ -180,7 +204,12 @@ export default function ResolveIncidentModal({
 
   const handleSubmit = async () => {
     try {
-      if (!validateForm() || !incident || !imageUri) {
+      if (!incident || !imageUri || !actorKey || resolutionNote.trim().length < 10) {
+        validateForm();
+        return;
+      }
+
+      if (!validateForm()) {
         return;
       }
 
@@ -196,6 +225,7 @@ export default function ResolveIncidentModal({
         resolvedImageUri: uploadedImageUrl,
         resolutionNote: resolutionNote.trim(),
         resolvedBy: user?.displayName ?? user?.email ?? user?.uid,
+        resolvedByActorKey: actorKey,
       });
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
@@ -231,8 +261,8 @@ export default function ResolveIncidentModal({
   return (
     <IncidentModalShell
       visible={visible}
-      title="Resolution Validation"
-      subtitle="Upload a fresh image so the resolved status can be trusted."
+      title="Moderator Resolution"
+      subtitle="Upload evidence and notes before closing this report."
       submitting={submitting}
       onClose={handleClose}
       footer={

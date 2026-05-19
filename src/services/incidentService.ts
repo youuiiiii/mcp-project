@@ -6,9 +6,11 @@ import {
   DocumentData,
   getDocs,
   increment,
+  limit as limitQuery,
   onSnapshot,
   orderBy,
   query,
+  QueryConstraint,
   QueryDocumentSnapshot,
   runTransaction,
   serverTimestamp,
@@ -37,7 +39,6 @@ import {
   CreateIncidentPayload,
   CreateIncidentReplyPayload,
   CreateIncidentVerificationPayload,
-  CreateSOSLogPayload,
   CommunityUpdateType,
   IncidentAccuracyVote,
   IncidentCategory,
@@ -56,7 +57,6 @@ import {
   ModerationStatus,
   ProximityStatus,
   ResolveIncidentPayload,
-  SOSLog,
   TrustStatus,
   VerificationStatus,
   VerificationType,
@@ -64,7 +64,6 @@ import {
 import { getDistanceInMeters } from "../utils/geo";
 
 const REPORTS_COLLECTION = "reports";
-const SOS_LOGS_COLLECTION = "sos_logs";
 const VERIFICATIONS_COLLECTION = "verifications";
 const REPLIES_COLLECTION = "replies";
 const INCIDENT_CONTENT_REPORTS_COLLECTION = "incident_content_reports";
@@ -153,6 +152,12 @@ const normalizeCommunityUpdateType = (value: unknown): CommunityUpdateType => {
   }
 
   return "additional_info";
+};
+
+type SubscribeToIncidentsOptions = {
+  category?: IncidentCategory;
+  limitCount?: number;
+  status?: IncidentStatus;
 };
 
 const normalizeIncidentDomain = (value: unknown): IncidentDomain | null => {
@@ -509,6 +514,7 @@ const mapIncidentDocument = (
     resolvedImageUri: normalizeNullableString(data.resolvedImageUri),
     resolutionNote: normalizeNullableString(data.resolutionNote),
     resolvedBy: normalizeNullableString(data.resolvedBy),
+    resolvedByActorKey: normalizeNullableString(data.resolvedByActorKey),
     resolvedAt: toDate(data.resolvedAt),
 
     trustStatus: normalizeTrustStatus(data.trustStatus),
@@ -562,25 +568,6 @@ const mapReplyDocument = (
     createdAt: toDate(data.createdAt),
   };
 };
-const mapSOSDocument = (
-  snapshot: QueryDocumentSnapshot<DocumentData>
-): SOSLog => {
-  const data = snapshot.data();
-
-  return {
-    id: snapshot.id,
-    latitude: normalizeLatitude(data.latitude) ?? 0,
-    longitude: normalizeLongitude(data.longitude) ?? 0,
-    nearestIncidentId: normalizeNullableString(data.nearestIncidentId),
-    nearestIncidentDistance:
-      typeof data.nearestIncidentDistance === "number" &&
-      !Number.isNaN(data.nearestIncidentDistance)
-        ? Math.max(0, data.nearestIncidentDistance)
-        : null,
-    createdAt: toDate(data.createdAt),
-  };
-};
-
 const mapIncidentContentReportDocument = (
   snapshot: QueryDocumentSnapshot<DocumentData>
 ): IncidentContentReport => {
@@ -640,12 +627,30 @@ const mapAccuracyVoteDocument = (
 
 export const subscribeToIncidents = (
   onSuccess: (reports: IncidentReport[]) => void,
-  onError?: (error: Error) => void
+  onError?: (error: Error) => void,
+  options: SubscribeToIncidentsOptions = {}
 ) => {
+  const constraints: QueryConstraint[] = [
+    where("moderationStatus", "==", "visible"),
+  ];
+
+  if (options.status) {
+    constraints.push(where("status", "==", options.status));
+  }
+
+  if (options.category) {
+    constraints.push(where("category", "==", options.category));
+  }
+
+  constraints.push(orderBy("createdAt", "desc"));
+
+  if (typeof options.limitCount === "number" && options.limitCount > 0) {
+    constraints.push(limitQuery(Math.floor(options.limitCount)));
+  }
+
   const reportsQuery = query(
     collection(db, REPORTS_COLLECTION),
-    where("moderationStatus", "==", "visible"),
-    orderBy("createdAt", "desc")
+    ...constraints
   );
 
   return onSnapshot(
@@ -762,25 +767,50 @@ export const createIncidentVerification = async (
     throw new Error("Verification notes must be at least 8 characters.");
   }
 
+  const actorKey = payload.actorKey.trim();
+  const isCountedVerification =
+    payload.verificationType === "valid" ||
+    payload.verificationType === "invalid";
   const reportRef = doc(db, REPORTS_COLLECTION, payload.reportId);
-
-  const verificationRef = doc(
-    collection(
-      db,
-      REPORTS_COLLECTION,
-      payload.reportId,
-      VERIFICATIONS_COLLECTION
-    )
+  const verificationsCollectionRef = collection(
+    db,
+    REPORTS_COLLECTION,
+    payload.reportId,
+    VERIFICATIONS_COLLECTION
   );
+
+  const verificationRef = isCountedVerification
+    ? doc(verificationsCollectionRef, actorKey)
+    : doc(verificationsCollectionRef);
 
   await runTransaction(db, async (transaction) => {
     const reportSnapshot = await transaction.get(reportRef);
+    const existingVerificationSnapshot = isCountedVerification
+      ? await transaction.get(verificationRef)
+      : null;
 
     if (!reportSnapshot.exists()) {
       throw new Error("Incident not found.");
     }
 
     const reportData = reportSnapshot.data();
+    const reporterUid = normalizeNullableString(reportData.reporterUid);
+    const alreadyVerified =
+      normalizeStringArray(reportData.verifiedBy).includes(actorKey) ||
+      normalizeStringArray(reportData.disputedBy).includes(actorKey);
+
+    if (isCountedVerification && reporterUid === actorKey) {
+      throw new Error(
+        "Your original report is already counted. Ask another nearby user to confirm it."
+      );
+    }
+
+    if (
+      isCountedVerification &&
+      (existingVerificationSnapshot?.exists() || alreadyVerified)
+    ) {
+      throw new Error("You have already verified this incident.");
+    }
 
     const currentVerificationCount = normalizeCount(
       reportData.verificationCount
@@ -812,7 +842,7 @@ export const createIncidentVerification = async (
       longitude: payload.longitude,
       userName: normalizeNullableString(payload.userName) ?? "Anonymous",
       userEmail: normalizeNullableString(payload.userEmail),
-      actorKey: payload.actorKey,
+      actorKey,
       createdAt: serverTimestamp(),
     });
 
@@ -826,11 +856,11 @@ export const createIncidentVerification = async (
     };
 
     if (payload.verificationType === "valid") {
-      updateData.verifiedBy = arrayUnion(payload.actorKey);
+      updateData.verifiedBy = arrayUnion(actorKey);
     }
 
     if (payload.verificationType === "invalid") {
-      updateData.disputedBy = arrayUnion(payload.actorKey);
+      updateData.disputedBy = arrayUnion(actorKey);
     }
 
     transaction.update(reportRef, updateData);
@@ -984,6 +1014,7 @@ export const createIncidentReport = async (
     resolvedImageUri: null,
     resolutionNote: null,
     resolvedBy: null,
+    resolvedByActorKey: null,
     resolvedAt: null,
   });
 
@@ -1234,6 +1265,10 @@ export const resolveIncidentReport = async (
     throw new Error("Resolution notes must be at least 10 characters.");
   }
 
+  if (!payload.resolvedByActorKey.trim()) {
+    throw new Error("Invalid resolver.");
+  }
+
   const reportRef = doc(db, REPORTS_COLLECTION, payload.reportId);
 
   await updateDoc(reportRef, {
@@ -1241,6 +1276,7 @@ export const resolveIncidentReport = async (
     resolvedImageUri: payload.resolvedImageUri,
     resolutionNote: payload.resolutionNote.trim(),
     resolvedBy: normalizeNullableString(payload.resolvedBy) ?? "Anonymous",
+    resolvedByActorKey: payload.resolvedByActorKey.trim(),
     resolvedAt: serverTimestamp(),
     latestActivityAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -1261,56 +1297,11 @@ export const reopenIncidentReport = async (
     resolvedImageUri: null,
     resolutionNote: null,
     resolvedBy: null,
+    resolvedByActorKey: null,
     resolvedAt: null,
     latestActivityAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
-};
-
-export const createSOSLog = async (
-  payload: CreateSOSLogPayload
-): Promise<string> => {
-  const latitude = normalizeLatitude(payload.latitude);
-  const longitude = normalizeLongitude(payload.longitude);
-
-  if (latitude === null || longitude === null) {
-    throw new Error("Invalid SOS location.");
-  }
-
-  const docRef = await addDoc(collection(db, SOS_LOGS_COLLECTION), {
-    latitude,
-    longitude,
-    nearestIncidentId: payload.nearestIncidentId ?? null,
-    nearestIncidentDistance:
-      typeof payload.nearestIncidentDistance === "number" &&
-      !Number.isNaN(payload.nearestIncidentDistance)
-        ? Math.max(0, payload.nearestIncidentDistance)
-        : null,
-    createdAt: serverTimestamp(),
-  });
-
-  return docRef.id;
-};
-
-export const subscribeToSOSLogs = (
-  onSuccess: (logs: SOSLog[]) => void,
-  onError?: (error: Error) => void
-) => {
-  const sosQuery = query(
-    collection(db, SOS_LOGS_COLLECTION),
-    orderBy("createdAt", "desc")
-  );
-
-  return onSnapshot(
-    sosQuery,
-    (snapshot) => {
-      const logs = snapshot.docs.map(mapSOSDocument);
-      onSuccess(logs);
-    },
-    (error) => {
-      onError?.(error);
-    }
-  );
 };
 
 export const submitIncidentAccuracyVote = async (
@@ -1343,6 +1334,14 @@ export const submitIncidentAccuracyVote = async (
 
     if (!reportSnapshot.exists()) {
       throw new Error("Incident not found.");
+    }
+
+    const reporterUid = normalizeNullableString(reportSnapshot.data().reporterUid);
+
+    if (reporterUid === payload.actorKey) {
+      throw new Error(
+        "Your original report is already counted. Ask another nearby user to confirm it."
+      );
     }
 
     const previousVoteType = voteSnapshot.exists()

@@ -1,4 +1,3 @@
-export const CLOUDINARY_CONFIG = {
-  cloudName: "dk4roidvk",
-  uploadPreset: "incident_ready_unsigned",
-};
+import { cloudinaryConfig } from "../config/env";
+
+export const CLOUDINARY_CONFIG = cloudinaryConfig;

@@ -15,10 +15,19 @@ import {
   useState,
 } from "react";
 import { auth } from "../services/firebase";
+import {
+  getUserAccess,
+  type UserRole,
+  type UserRoleSource,
+} from "../services/userRoleService";
 
 type AuthContextValue = {
   user: User | null;
   loading: boolean;
+  role: UserRole;
+  roleSource: UserRoleSource;
+  roleLoading: boolean;
+  isModerator: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -33,14 +42,60 @@ type AuthProviderProps = {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState<UserRole>("reporter");
+  const [roleSource, setRoleSource] = useState<UserRoleSource>("default");
+  const [roleLoading, setRoleLoading] = useState(false);
+  const [isModerator, setIsModerator] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
+
+      if (!currentUser) {
+        setRole("reporter");
+        setRoleSource("default");
+        setIsModerator(false);
+        setRoleLoading(false);
+        return;
+      }
+
+      setRoleLoading(true);
+
+      getUserAccess(currentUser)
+        .then((access) => {
+          if (cancelled) {
+            return;
+          }
+
+          setRole(access.role);
+          setRoleSource(access.source);
+          setIsModerator(access.isModerator);
+        })
+        .catch((error) => {
+          console.error("Role lookup error:", error);
+
+          if (cancelled) {
+            return;
+          }
+
+          setRole("reporter");
+          setRoleSource("default");
+          setIsModerator(false);
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setRoleLoading(false);
+          }
+        });
     });
 
-    return unsubscribe;
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -70,11 +125,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     () => ({
       user,
       loading,
+      role,
+      roleSource,
+      roleLoading,
+      isModerator,
       login,
       register,
       logout,
     }),
-    [user, loading]
+    [user, loading, role, roleSource, roleLoading, isModerator]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

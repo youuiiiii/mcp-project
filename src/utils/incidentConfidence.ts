@@ -97,7 +97,7 @@ const getConfidencePresentation = (
   if (freshnessState === "stale") {
     return {
       level: "stale",
-      label: "Butuh Update",
+      label: "Needs Update",
       shortLabel: "Stale",
       description:
         "This report has not been updated recently and needs a fresh condition check.",
@@ -212,7 +212,7 @@ export const getIncidentConfidenceMeta = (
         value: String(incident.conditionUpdateCount ?? 0),
       },
       {
-        label: "Accurate",
+        label: "Still there",
         value: String(incident.accurateCount ?? 0),
       },
     ],

@@ -208,6 +208,7 @@ export type IncidentReport = {
   resolvedImageUri?: string | null;
   resolutionNote?: string | null;
   resolvedBy?: string | null;
+  resolvedByActorKey?: string | null;
   resolvedAt?: Date;
 };
 
@@ -321,6 +322,7 @@ export type ResolveIncidentPayload = {
   resolvedImageUri: string;
   resolutionNote: string;
   resolvedBy?: string | null;
+  resolvedByActorKey: string;
 };
 
 export type SOSLog = {
@@ -329,6 +331,9 @@ export type SOSLog = {
   longitude: number;
   nearestIncidentId?: string | null;
   nearestIncidentDistance?: number | null;
+  userId?: string | null;
+  userName?: string | null;
+  userEmail?: string | null;
   createdAt?: Date;
 };
 
@@ -337,4 +342,7 @@ export type CreateSOSLogPayload = {
   longitude: number;
   nearestIncidentId?: string | null;
   nearestIncidentDistance?: number | null;
+  userId: string;
+  userName?: string | null;
+  userEmail?: string | null;
 };

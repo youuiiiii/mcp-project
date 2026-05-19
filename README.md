@@ -39,6 +39,20 @@ npm run lint
 npm run typecheck
 ```
 
+## Environment
+
+Copy `.env.example` to a local `.env` file and fill in the Expo public
+Firebase and Cloudinary values before running the app. Local `.env` files are
+ignored so development and production projects can use different Firebase and
+Cloudinary resources.
+
+Moderator UI access is resolved from Firebase custom claims first
+(`role: "moderator" | "admin"` or `moderator: true`), then from
+`user_roles/{uid}` in Firestore, then from optional
+`EXPO_PUBLIC_MODERATOR_EMAILS` for local/demo access. Deploy `firestore.rules`
+with Firebase CLI so moderation writes are enforced server-side, not only
+hidden in the frontend.
+
 ## Code Standards
 
 - Keep route files in `app/` thin; put business logic in `src/features`.

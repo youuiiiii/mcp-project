@@ -7,7 +7,7 @@ import AppCard from "../../components/ui/AppCard";
 import AppScreen from "../../components/ui/AppScreen";
 import LoadingState from "../../components/ui/LoadingState";
 import SectionHeader from "../../components/ui/SectionHeader";
-import { isModeratorEmail } from "../../constants/moderators";
+import { useAuth } from "../../contexts/AuthContext";
 import { colors } from "../../theme/colors";
 import { radius, shadow, spacing } from "../../theme/layout";
 import { typography } from "../../theme/typography";
@@ -26,13 +26,14 @@ export default function ProfileScreen() {
   } = useProfileScreen();
 
   const router = useRouter();
-  const isModerator = isModeratorEmail(userEmail);
+  const { isModerator, roleLoading } = useAuth();
+  const roleLabel = isModerator ? "Moderator" : "Community Reporter";
 
   const openModeration = () => {
     router.push("/moderation" as Href);
   };
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
       <AppScreen scroll={false} contentContainerStyle={styles.loadingContainer}>
         <LoadingState message="Loading profile..." />
@@ -62,7 +63,7 @@ export default function ProfileScreen() {
               size={14}
               color={colors.info}
             />
-            <Text style={styles.roleText}>Community Reporter</Text>
+            <Text style={styles.roleText}>{roleLabel}</Text>
           </View>
         </View>
       </AppCard>
@@ -76,7 +77,7 @@ export default function ProfileScreen() {
 
       <View style={styles.section}>
         <SectionHeader
-          title="Kontribusi"
+          title="Contributions"
           subtitle="Report summary for this account."
         />
 

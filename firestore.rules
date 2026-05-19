@@ -1,0 +1,319 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isBootstrapAdmin() {
+      return signedIn()
+        && request.auth.token.email == "admin@gmail.com";
+    }
+
+    function hasAdminClaim() {
+      return signedIn()
+        && (
+          request.auth.token.admin == true
+          || request.auth.token.role == "admin"
+        );
+    }
+
+    function hasModeratorClaim() {
+      return signedIn()
+        && (
+          request.auth.token.moderator == true
+          || request.auth.token.role in ["moderator", "admin"]
+        );
+    }
+
+    function hasRoleDoc() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/user_roles/$(request.auth.uid));
+    }
+
+    function roleDoc() {
+      return get(/databases/$(database)/documents/user_roles/$(request.auth.uid));
+    }
+
+    function isAdmin() {
+      return hasAdminClaim()
+        || isBootstrapAdmin()
+        || (
+          hasRoleDoc()
+          && roleDoc().data.role == "admin"
+        );
+    }
+
+    function isModerator() {
+      return isAdmin()
+        || hasModeratorClaim()
+        || (
+          hasRoleDoc()
+          && (
+            roleDoc().data.isModerator == true
+            || roleDoc().data.role in ["moderator", "admin"]
+          )
+        );
+    }
+
+    function changedOnly(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    function isReportOwner(reportId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/reports/$(reportId))
+        && get(/databases/$(database)/documents/reports/$(reportId)).data.reporterUid == request.auth.uid;
+    }
+
+    function visibleReport(reportId) {
+      return exists(/databases/$(database)/documents/reports/$(reportId))
+        && get(/databases/$(database)/documents/reports/$(reportId)).data.moderationStatus == "visible";
+    }
+
+    function canReadReport(reportId) {
+      return signedIn()
+        && (
+          visibleReport(reportId)
+          || isModerator()
+        );
+    }
+
+    function validRoleWrite() {
+      return request.resource.data.keys().hasOnly([
+        "role",
+        "isModerator",
+        "email",
+        "createdAt",
+        "updatedAt"
+      ])
+      && request.resource.data.role in ["reporter", "moderator", "admin"]
+      && request.resource.data.isModerator is bool;
+    }
+
+    function validReportCreate() {
+      return signedIn()
+        && request.resource.data.reporterUid == request.auth.uid
+        && request.resource.data.status == "active"
+        && request.resource.data.moderationStatus == "visible"
+        && request.resource.data.verificationStatus == "pending"
+        && request.resource.data.verificationCount == 0
+        && request.resource.data.disputeCount == 0
+        && request.resource.data.evidenceCount == 0
+        && request.resource.data.replyCount == 0
+        && request.resource.data.accurateCount == 0
+        && request.resource.data.inaccurateCount == 0
+        && request.resource.data.verifiedBy is list
+        && request.resource.data.disputedBy is list
+        && request.resource.data.title is string
+        && request.resource.data.title.size() >= 5
+        && request.resource.data.description is string
+        && request.resource.data.description.size() >= 10
+        && request.resource.data.latitude is number
+        && request.resource.data.longitude is number
+        && request.resource.data.imageUri is string
+        && request.resource.data.imageUri.size() > 0
+        && request.resource.data.imageUris is list
+        && request.resource.data.imageUris.size() >= 1
+        && request.resource.data.imageUris.size() <= 4;
+    }
+
+    function validCommunityReportUpdate() {
+      return signedIn()
+        && resource.data.moderationStatus == "visible"
+        && request.resource.data.moderationStatus == resource.data.moderationStatus
+        && changedOnly([
+          "verificationStatus",
+          "verificationCount",
+          "disputeCount",
+          "evidenceCount",
+          "replyCount",
+          "accurateCount",
+          "inaccurateCount",
+          "verifiedBy",
+          "disputedBy",
+          "latestAccuracyVoteAt",
+          "latestActivityAt",
+          "latestCommunityUpdateType",
+          "latestCommunityUpdateAt",
+          "conditionUpdateCount",
+          "updatedAt"
+        ]);
+    }
+
+    function validModerationUpdate() {
+      return isModerator()
+        && changedOnly([
+          "moderationStatus",
+          "moderationReason",
+          "moderatedBy",
+          "moderatedAt",
+          "updatedAt"
+        ])
+        && request.resource.data.moderationStatus in [
+          "visible",
+          "under_review",
+          "hidden"
+        ];
+    }
+
+    function validResolveUpdate() {
+      return isModerator()
+        && changedOnly([
+          "status",
+          "resolvedImageUri",
+          "resolutionNote",
+          "resolvedBy",
+          "resolvedByActorKey",
+          "resolvedAt",
+          "latestActivityAt",
+          "updatedAt"
+        ])
+        && request.resource.data.status == "resolved"
+        && request.resource.data.resolvedByActorKey == request.auth.uid;
+    }
+
+    function validReopenUpdate() {
+      return isModerator()
+        && changedOnly([
+          "status",
+          "resolvedImageUri",
+          "resolutionNote",
+          "resolvedBy",
+          "resolvedByActorKey",
+          "resolvedAt",
+          "latestActivityAt",
+          "updatedAt"
+        ])
+        && request.resource.data.status == "active";
+    }
+
+    match /user_roles/{userId} {
+      allow get: if signedIn() && request.auth.uid == userId;
+      allow get, list: if isAdmin();
+      allow create, update: if isAdmin() && validRoleWrite();
+      allow delete: if isAdmin();
+    }
+
+    match /reports/{reportId} {
+      allow read: if signedIn()
+        && (
+          resource.data.moderationStatus == "visible"
+          || isModerator()
+        );
+
+      allow create: if validReportCreate();
+
+      allow update: if validCommunityReportUpdate()
+        || validModerationUpdate()
+        || validResolveUpdate()
+        || validReopenUpdate();
+
+      allow delete: if false;
+
+      match /verifications/{verificationId} {
+        allow read: if canReadReport(reportId);
+
+        allow create: if signedIn()
+          && canReadReport(reportId)
+          && request.resource.data.actorKey == request.auth.uid
+          && request.resource.data.imageUri is string
+          && request.resource.data.imageUri.size() > 0
+          && request.resource.data.note is string
+          && request.resource.data.note.size() >= 8
+          && request.resource.data.verificationType in [
+            "valid",
+            "invalid",
+            "condition_update"
+          ]
+          && (
+            (
+              request.resource.data.verificationType in ["valid", "invalid"]
+              && verificationId == request.auth.uid
+              && !isReportOwner(reportId)
+            )
+            ||
+            request.resource.data.verificationType == "condition_update"
+          );
+
+        allow update, delete: if false;
+      }
+
+      match /replies/{replyId} {
+        allow read: if canReadReport(reportId)
+          && (
+            resource.data.moderationStatus == "visible"
+            || isModerator()
+          );
+
+        allow create: if signedIn()
+          && canReadReport(reportId)
+          && request.resource.data.actorKey == request.auth.uid
+          && request.resource.data.moderationStatus == "visible"
+          && request.resource.data.message is string
+          && request.resource.data.message.size() >= 3;
+
+        allow update, delete: if isModerator();
+      }
+
+      match /accuracy_votes/{voteId} {
+        allow read: if canReadReport(reportId);
+
+        allow create: if signedIn()
+          && canReadReport(reportId)
+          && !isReportOwner(reportId)
+          && voteId == request.auth.uid
+          && request.resource.data.actorKey == request.auth.uid
+          && request.resource.data.voteType in ["accurate", "inaccurate"]
+          && request.resource.data.proximityStatus == "near_incident";
+
+        allow update: if signedIn()
+          && canReadReport(reportId)
+          && !isReportOwner(reportId)
+          && voteId == request.auth.uid
+          && resource.data.actorKey == request.auth.uid
+          && request.resource.data.actorKey == request.auth.uid
+          && request.resource.data.voteType in ["accurate", "inaccurate"]
+          && request.resource.data.proximityStatus == "near_incident";
+
+        allow delete: if false;
+      }
+    }
+
+    match /incident_content_reports/{contentReportId} {
+      allow create: if signedIn()
+        && request.resource.data.actorKey == request.auth.uid
+        && request.resource.data.status == "open"
+        && request.resource.data.targetType in [
+          "incident_report",
+          "incident_reply"
+        ];
+
+      allow read: if isModerator();
+
+      allow update: if isModerator()
+        && changedOnly([
+          "status",
+          "reviewedBy",
+          "reviewedAt"
+        ])
+        && request.resource.data.status in ["reviewed", "dismissed"];
+
+      allow delete: if false;
+    }
+
+    match /sos_logs/{sosLogId} {
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid;
+
+      allow read: if isModerator();
+
+      allow update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

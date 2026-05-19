@@ -31,8 +31,11 @@ export default function IncidentThreadModal({
   visible,
   incident,
   onClose,
+  showActions = true,
+  onOpenVerify,
+  onOpenResolve,
 }: IncidentThreadModalProps) {
-  const { user } = useAuth();
+  const { user, isModerator } = useAuth();
 
   const thread = useIncidentThread({
     visible,
@@ -73,6 +76,24 @@ export default function IncidentThreadModal({
     setReportModalVisible(false);
     setSelectedReason(null);
     setReportNote("");
+  };
+
+  const openVerifyModal = () => {
+    if (!incident || !onOpenVerify) {
+      return;
+    }
+
+    onOpenVerify(incident);
+    thread.closeThread();
+  };
+
+  const openResolveModal = () => {
+    if (!incident || !onOpenResolve) {
+      return;
+    }
+
+    onOpenResolve(incident);
+    thread.closeThread();
   };
 
   const submitContentReport = async () => {
@@ -141,6 +162,11 @@ export default function IncidentThreadModal({
         <IncidentOverviewCard
           incident={incident}
           onReportContent={openReportContentModal}
+          showActions={showActions}
+          onOpenVerify={onOpenVerify ? openVerifyModal : undefined}
+          onOpenResolve={
+            isModerator && onOpenResolve ? openResolveModal : undefined
+          }
         />
 
         <IncidentTimeline
@@ -153,6 +179,11 @@ export default function IncidentThreadModal({
           accurateCount={thread.accuracySummary.accurateCount}
           inaccurateCount={thread.accuracySummary.inaccurateCount}
           currentUserVote={thread.accuracySummary.currentUserVote}
+          disabledReason={
+            thread.isOwnIncident
+              ? "Your original report is already counted. Nearby users can confirm whether it is still there."
+              : null
+          }
           label={thread.accuracySummary.label}
           tone={thread.accuracySummary.tone}
           submitting={thread.accuracySubmitting}
@@ -169,12 +200,9 @@ export default function IncidentThreadModal({
           replyText={thread.replyText}
           replyImageUri={thread.replyImageUri}
           replyingTo={thread.replyingTo}
-          selectedUpdateType={thread.selectedUpdateType}
           replySubmitting={thread.replySubmitting}
           replyIsValid={thread.replyIsValid}
-          repliesCount={thread.replies.length}
           onChangeReplyText={thread.setReplyText}
-          onChangeUpdateType={thread.setSelectedUpdateType}
           onTakePhoto={thread.takeReplyPhoto}
           onPickImage={thread.pickReplyImage}
           onRemoveImage={thread.removeReplyImage}

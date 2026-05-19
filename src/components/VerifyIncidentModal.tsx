@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
 import { useEffect, useMemo, useState } from "react";
 import { Alert, StyleSheet, Text, TextInput, View } from "react-native";
 
@@ -34,7 +35,7 @@ type AppIconName = keyof typeof Ionicons.glyphMap;
 type VerifyIncidentModalProps = {
   visible: boolean;
   incident: IncidentReport | null;
-  userLocation: Coordinate | null;
+  userLocation?: Coordinate | null;
   onClose: () => void;
   onSuccess?: () => void;
 };
@@ -261,7 +262,32 @@ export default function VerifyIncidentModal({
     }
   };
 
-  const validateForm = () => {
+  const getVerificationLocation = async (): Promise<Coordinate | null> => {
+    if (userLocation) {
+      return userLocation;
+    }
+
+    const permission = await Location.requestForegroundPermissionsAsync();
+
+    if (permission.status !== "granted") {
+      Alert.alert(
+        "Location Permission Needed",
+        "Allow location access so the app can confirm you are near the incident."
+      );
+      return null;
+    }
+
+    const currentLocation = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+    });
+
+    return {
+      latitude: currentLocation.coords.latitude,
+      longitude: currentLocation.coords.longitude,
+    };
+  };
+
+  const validateForm = (currentLocation: Coordinate | null) => {
     if (!user || !actorKey) {
       Alert.alert("Login Required", "Please log in to send an update.");
       return false;
@@ -269,29 +295,6 @@ export default function VerifyIncidentModal({
 
     if (!incident) {
       Alert.alert("Invalid Incident", "Incident data was not found.");
-      return false;
-    }
-
-    if (!userLocation) {
-      Alert.alert(
-        "Location Unavailable",
-        "The app has not received your realtime location yet."
-      );
-      return false;
-    }
-
-    const distance = getDistanceInMeters(userLocation, {
-      latitude: incident.latitude,
-      longitude: incident.longitude,
-    });
-
-    if (distance > VERIFICATION_DISTANCE_METERS) {
-      Alert.alert(
-        "Too Far From Incident",
-        `You can only send verification or updates when you are within ${VERIFICATION_DISTANCE_METERS} meters of the incident location.\n\nYour current distance is about ${formatDistance(
-          distance
-        )}.`
-      );
       return false;
     }
 
@@ -353,18 +356,42 @@ export default function VerifyIncidentModal({
       return false;
     }
 
+    if (!currentLocation) {
+      Alert.alert(
+        "Location Unavailable",
+        "The app has not received your realtime location yet."
+      );
+      return false;
+    }
+
+    const distance = getDistanceInMeters(currentLocation, {
+      latitude: incident.latitude,
+      longitude: incident.longitude,
+    });
+
+    if (distance > VERIFICATION_DISTANCE_METERS) {
+      Alert.alert(
+        "Too Far From Incident",
+        `You can only send verification or updates when you are within ${VERIFICATION_DISTANCE_METERS} meters of the incident location.\n\nYour current distance is about ${formatDistance(
+          distance
+        )}.`
+      );
+      return false;
+    }
+
     return true;
   };
 
   const handleSubmit = async () => {
     try {
-      if (
-        !validateForm() ||
-        !incident ||
-        !userLocation ||
-        !imageUri ||
-        !actorKey
-      ) {
+      if (!incident || !imageUri || !actorKey || note.trim().length < 8) {
+        validateForm(userLocation ?? null);
+        return;
+      }
+
+      const verificationLocation = await getVerificationLocation();
+
+      if (!validateForm(verificationLocation) || !verificationLocation) {
         return;
       }
 
@@ -381,8 +408,8 @@ export default function VerifyIncidentModal({
         conditionStatus,
         note: note.trim(),
         imageUri: uploadedImageUrl,
-        latitude: userLocation.latitude,
-        longitude: userLocation.longitude,
+        latitude: verificationLocation.latitude,
+        longitude: verificationLocation.longitude,
         userName: user?.displayName ?? user?.email ?? "Anonymous",
         userEmail: user?.email ?? null,
         actorKey,
