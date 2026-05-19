@@ -35,7 +35,7 @@ export default function HomeEarthquakeSection({
     <View style={styles.wrapper}>
       <SectionHeader
         title="BMKG Earthquake Updates"
-        subtitle="Data resmi gempa terkini"
+        subtitle="Latest official earthquake data"
         style={styles.sectionHeader}
         right={
           <AppButton
@@ -75,7 +75,7 @@ export default function HomeEarthquakeSection({
 
           <Text style={styles.emptyTitle}>No earthquake updates yet</Text>
           <Text style={styles.emptyText}>
-            Data gempa resmi akan tampil di sini saat tersedia.
+            Official earthquake updates will appear here when available.
           </Text>
         </AppCard>
       ) : (

@@ -11,6 +11,7 @@ type IncidentAccuracyPanelProps = {
   accurateCount: number;
   inaccurateCount: number;
   currentUserVote: IncidentAccuracyVoteType | null;
+  disabledReason?: string | null;
   label: string;
   tone: AccuracyTone;
   submitting: boolean;
@@ -21,20 +22,23 @@ export default function IncidentAccuracyPanel({
   accurateCount,
   inaccurateCount,
   currentUserVote,
+  disabledReason,
   label,
   tone,
   submitting,
   onVote,
 }: IncidentAccuracyPanelProps) {
   const toneColor = getToneColor(tone);
+  const disabled = Boolean(disabledReason) || submitting;
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.titleGroup}>
-          <Text style={styles.title}>Report Accuracy</Text>
+          <Text style={styles.title}>On-site Check</Text>
           <Text style={styles.subtitle}>
-            Rated by users who are close enough to the reported location.
+            {disabledReason ??
+              "For nearby users only: confirm whether this report is still there."}
           </Text>
         </View>
 
@@ -61,21 +65,21 @@ export default function IncidentAccuracyPanel({
 
       <View style={styles.actions}>
         <AccuracyButton
-          label="Akurat"
+          label="Still there"
           count={accurateCount}
           iconName="arrow-up-circle"
           active={currentUserVote === "accurate"}
-          disabled={submitting}
+          disabled={disabled}
           color={colors.success}
           onPress={() => onVote("accurate")}
         />
 
         <AccuracyButton
-          label="Inaccurate"
+          label="Not there"
           count={inaccurateCount}
           iconName="arrow-down-circle"
           active={currentUserVote === "inaccurate"}
-          disabled={submitting}
+          disabled={disabled}
           color={colors.danger}
           onPress={() => onVote("inaccurate")}
         />

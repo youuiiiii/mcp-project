@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import {
   Image,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -12,11 +11,7 @@ import {
 import AppButton from "../../../components/ui/AppButton";
 import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
-import type { CommunityUpdateType, IncidentReply } from "../../../types/incident";
-import {
-  COMMUNITY_UPDATE_OPTIONS,
-  getCommunityUpdateMeta,
-} from "./threadLabels";
+import type { IncidentReply } from "../../../types/incident";
 
 type IncidentReplyComposerProps = {
   replyText: string;
@@ -24,10 +19,8 @@ type IncidentReplyComposerProps = {
   replyingTo: IncidentReply | null;
   replySubmitting: boolean;
   replyIsValid: boolean;
-  repliesCount: number;
-  selectedUpdateType: CommunityUpdateType;
   onChangeReplyText: (value: string) => void;
-  onChangeUpdateType: (value: CommunityUpdateType) => void;
+  onTakePhoto: () => void;
   onPickImage: () => void;
   onRemoveImage: () => void;
   onCancelReplyTo: () => void;
@@ -40,9 +33,8 @@ export default function IncidentReplyComposer({
   replyingTo,
   replySubmitting,
   replyIsValid,
-  selectedUpdateType,
   onChangeReplyText,
-  onChangeUpdateType,
+  onTakePhoto,
   onPickImage,
   onRemoveImage,
   onCancelReplyTo,
@@ -75,55 +67,6 @@ export default function IncidentReplyComposer({
         </View>
       ) : null}
 
-      {!replyingTo ? (
-        <View style={styles.updateTypeSection}>
-          <Text style={styles.updateTypeLabel}>Condition at location</Text>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.updateTypeList}
-          >
-            {COMMUNITY_UPDATE_OPTIONS.map((updateType) => {
-              const meta = getCommunityUpdateMeta(updateType);
-              const selected = selectedUpdateType === updateType;
-
-              return (
-                <Pressable
-                  key={updateType}
-                  disabled={replySubmitting}
-                  onPress={() => onChangeUpdateType(updateType)}
-                  style={({ pressed }) => [
-                    styles.updateTypeChip,
-                    selected && {
-                      backgroundColor: meta.color,
-                      borderColor: meta.color,
-                    },
-                    pressed && styles.pressed,
-                    replySubmitting && styles.disabled,
-                  ]}
-                >
-                  <Ionicons
-                    name={meta.iconName}
-                    size={14}
-                    color={selected ? colors.textInverse : meta.color}
-                  />
-
-                  <Text
-                    style={[
-                      styles.updateTypeChipText,
-                      selected && styles.updateTypeChipTextSelected,
-                    ]}
-                  >
-                    {meta.shortLabel}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
-      ) : null}
-
       {replyImageUri ? (
         <View style={styles.imagePreviewWrapper}>
           <Image source={{ uri: replyImageUri }} style={styles.imagePreview} />
@@ -144,6 +87,18 @@ export default function IncidentReplyComposer({
       <View style={styles.inputRow}>
         <Pressable
           disabled={replySubmitting}
+          onPress={onTakePhoto}
+          style={({ pressed }) => [
+            styles.imageButton,
+            pressed && styles.pressed,
+            replySubmitting && styles.disabled,
+          ]}
+        >
+          <Ionicons name="camera-outline" size={20} color={colors.textMuted} />
+        </Pressable>
+
+        <Pressable
+          disabled={replySubmitting}
           onPress={onPickImage}
           style={({ pressed }) => [
             styles.imageButton,
@@ -159,7 +114,9 @@ export default function IncidentReplyComposer({
           onChangeText={onChangeReplyText}
           editable={!replySubmitting}
           placeholder={
-            replyingTo ? "Write a reply..." : "Write a condition update..."
+            replyingTo
+              ? "Write a reply..."
+              : "Add helpful context or a short comment..."
           }
           placeholderTextColor={colors.textSoft}
           multiline
@@ -197,38 +154,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
-  },
-  updateTypeSection: {
-    gap: spacing.xs,
-  },
-  updateTypeLabel: {
-    fontSize: 11,
-    fontWeight: "900",
-    color: colors.textMuted,
-    textTransform: "uppercase",
-  },
-  updateTypeList: {
-    gap: spacing.xs,
-    paddingRight: spacing.md,
-  },
-  updateTypeChip: {
-    minHeight: 34,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  updateTypeChipText: {
-    fontSize: 11,
-    fontWeight: "900",
-    color: colors.text,
-  },
-  updateTypeChipTextSelected: {
-    color: colors.textInverse,
   },
   replyingTextGroup: {
     flex: 1,

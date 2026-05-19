@@ -2,6 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
 import IncidentThreadModal from "../../components/IncidentThreadModal";
+import ResolveIncidentModal from "../../components/ResolveIncidentModal";
+import VerifyIncidentModal from "../../components/VerifyIncidentModal";
 import AppCard from "../../components/ui/AppCard";
 import AppScreen from "../../components/ui/AppScreen";
 import IconBadge from "../../components/ui/IconBadge";
@@ -28,11 +30,19 @@ export default function ReportsScreen() {
     setSelectedFilter,
 
     selectedIncident,
+    selectedVerifyIncident,
+    selectedResolveIncident,
 
     isThreadModalVisible,
+    isVerifyModalVisible,
+    isResolveModalVisible,
 
     handleOpenIncident,
     handleCloseThreadModal,
+    handleOpenVerifyModal,
+    handleCloseVerifyModal,
+    handleOpenResolveModal,
+    handleCloseResolveModal,
   } = useReportsScreen();
 
   if (loading) {
@@ -85,6 +95,20 @@ export default function ReportsScreen() {
         visible={isThreadModalVisible}
         incident={selectedIncident}
         onClose={handleCloseThreadModal}
+        onOpenVerify={handleOpenVerifyModal}
+        onOpenResolve={handleOpenResolveModal}
+      />
+
+      <VerifyIncidentModal
+        visible={isVerifyModalVisible}
+        incident={selectedVerifyIncident}
+        onClose={handleCloseVerifyModal}
+      />
+
+      <ResolveIncidentModal
+        visible={isResolveModalVisible}
+        incident={selectedResolveIncident}
+        onClose={handleCloseResolveModal}
       />
     </>
   );

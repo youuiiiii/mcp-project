@@ -110,7 +110,7 @@ function getStatusMeta(status: VoteFeedbackStatus, message?: string) {
   if (status === "success") {
     return {
       title: "Rating saved",
-      description: "Thank you, the report accuracy signal has been updated.",
+      description: "Thank you, the on-site check has been updated.",
       iconName: "checkmark-circle" as const,
       color: colors.success,
       backgroundColor: colors.successSoft,
@@ -120,7 +120,7 @@ function getStatusMeta(status: VoteFeedbackStatus, message?: string) {
   if (status === "location_denied") {
     return {
       title: "Location not allowed",
-      description: "Enable location permission to rate report accuracy.",
+      description: "Enable location permission to check this report.",
       iconName: "location-outline" as const,
       color: colors.warningDark,
       backgroundColor: colors.warningSoft,
@@ -140,7 +140,7 @@ function getStatusMeta(status: VoteFeedbackStatus, message?: string) {
   if (status === "too_far") {
     return {
       title: "Too far",
-      description: "You are too far from the report location to rate accuracy.",
+      description: "You are too far from the report location to check it.",
       iconName: "alert-circle-outline" as const,
       color: colors.danger,
       backgroundColor: colors.dangerSoft,

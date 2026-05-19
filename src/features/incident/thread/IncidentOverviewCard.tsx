@@ -1,8 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import AppButton from "../../../components/ui/AppButton";
 import StatusBadge from "../../../components/ui/StatusBadge";
 import { getIncidentDisplayMeta } from "../../../constants/incident";
+import IncidentImpactSummary from "../components/IncidentImpactSummary";
+import IncidentImageGallery from "../components/IncidentImageGallery";
 import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
 import { typography } from "../../../theme/typography";
@@ -19,11 +22,17 @@ import {
 type IncidentOverviewCardProps = {
   incident: IncidentReport;
   onReportContent: () => void;
+  showActions?: boolean;
+  onOpenVerify?: (incident: IncidentReport) => void;
+  onOpenResolve?: (incident: IncidentReport) => void;
 };
 
 export default function IncidentOverviewCard({
   incident,
   onReportContent,
+  showActions = true,
+  onOpenVerify,
+  onOpenResolve,
 }: IncidentOverviewCardProps) {
   const meta = getIncidentDisplayMeta({
     category: incident.category,
@@ -97,6 +106,20 @@ export default function IncidentOverviewCard({
           />
         </View>
 
+        <Text style={styles.title}>{incident.title}</Text>
+
+        <Text style={styles.description}>
+          {incident.description || "No description provided."}
+        </Text>
+
+        <IncidentImpactSummary impactAnswers={incident.impactAnswers} />
+
+        <IncidentImageGallery
+          imageUri={incident.imageUri}
+          imageUris={incident.imageUris}
+          variant="detail"
+        />
+
         <View
           style={[
             styles.signalNotice,
@@ -154,20 +177,48 @@ export default function IncidentOverviewCard({
           </View>
         </View>
 
-        <Text style={styles.title}>{incident.title}</Text>
-
-        <Text style={styles.description}>
-          {incident.description || "No description provided."}
-        </Text>
-
-        {incident.imageUri ? (
-          <Image source={{ uri: incident.imageUri }} style={styles.image} />
-        ) : null}
-
         <Text style={styles.disclaimer}>
           This report comes from the community and may not be official
           information. Treat it as an early signal and stay careful on site.
         </Text>
+
+        {showActions && incident.status === "active" ? (
+          <View style={styles.actionRow}>
+            {onOpenVerify ? (
+              <AppButton
+                title="Verify / Update"
+                variant="primary"
+                size="md"
+                onPress={() => onOpenVerify(incident)}
+                leftIcon={
+                  <Ionicons
+                    name="shield-checkmark"
+                    size={17}
+                    color={colors.textInverse}
+                  />
+                }
+                style={styles.actionButton}
+              />
+            ) : null}
+
+            {onOpenResolve ? (
+              <AppButton
+                title="Resolve"
+                variant="secondary"
+                size="md"
+                onPress={() => onOpenResolve(incident)}
+                leftIcon={
+                  <Ionicons
+                    name="checkmark-done"
+                    size={17}
+                    color={colors.text}
+                  />
+                }
+                style={styles.actionButton}
+              />
+            ) : null}
+          </View>
+        ) : null}
 
         <Pressable
           onPress={onReportContent}
@@ -367,17 +418,19 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#475569",
   },
-  image: {
-    marginTop: spacing.md,
-    width: "100%",
-    height: 210,
-    borderRadius: radius.xl,
-    backgroundColor: colors.border,
-  },
   disclaimer: {
     marginTop: spacing.md,
     ...typography.caption,
     color: colors.textMuted,
+  },
+  actionRow: {
+    marginTop: spacing.md,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  actionButton: {
+    flexGrow: 1,
   },
   reportContentButton: {
     marginTop: spacing.md,

@@ -16,7 +16,7 @@ import AppCard from "../../components/ui/AppCard";
 import AppScreen from "../../components/ui/AppScreen";
 import LoadingState from "../../components/ui/LoadingState";
 import SectionHeader from "../../components/ui/SectionHeader";
-import { isModeratorEmail } from "../../constants/moderators";
+import { useAuth } from "../../contexts/AuthContext";
 import { colors } from "../../theme/colors";
 import { radius, shadow, spacing } from "../../theme/layout";
 import { typography } from "../../theme/typography";
@@ -42,6 +42,8 @@ export default function ProfileScreen() {
   } = useProfileScreen();
 
   const router = useRouter();
+  const { isModerator, roleLoading } = useAuth();
+  const roleLabel = isModerator ? "Moderator" : "Community Reporter";
   const [isEditingName, setIsEditingName] = useState(false);
   const isModerator = isModeratorEmail(userEmail);
   const profileImageUri = draftPhotoUri ?? photoURL;
@@ -51,6 +53,7 @@ export default function ProfileScreen() {
     router.push("/moderation" as Href);
   };
 
+  if (loading || roleLoading) {
   const cancelEditName = () => {
     setDraftName(displayName);
     setIsEditingName(false);
@@ -112,8 +115,12 @@ export default function ProfileScreen() {
             {userEmail}
           </Text>
           <View style={styles.rolePill}>
-            <Ionicons name="shield-checkmark" size={14} color={colors.info} />
-            <Text style={styles.roleText}>Community Reporter</Text>
+            <Ionicons
+              name="shield-checkmark"
+              size={14}
+              color={colors.info}
+            />
+            <Text style={styles.roleText}>{roleLabel}</Text>
           </View>
         </View>
       </AppCard>
@@ -127,8 +134,8 @@ export default function ProfileScreen() {
 
       <View style={styles.section}>
         <SectionHeader
-          title="Contribution"
-          subtitle="Summary of reports from this account."
+          title="Contributions"
+          subtitle="Report summary for this account."
         />
         <StatsStrip stats={stats} />
       </View>

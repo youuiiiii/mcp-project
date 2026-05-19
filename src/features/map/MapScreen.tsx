@@ -7,6 +7,8 @@ import SosInfoModal from "../sos/SosInfoModal";
 
 import FilterBar, { type MapFilterValue } from "../../components/FilterBar";
 import IncidentThreadModal from "../../components/IncidentThreadModal";
+import ResolveIncidentModal from "../../components/ResolveIncidentModal";
+import VerifyIncidentModal from "../../components/VerifyIncidentModal";
 import AppButton from "../../components/ui/AppButton";
 import LoadingState from "../../components/ui/LoadingState";
 import { getFilterLabel } from "../../constants/incident";
@@ -66,7 +68,7 @@ export default function MapScreen() {
   if (loadingLocation && loadingReports) {
     return (
       <View style={styles.container}>
-        <LoadingState message="Menyiapkan crisis map..." />
+        <LoadingState message="Preparing crisis map..." />
       </View>
     );
   }
@@ -130,7 +132,7 @@ export default function MapScreen() {
           ]}
         >
           <Ionicons name="alert" size={22} color={colors.textInverse} />
-          <Text style={styles.sosButtonText}>SOS</Text>
+          <Text style={styles.sosButtonText}>SOS Info</Text>
         </Pressable>
         <Pressable
           onPress={focusUserLocation}
@@ -194,10 +196,30 @@ export default function MapScreen() {
         visible={modalState.isThreadModalVisible}
         incident={modalState.selectedIncident}
         onClose={modalState.closeThreadModal}
-        showActions={false}
+        onOpenVerify={modalState.openVerifyModal}
+        onOpenResolve={modalState.openResolveModal}
       />
 
-      <SosInfoModal visible={sosVisible} onClose={() => setSosVisible(false)} />
+      <VerifyIncidentModal
+        visible={modalState.isVerifyModalVisible}
+        incident={modalState.selectedVerifyIncident}
+        userLocation={userLocation}
+        onClose={modalState.closeVerifyModal}
+      />
+
+      <ResolveIncidentModal
+        visible={modalState.isResolveModalVisible}
+        incident={modalState.selectedResolveIncident}
+        onClose={modalState.closeResolveModal}
+      />
+
+      <SosInfoModal
+        visible={sosVisible}
+        userLocation={userLocation}
+        nearestIncidentId={nearestIncident.incident?.id ?? null}
+        nearestIncidentDistance={nearestIncident.distance}
+        onClose={() => setSosVisible(false)}
+      />
     </View>
     
   );

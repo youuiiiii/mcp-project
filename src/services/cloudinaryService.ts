@@ -20,17 +20,11 @@ export const uploadImageAsync = async (
     throw new Error("Invalid image URI.");
   }
 
-  if (
-    !CLOUDINARY_CONFIG.cloudName ||
-    CLOUDINARY_CONFIG.cloudName === "ISI_CLOUD_NAME_KAMU"
-  ) {
+  if (!CLOUDINARY_CONFIG.cloudName) {
     throw new Error("Cloudinary cloudName is not configured.");
   }
 
-  if (
-    !CLOUDINARY_CONFIG.uploadPreset ||
-    CLOUDINARY_CONFIG.uploadPreset === "ISI_UPLOAD_PRESET_KAMU"
-  ) {
+  if (!CLOUDINARY_CONFIG.uploadPreset) {
     throw new Error("Cloudinary upload preset is not configured.");
   }
 

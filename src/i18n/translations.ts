@@ -41,7 +41,7 @@ export const en = {
   "report.details.minimumCharacters": "{count}/{min} minimum characters",
   "report.severity.title": "4. Severity",
   "report.severity.subtitle": "Choose how urgent the current situation is.",
-  "report.evidence.title": "5. Evidence",
+  "report.evidence.title": "4. Evidence",
   "report.evidence.subtitle":
     "Add 1-4 incident photos. The first photo becomes the report cover.",
   "report.evidence.counter": "{count}/{max} photos selected",
@@ -313,7 +313,7 @@ export const id: TranslationResources = {
   "report.details.minimumCharacters": "{count}/{min} karakter minimum",
   "report.severity.title": "4. Tingkat Urgensi",
   "report.severity.subtitle": "Pilih seberapa mendesak situasi saat ini.",
-  "report.evidence.title": "5. Bukti",
+  "report.evidence.title": "4. Bukti",
   "report.evidence.subtitle":
     "Tambahkan 1-4 foto insiden. Foto pertama menjadi sampul laporan.",
   "report.evidence.counter": "{count}/{max} foto dipilih",

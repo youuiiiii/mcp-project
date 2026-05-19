@@ -84,8 +84,8 @@ const getConfidencePresentation = (
   if (trustLevel === "disputed" || score < 35) {
     return {
       level: "questioned",
-      label: "Perlu Ditinjau",
-      shortLabel: "Ditinjau",
+      label: "Needs Review",
+      shortLabel: "Review",
       description:
         "There are conflicting signals. Treat this report as early information.",
       color: colors.primaryDark,
@@ -97,7 +97,7 @@ const getConfidencePresentation = (
   if (freshnessState === "stale") {
     return {
       level: "stale",
-      label: "Butuh Update",
+      label: "Needs Update",
       shortLabel: "Stale",
       description:
         "This report has not been updated recently and needs a fresh condition check.",
@@ -110,8 +110,8 @@ const getConfidencePresentation = (
   if (score >= 78 || trustLevel === "verified") {
     return {
       level: "confirmed",
-      label: "Kuat",
-      shortLabel: "Kuat",
+      label: "Strong Signal",
+      shortLabel: "Strong",
       description:
         "This report has enough evidence or confirmation to be trusted by the community.",
       color: colors.successDark,
@@ -123,8 +123,8 @@ const getConfidencePresentation = (
   if (score >= 55) {
     return {
       level: "credible",
-      label: "Cukup Kuat",
-      shortLabel: "Cukup",
+      label: "Supported",
+      shortLabel: "Supported",
       description:
         "This report has some supporting signals, but it can still be strengthened.",
       color: colors.infoDark,
@@ -135,8 +135,8 @@ const getConfidencePresentation = (
 
   return {
     level: "emerging",
-    label: "Baru Muncul",
-    shortLabel: "Baru",
+    label: "New Signal",
+    shortLabel: "New",
     description:
       "This report is still new or does not have enough nearby community signals yet.",
     color: colors.warningDark,
@@ -192,7 +192,7 @@ export const getIncidentConfidenceMeta = (
     freshnessState: freshness.state,
     signals: [
       {
-        label: "Skor",
+        label: "Score",
         value: `${score}/100`,
       },
       {
@@ -212,7 +212,7 @@ export const getIncidentConfidenceMeta = (
         value: String(incident.conditionUpdateCount ?? 0),
       },
       {
-        label: "Accurate",
+        label: "Still there",
         value: String(incident.accurateCount ?? 0),
       },
     ],

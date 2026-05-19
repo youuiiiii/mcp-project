@@ -2,9 +2,8 @@ import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Linking, Platform } from "react-native";
+import { Alert, Linking, Platform } from "react-native";
 
-import { getIncidentDisplayMeta } from "../../../constants/incident";
 import { useAuth } from "../../../contexts/AuthContext";
 import { uploadImageAsync } from "../../../services/cloudinaryService";
 import {
@@ -15,7 +14,6 @@ import {
   subscribeToIncidentVerifications,
 } from "../../../services/incidentService";
 import type {
-  CommunityUpdateType,
   IncidentAccuracyVote,
   IncidentAccuracyVoteType,
   IncidentReply,
@@ -49,8 +47,6 @@ export function useIncidentThread({
   const [replyText, setReplyText] = useState("");
   const [replyImageUri, setReplyImageUri] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<IncidentReply | null>(null);
-  const [selectedUpdateType, setSelectedUpdateType] =
-    useState<CommunityUpdateType>("additional_info");
 
   const [replySubmitting, setReplySubmitting] = useState(false);
   const [accuracySubmitting, setAccuracySubmitting] = useState(false);
@@ -66,17 +62,6 @@ export function useIncidentThread({
 
   const actorKey = user?.uid ?? null;
 
-  const meta = useMemo(() => {
-    if (!incident) {
-      return null;
-    }
-
-    return getIncidentDisplayMeta({
-      category: incident.category,
-      subcategory: incident.subcategory ?? incident.type,
-    });
-  }, [incident]);
-
   useEffect(() => {
     if (!visible || !incident) {
       setVerifications([]);
@@ -85,7 +70,6 @@ export function useIncidentThread({
       setReplyText("");
       setReplyImageUri(null);
       setReplyingTo(null);
-      setSelectedUpdateType("additional_info");
       setLoadingThread(false);
       return;
     }
@@ -144,20 +128,6 @@ export function useIncidentThread({
     );
   }, [incident, user]);
 
-  const hasUserVerified = useMemo(() => {
-    if (!user?.uid && !user?.email) {
-      return false;
-    }
-
-    return verifications.some((item) => {
-      return (
-        (item.actorKey === user.uid || item.actorKey === user.email) &&
-        (item.verificationType === "valid" ||
-          item.verificationType === "invalid")
-      );
-    });
-  }, [verifications, user]);
-
   const accuracySummary = useMemo(() => {
     const accurateCount = accuracyVotes.filter((item) => {
       return item.voteType === "accurate";
@@ -194,13 +164,13 @@ export function useIncidentThread({
     };
   }, [accuracyVotes, actorKey]);
 
-  const replyIsValid = replyText.trim().length >= 3;
+  const replyIsValid =
+    replyText.trim().length >= 3 || Boolean(replyImageUri);
 
   const closeThread = () => {
     setReplyText("");
     setReplyImageUri(null);
     setReplyingTo(null);
-    setSelectedUpdateType("additional_info");
     onClose();
   };
 
@@ -209,27 +179,80 @@ export function useIncidentThread({
       return;
     }
 
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (!permission.granted) {
+      if (!permission.granted) {
+        Alert.alert(
+          "Gallery Permission Needed",
+          "Enable gallery permission to add an image update."
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: false,
+        quality: 0.75,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const assetUri = result.assets?.[0]?.uri;
+
+      if (assetUri) {
+        setReplyImageUri(assetUri);
+      }
+    } catch (error) {
+      Alert.alert(
+        "Could Not Open Gallery",
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while opening the gallery."
+      );
+    }
+  };
+
+  const takeReplyPhoto = async () => {
+    if (replySubmitting) {
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.75,
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    });
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
 
-    if (result.canceled) {
-      return;
-    }
+      if (!permission.granted) {
+        Alert.alert(
+          "Camera Permission Needed",
+          "Enable camera permission to capture an image update."
+        );
+        return;
+      }
 
-    const assetUri = result.assets?.[0]?.uri;
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: false,
+        quality: 0.75,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      });
 
-    if (assetUri) {
-      setReplyImageUri(assetUri);
+      if (result.canceled) {
+        return;
+      }
+
+      const assetUri = result.assets?.[0]?.uri;
+
+      if (assetUri) {
+        setReplyImageUri(assetUri);
+      }
+    } catch (error) {
+      Alert.alert(
+        "Could Not Open Camera",
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while opening the camera."
+      );
     }
   };
 
@@ -239,7 +262,6 @@ export function useIncidentThread({
 
   const startReplyTo = (reply: IncidentReply) => {
     setReplyingTo(reply);
-    setSelectedUpdateType("additional_info");
   };
 
   const cancelReplyTo = () => {
@@ -249,6 +271,14 @@ export function useIncidentThread({
   const submitAccuracy = async (voteType: IncidentAccuracyVoteType) => {
     try {
       if (!incident) {
+        return;
+      }
+
+      if (isOwnIncident) {
+        setVoteFeedbackStatus("error");
+        setVoteFeedbackMessage(
+          "Your original report is already counted. Ask another nearby user to confirm it."
+        );
         return;
       }
 
@@ -350,7 +380,7 @@ export function useIncidentThread({
     } catch (error) {
       setVoteFeedbackStatus("error");
       setVoteFeedbackMessage(
-        error instanceof Error ? error.message : "Could not save your rating."
+        getAccuracyErrorMessage(error)
       );
     } finally {
       setAccuracySubmitting(false);
@@ -368,8 +398,13 @@ export function useIncidentThread({
       }
 
       const cleanReply = replyText.trim();
+      const fallbackReply = replyingTo
+        ? "Shared an image."
+        : "Shared an image.";
+      const replyMessage =
+        cleanReply.length >= 3 ? cleanReply : replyImageUri ? fallbackReply : "";
 
-      if (cleanReply.length < 3) {
+      if (replyMessage.length < 3) {
         return;
       }
 
@@ -385,11 +420,11 @@ export function useIncidentThread({
 
       await createIncidentReply({
         reportId: incident.id,
-        message: cleanReply,
+        message: replyMessage,
         imageUri: uploadedImageUrl,
         parentReplyId,
         replyToUserName: replyingTo?.userName ?? replyingTo?.userEmail ?? null,
-        updateType: replyingTo ? "additional_info" : selectedUpdateType,
+        updateType: "additional_info",
         userName: user.displayName ?? user.email ?? "Anonymous",
         userEmail: user.email ?? null,
         actorKey: user.uid,
@@ -398,11 +433,16 @@ export function useIncidentThread({
       setReplyText("");
       setReplyImageUri(null);
       setReplyingTo(null);
-      setSelectedUpdateType("additional_info");
 
       Haptics.selectionAsync().catch(() => {});
     } catch (error) {
       console.error("Submit reply error:", error);
+      Alert.alert(
+        "Could Not Send Update",
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while sending the update."
+      );
     } finally {
       setReplySubmitting(false);
     }
@@ -425,7 +465,6 @@ export function useIncidentThread({
   };
 
   return {
-    meta,
     verifications,
     replies,
     accuracyVotes,
@@ -435,15 +474,12 @@ export function useIncidentThread({
     setReplyText,
     replyImageUri,
     replyingTo,
-    selectedUpdateType,
-    setSelectedUpdateType,
     replySubmitting,
     replyIsValid,
 
     accuracySubmitting,
     loadingThread,
     isOwnIncident,
-    hasUserVerified,
 
     voteFeedbackStatus,
     voteFeedbackMessage,
@@ -453,6 +489,7 @@ export function useIncidentThread({
     submitAccuracy,
 
     pickReplyImage,
+    takeReplyPhoto,
     removeReplyImage,
     startReplyTo,
     cancelReplyTo,
@@ -460,4 +497,17 @@ export function useIncidentThread({
     closeVoteFeedback,
     openLocationSettings,
   };
+}
+
+function getAccuracyErrorMessage(error: unknown) {
+  if (
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    error.code === "permission-denied"
+  ) {
+    return "Could not save this check because Firestore rules do not allow it yet. Deploy the latest firestore.rules, then try again.";
+  }
+
+  return error instanceof Error ? error.message : "Could not save your check.";
 }

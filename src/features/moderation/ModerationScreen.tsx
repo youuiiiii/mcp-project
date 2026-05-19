@@ -10,7 +10,6 @@ import EmptyState from "../../components/ui/EmptyState";
 import LoadingState from "../../components/ui/LoadingState";
 import SectionHeader from "../../components/ui/SectionHeader";
 import StatusBadge from "../../components/ui/StatusBadge";
-import { isModeratorEmail } from "../../constants/moderators";
 import { useAuth } from "../../contexts/AuthContext";
 import {
   dismissIncidentContentReport,
@@ -32,7 +31,7 @@ const HOME_ROUTE = "/(tabs)" as Href;
 
 export default function ModerationScreen() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, roleLoading, isModerator } = useAuth();
 
   const [contentReports, setContentReports] = useState<
     IncidentContentReport[]
@@ -44,8 +43,6 @@ export default function ModerationScreen() {
 
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [moderationReason, setModerationReason] = useState("");
-
-  const isModerator = isModeratorEmail(user?.email);
 
   useEffect(() => {
     if (!user || !isModerator) {
@@ -91,7 +88,8 @@ export default function ModerationScreen() {
     }, {});
   }, [incidents]);
 
-  const loading = authLoading || loadingReports || loadingIncidents;
+  const checkingAccess = authLoading || roleLoading;
+  const loading = checkingAccess || loadingReports || loadingIncidents;
 
   const reviewer = user?.email ?? user?.uid ?? "moderator";
 
@@ -122,7 +120,7 @@ export default function ModerationScreen() {
                 "Could Not Dismiss",
                 error instanceof Error
                   ? error.message
-                  : "Terjadi kesalahan saat dismiss ticket."
+                  : "Something went wrong while dismissing the ticket."
               );
             } finally {
               setSelectedTicketId(null);
@@ -195,7 +193,7 @@ export default function ModerationScreen() {
     );
   };
 
-  if (authLoading) {
+  if (checkingAccess) {
     return (
       <AppScreen scroll={false} contentContainerStyle={styles.centerContent}>
         <LoadingState message="Checking moderator access..." />
@@ -261,7 +259,7 @@ export default function ModerationScreen() {
         {!loading && contentReports.length === 0 ? (
           <EmptyState
             iconName="shield-checkmark-outline"
-            title="Queue kosong"
+            title="Queue empty"
             message="No content reports need review right now."
           />
         ) : null}
@@ -323,7 +321,7 @@ function ModerationTicketCard({
           <Text style={styles.ticketTitle}>{getReasonLabel(ticket.reason)}</Text>
 
           <Text style={styles.ticketMeta} numberOfLines={1}>
-            Dilaporkan oleh {ticket.userName || ticket.userEmail || "Anonymous"}
+            Reported by {ticket.userName || ticket.userEmail || "Anonymous"}
           </Text>
         </View>
 

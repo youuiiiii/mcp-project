@@ -45,13 +45,17 @@ export default function IncidentTimeline({
     <View style={styles.section}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>Live Timeline</Text>
+          <Text style={styles.title}>Recent Activity</Text>
           <Text style={styles.subtitle}>
-            Latest changes from the report and nearby users.
+            Recent status and evidence changes for this report.
           </Text>
         </View>
 
-        <StatusBadge label={`${items.length} update`} variant="info" size="sm" />
+        <StatusBadge
+          label={`${items.length} update${items.length === 1 ? "" : "s"}`}
+          variant="info"
+          size="sm"
+        />
       </View>
 
       <View style={styles.timeline}>
@@ -95,23 +99,25 @@ function buildTimelineItems({
     badgeLabel: getConditionLabel(item.conditionStatus),
   }));
 
-  const replyItems: TimelineItem[] = replies.slice(0, 5).map((item) => {
-    const updateMeta = getCommunityUpdateMeta(item.updateType);
+  const replyItems: TimelineItem[] = replies
+    .filter((item) => item.updateType && item.updateType !== "additional_info")
+    .map((item) => {
+      const updateMeta = getCommunityUpdateMeta(item.updateType);
 
-    return {
-      id: `reply-${item.id}`,
-      kind: "reply",
-      date: item.createdAt,
-      title: updateMeta.label,
-      message: item.message,
-      author: item.userName ?? item.userEmail,
-      imageUri: item.imageUri,
-      color: updateMeta.color,
-      badgeLabel: item.imageUri
-        ? `${updateMeta.shortLabel} + photo`
-        : updateMeta.shortLabel,
-    };
-  });
+      return {
+        id: `reply-${item.id}`,
+        kind: "reply",
+        date: item.createdAt,
+        title: updateMeta.label,
+        message: item.message,
+        author: item.userName ?? item.userEmail,
+        imageUri: item.imageUri,
+        color: updateMeta.color,
+        badgeLabel: item.imageUri
+          ? `${updateMeta.shortLabel} + photo`
+          : updateMeta.shortLabel,
+      };
+    });
 
   const resolvedItem: TimelineItem[] =
     incident.status === "resolved"
@@ -120,7 +126,7 @@ function buildTimelineItems({
             id: `resolved-${incident.id}`,
             kind: "resolved",
             date: incident.resolvedAt,
-            title: "Ditandai selesai",
+            title: "Marked resolved",
             message:
               incident.resolutionNote ||
               "This report has been marked resolved by the community.",

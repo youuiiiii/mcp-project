@@ -6,6 +6,8 @@ import { useBmkgEarthquakes } from "./hooks/useBmkgEarthquakes";
 
 import EarthquakeAlertModal from "../../components/EarthquakeAlertModal";
 import IncidentThreadModal from "../../components/IncidentThreadModal";
+import ResolveIncidentModal from "../../components/ResolveIncidentModal";
+import VerifyIncidentModal from "../../components/VerifyIncidentModal";
 import AppCard from "../../components/ui/AppCard";
 import AppScreen from "../../components/ui/AppScreen";
 import EmptyState from "../../components/ui/EmptyState";
@@ -30,16 +32,10 @@ export default function HomeScreen() {
 
   const [selectedIncident, setSelectedIncident] =
     useState<IncidentReport | null>(null);
-  const [alertVisible, setAlertVisible] = useState(false);
-
-  useEffect(() => {
-    if (earthquake.mainEarthquake) {
-      const magnitude = parseFloat(earthquake.mainEarthquake.Magnitude ?? "0");
-      if (magnitude >= ALERT_MAGNITUDE_THRESHOLD) {
-        setAlertVisible(true);
-      }
-    }
-  }, [earthquake.mainEarthquake]);
+  const [selectedVerifyIncident, setSelectedVerifyIncident] =
+    useState<IncidentReport | null>(null);
+  const [selectedResolveIncident, setSelectedResolveIncident] =
+    useState<IncidentReport | null>(null);
 
   const openIncidentThread = (incident: IncidentReport) => {
     setSelectedIncident(incident);
@@ -47,6 +43,22 @@ export default function HomeScreen() {
 
   const closeIncidentThread = () => {
     setSelectedIncident(null);
+  };
+
+  const openVerifyModal = (incident: IncidentReport) => {
+    setSelectedVerifyIncident(incident);
+  };
+
+  const closeVerifyModal = () => {
+    setSelectedVerifyIncident(null);
+  };
+
+  const openResolveModal = (incident: IncidentReport) => {
+    setSelectedResolveIncident(incident);
+  };
+
+  const closeResolveModal = () => {
+    setSelectedResolveIncident(null);
   };
 
   return (
@@ -120,7 +132,20 @@ export default function HomeScreen() {
         visible={!!selectedIncident}
         incident={selectedIncident}
         onClose={closeIncidentThread}
-        showActions={false}
+        onOpenVerify={openVerifyModal}
+        onOpenResolve={openResolveModal}
+      />
+
+      <VerifyIncidentModal
+        visible={!!selectedVerifyIncident}
+        incident={selectedVerifyIncident}
+        onClose={closeVerifyModal}
+      />
+
+      <ResolveIncidentModal
+        visible={!!selectedResolveIncident}
+        incident={selectedResolveIncident}
+        onClose={closeResolveModal}
       />
 
       <EarthquakeAlertModal
@@ -162,7 +187,7 @@ function LatestReportCard({
             {report.title}
           </Text>
           <StatusBadge
-            label={`${confidence.shortLabel} ${confidence.score}`}
+            label={`Confidence ${confidence.score}`}
             variant={getConfidenceVariant(confidence.level)}
             size="sm"
           />

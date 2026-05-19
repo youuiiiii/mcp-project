@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { getIncidentDisplayMeta } from "../constants/incident";
+import IncidentImageGallery from "../features/incident/components/IncidentImageGallery";
 import { colors } from "../theme/colors";
 import { radius, spacing } from "../theme/layout";
 import { typography } from "../theme/typography";
@@ -83,7 +84,7 @@ export default function IncidentCard({
           </Text>
         </View>
         <StatusBadge
-          label={`${confidence.shortLabel} ${confidence.score}`}
+          label={`Confidence ${confidence.score}`}
           variant={getConfidenceVariant(confidence.level)}
           size="sm"
         />
@@ -93,8 +94,12 @@ export default function IncidentCard({
         {incident.description || "No description provided."}
       </Text>
 
-      {showImage && incident.imageUri ? (
-        <Image source={{ uri: incident.imageUri }} style={styles.image} />
+      {showImage ? (
+        <IncidentImageGallery
+          imageUri={incident.imageUri}
+          imageUris={incident.imageUris}
+          variant="compact"
+        />
       ) : null}
 
       <View style={styles.footer}>
@@ -211,13 +216,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     ...typography.caption,
     color: colors.textMuted,
-  },
-  image: {
-    marginTop: spacing.md,
-    width: "100%",
-    height: 150,
-    borderRadius: radius.lg,
-    backgroundColor: colors.border,
   },
   footer: {
     marginTop: spacing.md,
