@@ -21,6 +21,10 @@ type AuthContextValue = {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  updateUserProfile: (payload: {
+    displayName?: string;
+    photoURL?: string | null;
+  }) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -33,6 +37,7 @@ type AuthProviderProps = {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileRevision, setProfileRevision] = useState(0);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -59,11 +64,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
     });
 
     setUser(credential.user);
+    setProfileRevision((current) => current + 1);
+  };
+
+  const updateUserProfile: AuthContextValue["updateUserProfile"] = async (
+    payload
+  ) => {
+    if (!auth.currentUser) {
+      throw new Error("User belum login.");
+    }
+
+    await updateProfile(auth.currentUser, payload);
+    await auth.currentUser.reload();
+    setUser(auth.currentUser);
+    setProfileRevision((current) => current + 1);
   };
 
   const logout = async () => {
     await signOut(auth);
     setUser(null);
+    setProfileRevision((current) => current + 1);
   };
 
   const value = useMemo<AuthContextValue>(
@@ -72,9 +92,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       loading,
       login,
       register,
+      updateUserProfile,
       logout,
     }),
-    [user, loading]
+    [user, loading, profileRevision]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
