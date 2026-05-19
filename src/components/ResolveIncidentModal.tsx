@@ -63,8 +63,8 @@ export default function ResolveIncidentModal({
 
       if (!permission.granted) {
         Alert.alert(
-          "Izin Kamera Ditolak",
-          "Aplikasi membutuhkan izin kamera untuk mengambil bukti selesai."
+          "Camera Permission Denied",
+          "The app needs camera permission to capture resolution evidence."
         );
         return;
       }
@@ -82,7 +82,7 @@ export default function ResolveIncidentModal({
       const uri = result.assets?.[0]?.uri;
 
       if (!uri) {
-        Alert.alert("Foto Tidak Valid", "Gagal membaca hasil foto.");
+        Alert.alert("Invalid Photo", "Could not read the captured photo.");
         return;
       }
 
@@ -90,10 +90,10 @@ export default function ResolveIncidentModal({
       Haptics.selectionAsync().catch(() => {});
     } catch (error) {
       Alert.alert(
-        "Gagal Membuka Kamera",
+        "Could Not Open Camera",
         error instanceof Error
           ? error.message
-          : "Terjadi kesalahan saat membuka kamera."
+          : "Something went wrong while opening the camera."
       );
     }
   };
@@ -104,8 +104,8 @@ export default function ResolveIncidentModal({
 
       if (!permission.granted) {
         Alert.alert(
-          "Izin Galeri Ditolak",
-          "Aplikasi membutuhkan izin galeri untuk memilih bukti selesai."
+          "Gallery Permission Denied",
+          "The app needs gallery permission to choose resolution evidence."
         );
         return;
       }
@@ -124,7 +124,7 @@ export default function ResolveIncidentModal({
       const uri = result.assets?.[0]?.uri;
 
       if (!uri) {
-        Alert.alert("Foto Tidak Valid", "Gagal membaca gambar dari galeri.");
+        Alert.alert("Invalid Photo", "Could not read the selected gallery image.");
         return;
       }
 
@@ -132,29 +132,29 @@ export default function ResolveIncidentModal({
       Haptics.selectionAsync().catch(() => {});
     } catch (error) {
       Alert.alert(
-        "Gagal Membuka Galeri",
+        "Could Not Open Gallery",
         error instanceof Error
           ? error.message
-          : "Terjadi kesalahan saat membuka galeri."
+          : "Something went wrong while opening the gallery."
       );
     }
   };
 
   const validateForm = () => {
     if (!user) {
-      Alert.alert("Belum Login", "Silakan login terlebih dahulu.");
+      Alert.alert("Login Required", "Please log in first.");
       return false;
     }
 
     if (!incident) {
-      Alert.alert("Laporan Tidak Valid", "Data laporan tidak ditemukan.");
+      Alert.alert("Invalid Report", "Report data was not found.");
       return false;
     }
 
     if (!imageUri) {
       Alert.alert(
-        "Bukti Foto Wajib",
-        "Anda wajib memasukkan foto terbaru yang menunjukkan kejadian sudah selesai."
+        "Evidence Photo Required",
+        "You must add a fresh photo showing the incident has been resolved."
       );
       return false;
     }
@@ -163,16 +163,16 @@ export default function ResolveIncidentModal({
 
     if (!cleanNote) {
       Alert.alert(
-        "Catatan Wajib Diisi",
-        "Jelaskan kenapa laporan ini sudah bisa dinyatakan selesai."
+        "Notes Required",
+        "Explain why this report can be marked resolved."
       );
       return false;
     }
 
     if (cleanNote.length < 10) {
       Alert.alert(
-        "Catatan Terlalu Pendek",
-        "Catatan penyelesaian minimal 10 karakter."
+        "Notes Too Short",
+        "Resolution notes must be at least 10 characters."
       );
       return false;
     }
@@ -205,8 +205,8 @@ export default function ResolveIncidentModal({
       );
 
       Alert.alert(
-        "Laporan Ditandai Selesai",
-        "Bukti penyelesaian berhasil disimpan. Status laporan sekarang menjadi resolved.",
+        "Report Marked Resolved",
+        "Resolution evidence was saved. The report is now marked resolved.",
         [
           {
             text: "OK",
@@ -220,7 +220,7 @@ export default function ResolveIncidentModal({
       );
     } catch (error) {
       Alert.alert(
-        "Gagal Menyelesaikan Laporan",
+        "Could Not Resolve Report",
         error instanceof Error
           ? error.message
           : "Terjadi kesalahan saat menyimpan bukti selesai."
@@ -233,14 +233,14 @@ export default function ResolveIncidentModal({
   return (
     <IncidentModalShell
       visible={visible}
-      title="Validasi Selesai"
+      title="Resolution Validation"
       subtitle="Upload gambar terbaru agar status selesai bisa dipercaya."
       submitting={submitting}
       onClose={handleClose}
       footer={
         <>
           <AppButton
-            title="Batal"
+            title="Cancel"
             variant="secondary"
             size="lg"
             disabled={submitting}
@@ -249,7 +249,7 @@ export default function ResolveIncidentModal({
           />
 
           <AppButton
-            title="Tandai Selesai"
+            title="Mark Resolved"
             variant="danger"
             size="lg"
             loading={submitting}
@@ -270,24 +270,24 @@ export default function ResolveIncidentModal({
       {incident ? <IncidentPreviewCard incident={incident} /> : null}
 
       <AppCard variant="muted" style={styles.noticeCard}>
-        <StatusBadge label="Validasi Wajib" variant="warning" size="sm" />
+        <StatusBadge label="Validation Required" variant="warning" size="sm" />
 
         <View style={styles.noticeTextGroup}>
           <Ionicons name="warning" size={20} color={colors.warningDark} />
           <TextInput
             editable={false}
             multiline
-            value="Foto harus sesuai dengan laporan dan menunjukkan bahwa lokasi sudah aman, sudah dibersihkan, atau kejadian sudah tidak mengganggu aktivitas sekitar."
+            value="The photo should match the report and show that the location is safe, cleared, or no longer disrupting nearby activity."
             style={styles.noticeText}
           />
         </View>
       </AppCard>
 
       <EvidencePicker
-        title="Bukti Foto Selesai"
-        subtitle="Upload foto terbaru sebagai bukti bahwa kejadian sudah selesai."
-        emptyTitle="Belum ada bukti selesai"
-        emptyMessage="Upload foto terbaru sebagai bukti bahwa kejadian sudah selesai."
+        title="Resolution Evidence Photo"
+        subtitle="Upload a fresh photo as evidence that the incident is resolved."
+        emptyTitle="No resolution evidence yet"
+        emptyMessage="Upload a fresh photo as evidence that the incident is resolved."
         imageUri={imageUri}
         disabled={submitting}
         onTakePhoto={handleTakePhoto}
@@ -297,14 +297,14 @@ export default function ResolveIncidentModal({
 
       <View style={styles.section}>
         <SectionHeader
-          title="Catatan Penyelesaian"
-          subtitle="Jelaskan alasan laporan ini sudah bisa dinyatakan selesai."
+          title="Resolution Notes"
+          subtitle="Explain why this report can be marked resolved."
         />
 
         <TextInput
           value={resolutionNote}
           onChangeText={setResolutionNote}
-          placeholder="Contoh: Jalan sudah dibersihkan dan kendaraan sudah bisa lewat."
+          placeholder="Example: The road has been cleared and vehicles can pass."
           placeholderTextColor={colors.textSoft}
           style={styles.input}
           multiline
@@ -316,7 +316,7 @@ export default function ResolveIncidentModal({
           label={`${Math.max(
             resolutionNote.trim().length,
             0
-          )}/10 minimum karakter`}
+          )}/10 minimum characters`}
           variant={resolutionNote.trim().length >= 10 ? "success" : "neutral"}
           size="sm"
         />

@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import HomeEarthquakeSection from "./components/HomeEarthquakeSection";
 import { useBmkgEarthquakes } from "./hooks/useBmkgEarthquakes";
 
+import EarthquakeAlertModal from "../../components/EarthquakeAlertModal";
 import IncidentThreadModal from "../../components/IncidentThreadModal";
 import AppCard from "../../components/ui/AppCard";
 import AppScreen from "../../components/ui/AppScreen";
@@ -17,8 +18,11 @@ import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/layout";
 import { typography } from "../../theme/typography";
 import type { IncidentReport } from "../../types/incident";
+import { getIncidentConfidenceMeta } from "../../utils/incidentConfidence";
 import HomeHero from "./components/HomeHero";
 import { useHomeScreen } from "./hooks/useHomeScreen";
+
+const ALERT_MAGNITUDE_THRESHOLD = 5.0;
 
 export default function HomeScreen() {
   const home = useHomeScreen();
@@ -26,6 +30,16 @@ export default function HomeScreen() {
 
   const [selectedIncident, setSelectedIncident] =
     useState<IncidentReport | null>(null);
+  const [alertVisible, setAlertVisible] = useState(false);
+
+  useEffect(() => {
+    if (earthquake.mainEarthquake) {
+      const magnitude = parseFloat(earthquake.mainEarthquake.Magnitude ?? "0");
+      if (magnitude >= ALERT_MAGNITUDE_THRESHOLD) {
+        setAlertVisible(true);
+      }
+    }
+  }, [earthquake.mainEarthquake]);
 
   const openIncidentThread = (incident: IncidentReport) => {
     setSelectedIncident(incident);
@@ -63,9 +77,8 @@ export default function HomeScreen() {
         <AppCard variant="muted" style={styles.errorCard}>
           <View style={styles.errorHeader}>
             <Ionicons name="warning" size={18} color={colors.danger} />
-            <Text style={styles.errorTitle}>Data belum lengkap</Text>
+            <Text style={styles.errorTitle}>Data incomplete</Text>
           </View>
-
           <Text style={styles.errorMessage}>{home.errorMessage}</Text>
         </AppCard>
       ) : null}
@@ -73,20 +86,20 @@ export default function HomeScreen() {
       <View style={styles.section}>
         <SectionHeader
           title="Latest Incidents"
-          subtitle="Laporan terbaru dari komunitas."
+          subtitle="Latest community reports."
         />
 
         {home.loadingReports ? (
           <AppCard style={styles.loadingCard}>
-            <LoadingState message="Memuat laporan terbaru..." />
+            <LoadingState message="Loading latest reports..." />
           </AppCard>
         ) : null}
 
         {!home.loadingReports && home.latestReports.length === 0 ? (
           <EmptyState
             iconName="map-outline"
-            title="Belum ada laporan"
-            message="Laporan warga akan muncul setelah ada incident yang dikirim."
+            title="No reports yet"
+            message="Community reports will appear after an incident is submitted."
           />
         ) : null}
 
@@ -109,6 +122,12 @@ export default function HomeScreen() {
         onClose={closeIncidentThread}
         showActions={false}
       />
+
+      <EarthquakeAlertModal
+        visible={alertVisible}
+        earthquake={earthquake.mainEarthquake}
+        onClose={() => setAlertVisible(false)}
+      />
     </AppScreen>
   );
 }
@@ -124,6 +143,7 @@ function LatestReportCard({
     category: report.category,
     subcategory: report.subcategory ?? report.type,
   });
+  const confidence = getIncidentConfidenceMeta(report);
 
   return (
     <AppCard onPress={onPress} style={styles.reportCard}>
@@ -131,9 +151,7 @@ function LatestReportCard({
         variant="neutral"
         size="md"
         rounded={false}
-        style={{
-          backgroundColor: meta.lightColor,
-        }}
+        style={{ backgroundColor: meta.lightColor }}
       >
         <Ionicons name={meta.iconName} size={21} color={meta.color} />
       </IconBadge>
@@ -143,20 +161,19 @@ function LatestReportCard({
           <Text style={styles.reportTitle} numberOfLines={1}>
             {report.title}
           </Text>
-
           <StatusBadge
-            label={report.status}
-            variant={report.status === "active" ? "active" : "resolved"}
+            label={`${confidence.shortLabel} ${confidence.score}`}
+            variant={getConfidenceVariant(confidence.level)}
             size="sm"
           />
         </View>
 
         <Text style={styles.reportMeta} numberOfLines={1}>
-          {meta.label} • {getSeverityLabel(report.severity)}
+          {meta.label} - {getUrgencyLabel(report)}
         </Text>
 
         <Text style={styles.reportDescription} numberOfLines={2}>
-          {report.description || "Tidak ada deskripsi."}
+          {report.description || "No description provided."}
         </Text>
       </View>
     </AppCard>
@@ -164,14 +181,8 @@ function LatestReportCard({
 }
 
 function getSeverityLabel(severity: IncidentReport["severity"]) {
-  if (severity === "high") {
-    return "High severity";
-  }
-
-  if (severity === "medium") {
-    return "Medium severity";
-  }
-
+  if (severity === "high") return "High severity";
+  if (severity === "medium") return "Medium severity";
   return "Low severity";
 }
 

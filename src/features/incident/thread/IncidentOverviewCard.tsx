@@ -7,8 +7,11 @@ import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
 import { typography } from "../../../theme/typography";
 import type { IncidentReport } from "../../../types/incident";
+import { getIncidentConfidenceMeta } from "../../../utils/incidentConfidence";
+import { getIncidentFreshnessMeta } from "../../../utils/incidentFreshness";
 import {
   formatIncidentDate,
+  getCommunityUpdateMeta,
   getStatusLabel,
   getStatusVariant,
 } from "./threadLabels";
@@ -28,7 +31,16 @@ export default function IncidentOverviewCard({
   });
 
   const author = incident.reportedBy || incident.reporterEmail || "Anonymous";
-  const trust = getTrustMeta(incident);
+  const confidence = getIncidentConfidenceMeta(incident);
+  const freshness = getIncidentFreshnessMeta(incident);
+  const urgencyLevel = incident.urgencyLevel ?? incident.severity;
+  const urgencyLabel =
+    typeof incident.urgencyScore === "number"
+      ? `Urgency ${incident.urgencyScore}`
+      : `${getUrgencyLevelLabel(urgencyLevel)} urgency`;
+  const latestUpdate = incident.latestCommunityUpdateType
+    ? getCommunityUpdateMeta(incident.latestCommunityUpdateType)
+    : null;
 
   return (
     <View style={styles.post}>
@@ -42,7 +54,7 @@ export default function IncidentOverviewCard({
             {author}
           </Text>
 
-          <Text style={styles.dot}>·</Text>
+          <Text style={styles.dot}>-</Text>
 
           <Text style={styles.timeText} numberOfLines={1}>
             {formatIncidentDate(incident.createdAt)}
@@ -79,43 +91,73 @@ export default function IncidentOverviewCard({
           />
 
           <StatusBadge
-            label={getSeverityLabel(incident.severity)}
-            variant={getSeverityVariant(incident.severity)}
+            label={urgencyLabel}
+            variant={getUrgencyVariant(urgencyLevel)}
             size="sm"
           />
         </View>
 
         <View
           style={[
-            styles.trustNotice,
+            styles.signalNotice,
             {
-              backgroundColor: trust.backgroundColor,
-              borderColor: trust.borderColor,
+              backgroundColor: confidence.backgroundColor,
+              borderColor: confidence.borderColor,
             },
           ]}
         >
-          <Ionicons name={trust.iconName} size={17} color={trust.color} />
+          <View style={styles.scoreDial}>
+            <Text style={[styles.scoreText, { color: confidence.color }]}>
+              {confidence.score}
+            </Text>
+          </View>
 
-          <View style={styles.trustTextGroup}>
+          <View style={styles.signalTextGroup}>
             <Text
               style={[
-                styles.trustTitle,
+                styles.signalTitle,
                 {
-                  color: trust.color,
+                  color: confidence.color,
                 },
               ]}
             >
-              {trust.label}
+              {confidence.label}
             </Text>
 
-            <Text style={styles.trustDescription}>{trust.description}</Text>
+            <Text style={styles.signalDescription}>
+              {confidence.description}
+            </Text>
+
+            <Text style={styles.freshnessText}>{freshness.message}</Text>
+
+            {latestUpdate ? (
+              <View style={styles.latestUpdateRow}>
+                <Ionicons
+                  name={latestUpdate.iconName}
+                  size={14}
+                  color={latestUpdate.color}
+                />
+                <Text style={styles.latestUpdateText} numberOfLines={2}>
+                  Latest community update: {latestUpdate.label}
+                </Text>
+              </View>
+            ) : null}
+
+            <View style={styles.signalGrid}>
+              {confidence.signals.map((signal) => (
+                <View key={signal.label} style={styles.signalItem}>
+                  <Text style={styles.signalValue}>{signal.value}</Text>
+                  <Text style={styles.signalLabel}>{signal.label}</Text>
+                </View>
+              ))}
+            </View>
           </View>
         </View>
 
         <Text style={styles.title}>{incident.title}</Text>
 
         <Text style={styles.description}>
-          {incident.description || "Tidak ada deskripsi."}
+          {incident.description || "No description provided."}
         </Text>
 
         {incident.imageUri ? (
@@ -123,9 +165,8 @@ export default function IncidentOverviewCard({
         ) : null}
 
         <Text style={styles.disclaimer}>
-          Laporan ini berasal dari warga dan belum tentu merupakan informasi
-          resmi. Gunakan sebagai informasi awal dan tetap berhati-hati di
-          lapangan.
+          This report comes from the community and may not be official
+          information. Treat it as an early signal and stay careful on site.
         </Text>
 
         <Pressable
@@ -140,84 +181,33 @@ export default function IncidentOverviewCard({
             size={16}
             color={colors.primaryDark}
           />
-          <Text style={styles.reportContentText}>Laporkan Konten</Text>
+          <Text style={styles.reportContentText}>Report Content</Text>
         </Pressable>
       </View>
     </View>
   );
 }
 
-function getTrustMeta(incident: IncidentReport): {
-  label: string;
-  description: string;
-  iconName: keyof typeof Ionicons.glyphMap;
-  color: string;
-  backgroundColor: string;
-  borderColor: string;
-} {
-  const verificationCount = incident.verificationCount ?? 0;
-  const disputeCount = incident.disputeCount ?? 0;
-
-  if (
-    incident.verificationStatus === "disputed" ||
-    (disputeCount >= 2 && disputeCount >= verificationCount)
-  ) {
-    return {
-      label: "Dipertanyakan",
-      description:
-        "Beberapa warga memberi tanda bahwa laporan ini perlu ditinjau kembali.",
-      iconName: "alert-circle-outline",
-      color: colors.primaryDark,
-      backgroundColor: colors.dangerSoft,
-      borderColor: "#FECACA",
-    };
+function getUrgencyLevelLabel(urgency: NonNullable<IncidentReport["urgencyLevel"]>) {
+  if (urgency === "high") {
+    return "High";
   }
 
-  if (
-    incident.verificationStatus === "verified" ||
-    (verificationCount >= 2 && verificationCount > disputeCount)
-  ) {
-    return {
-      label: "Dikonfirmasi warga",
-      description: "Beberapa warga telah memberi update bahwa kejadian terjadi.",
-      iconName: "checkmark-circle-outline",
-      color: colors.success,
-      backgroundColor: colors.successSoft,
-      borderColor: "#BBF7D0",
-    };
+  if (urgency === "medium") {
+    return "Medium";
   }
 
-  return {
-    label: "Belum diverifikasi",
-    description:
-      "Laporan ini belum memiliki cukup update dari warga di sekitar lokasi.",
-    iconName: "information-circle-outline",
-    color: colors.warningDark,
-    backgroundColor: colors.warningSoft,
-    borderColor: "#FDE68A",
-  };
+  return "Low";
 }
 
-function getSeverityLabel(severity: IncidentReport["severity"]) {
-  if (severity === "high") {
-    return "Tinggi";
-  }
-
-  if (severity === "medium") {
-    return "Sedang";
-  }
-
-  return "Rendah";
-}
-
-function getSeverityVariant(
-  severity: IncidentReport["severity"]
+function getUrgencyVariant(
+  urgency: NonNullable<IncidentReport["urgencyLevel"]>
 ): "success" | "warning" | "danger" {
-  if (severity === "high") {
+  if (urgency === "high") {
     return "danger";
   }
 
-  if (severity === "medium") {
+  if (urgency === "medium") {
     return "warning";
   }
 
@@ -281,7 +271,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "800",
   },
-  trustNotice: {
+  signalNotice: {
     marginTop: spacing.md,
     borderRadius: radius.xl,
     borderWidth: 1,
@@ -290,19 +280,78 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: spacing.sm,
   },
-  trustTextGroup: {
+  scoreDial: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.full,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(15, 23, 42, 0.08)",
+  },
+  scoreText: {
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  signalTextGroup: {
     flex: 1,
   },
-  trustTitle: {
+  signalTitle: {
     fontSize: 13,
     fontWeight: "800",
   },
-  trustDescription: {
+  signalDescription: {
     marginTop: 2,
     fontSize: 11,
     lineHeight: 16,
     fontWeight: "500",
     color: colors.textMuted,
+  },
+  freshnessText: {
+    marginTop: spacing.xs,
+    fontSize: 11,
+    lineHeight: 16,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  latestUpdateRow: {
+    marginTop: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  latestUpdateText: {
+    flex: 1,
+    fontSize: 11,
+    lineHeight: 16,
+    fontWeight: "800",
+    color: colors.text,
+  },
+  signalGrid: {
+    marginTop: spacing.sm,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+  },
+  signalItem: {
+    minWidth: 58,
+    borderRadius: radius.md,
+    backgroundColor: "rgba(255, 255, 255, 0.64)",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+  },
+  signalValue: {
+    fontSize: 12,
+    fontWeight: "900",
+    color: colors.text,
+  },
+  signalLabel: {
+    marginTop: 1,
+    fontSize: 9,
+    fontWeight: "800",
+    color: colors.textMuted,
+    textTransform: "uppercase",
   },
   title: {
     marginTop: spacing.md,

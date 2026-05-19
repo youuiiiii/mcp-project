@@ -12,25 +12,25 @@ export type ReportFilter =
   | "medium"
   | "low";
 
-export const REPORT_FILTER_OPTIONS: ReadonlyArray<{
+export const REPORT_FILTER_OPTIONS: readonly {
   value: ReportFilter;
   label: string;
-}> = [
+}[] = [
   {
     value: "all",
-    label: "Semua",
+    label: "All",
   },
   {
     value: "active",
-    label: "Aktif",
+    label: "Active",
   },
   {
     value: "resolved",
-    label: "Selesai",
+    label: "Resolved",
   },
   {
     value: "high",
-    label: "Severity Tinggi",
+    label: "High Urgency",
   },
   {
     value: "medium",
@@ -80,7 +80,7 @@ export const useReportsScreen = () => {
       },
       (error) => {
         console.error("Reports screen error:", error);
-        setErrorMessage(error.message || "Gagal memuat laporan.");
+        setErrorMessage(error.message || "Could not load reports.");
         setLoading(false);
       }
     );
@@ -108,7 +108,9 @@ export const useReportsScreen = () => {
         return false;
       }
 
-      if (selectedFilter === "high" && report.severity !== "high") {
+      const urgencyLevel = report.urgencyLevel ?? report.severity;
+
+      if (selectedFilter === "high" && urgencyLevel !== "high") {
         return false;
       }
 
@@ -133,9 +135,14 @@ export const useReportsScreen = () => {
         report.title,
         report.description,
         report.category,
+        report.domain,
+        report.kind,
         report.status,
         report.severity,
+        report.urgencyLevel,
+        report.urgencyScore,
         report.verificationStatus,
+        report.latestCommunityUpdateType,
         meta.label,
         report.reportedBy,
         report.reporterEmail,
@@ -153,7 +160,9 @@ export const useReportsScreen = () => {
       total: reports.length,
       active: reports.filter((item) => item.status === "active").length,
       resolved: reports.filter((item) => item.status === "resolved").length,
-      highSeverity: reports.filter((item) => item.severity === "high").length,
+      highSeverity: reports.filter((item) => {
+        return (item.urgencyLevel ?? item.severity) === "high";
+      }).length,
     };
   }, [reports]);
 

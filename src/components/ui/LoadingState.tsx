@@ -17,7 +17,7 @@ type LoadingStateProps = {
 };
 
 export default function LoadingState({
-  message = "Memuat data...",
+  message = "Loading data...",
   style,
 }: LoadingStateProps) {
   return (

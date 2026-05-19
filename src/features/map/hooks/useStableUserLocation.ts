@@ -1,5 +1,5 @@
 import * as Location from "expo-location";
-import { RefObject, useEffect, useRef, useState } from "react";
+import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 import { Alert } from "react-native";
 import MapView, { Region } from "react-native-maps";
 
@@ -17,9 +17,7 @@ const USER_LOCATION_MIN_MOVE_METERS = 2;
 const USER_LOCATION_MAX_ACCURACY_METERS = 60;
 const USER_LOCATION_MAX_JUMP_METERS = 80;
 
-export const useStableUserLocation = (
-  mapRef: RefObject<MapView | null>
-) => {
+export const useStableUserLocation = (mapRef: RefObject<MapView | null>) => {
   const lastStableUserLocationRef = useRef<UserMapPosition | null>(null);
 
   const [userLocation, setUserLocation] = useState<UserMapPosition | null>(
@@ -31,47 +29,41 @@ export const useStableUserLocation = (
     string | null
   >(null);
 
-  const shouldUpdateUserLocation = (
-    nextLocation: UserMapPosition
-  ): boolean => {
-    const lastLocation = lastStableUserLocationRef.current;
-    const nextAccuracy =
-      nextLocation.accuracy ?? USER_LOCATION_MAX_ACCURACY_METERS;
+  const updateStableUserLocation = useCallback(
+    (nextLocation: UserMapPosition) => {
+      const lastLocation = lastStableUserLocationRef.current;
+      const nextAccuracy =
+        nextLocation.accuracy ?? USER_LOCATION_MAX_ACCURACY_METERS;
 
-    if (nextAccuracy > USER_LOCATION_MAX_ACCURACY_METERS) {
-      return false;
-    }
+      if (nextAccuracy > USER_LOCATION_MAX_ACCURACY_METERS) {
+        return;
+      }
 
-    if (!lastLocation) {
-      return true;
-    }
+      if (!lastLocation) {
+        lastStableUserLocationRef.current = nextLocation;
+        setUserLocation(nextLocation);
+        return;
+      }
 
-    const distance = getDistanceInMeters(lastLocation, nextLocation);
+      const distance = getDistanceInMeters(lastLocation, nextLocation);
 
-    if (distance > USER_LOCATION_MAX_JUMP_METERS) {
-      return false;
-    }
+      if (distance > USER_LOCATION_MAX_JUMP_METERS) {
+        return;
+      }
 
-    const lastAccuracy =
-      lastLocation.accuracy ?? USER_LOCATION_MAX_ACCURACY_METERS;
+      const lastAccuracy =
+        lastLocation.accuracy ?? USER_LOCATION_MAX_ACCURACY_METERS;
+      const accuracyImproved = nextAccuracy + 5 < lastAccuracy;
 
-    const accuracyImproved = nextAccuracy + 5 < lastAccuracy;
+      if (distance < USER_LOCATION_MIN_MOVE_METERS && !accuracyImproved) {
+        return;
+      }
 
-    if (distance < USER_LOCATION_MIN_MOVE_METERS && !accuracyImproved) {
-      return false;
-    }
-
-    return true;
-  };
-
-  const updateStableUserLocation = (nextLocation: UserMapPosition) => {
-    if (!shouldUpdateUserLocation(nextLocation)) {
-      return;
-    }
-
-    lastStableUserLocationRef.current = nextLocation;
-    setUserLocation(nextLocation);
-  };
+      lastStableUserLocationRef.current = nextLocation;
+      setUserLocation(nextLocation);
+    },
+    []
+  );
 
   useEffect(() => {
     let subscription: Location.LocationSubscription | null = null;
@@ -85,7 +77,7 @@ export const useStableUserLocation = (
 
         if (permission.status !== "granted") {
           setLocationErrorMessage(
-            "Izin lokasi ditolak. Map tetap dapat digunakan, tetapi posisi Anda tidak bisa ditampilkan."
+            "Location permission was denied. You can still use the map, but your position cannot be shown."
           );
           setLoadingLocation(false);
           return;
@@ -145,7 +137,7 @@ export const useStableUserLocation = (
         setLocationErrorMessage(
           error instanceof Error
             ? error.message
-            : "Gagal mengambil lokasi perangkat."
+            : "Could not get device location."
         );
 
         setLoadingLocation(false);
@@ -158,13 +150,13 @@ export const useStableUserLocation = (
       mounted = false;
       subscription?.remove();
     };
-  }, [mapRef]);
+  }, [mapRef, updateStableUserLocation]);
 
   const focusUserLocation = () => {
     if (!userLocation) {
       Alert.alert(
-        "Lokasi Tidak Tersedia",
-        "Izinkan akses lokasi untuk menampilkan posisi Anda."
+        "Location Unavailable",
+        "Allow location access to show your position."
       );
       return;
     }

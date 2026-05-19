@@ -34,7 +34,7 @@ export default function HomeEarthquakeSection({
   return (
     <View style={styles.wrapper}>
       <SectionHeader
-        title="Update Gempa BMKG"
+        title="BMKG Earthquake Updates"
         subtitle="Data resmi gempa terkini"
         style={styles.sectionHeader}
         right={
@@ -54,7 +54,7 @@ export default function HomeEarthquakeSection({
 
       {loading ? (
         <AppCard style={styles.loadingCard}>
-          <LoadingState message="Memuat data resmi BMKG..." />
+          <LoadingState message="Loading official BMKG data..." />
         </AppCard>
       ) : errorMessage ? (
         <AppCard variant="muted" style={styles.errorCard}>
@@ -73,7 +73,7 @@ export default function HomeEarthquakeSection({
             <Ionicons name="earth" size={30} color={colors.info} />
           </IconBadge>
 
-          <Text style={styles.emptyTitle}>Belum ada update gempa</Text>
+          <Text style={styles.emptyTitle}>No earthquake updates yet</Text>
           <Text style={styles.emptyText}>
             Data gempa resmi akan tampil di sini saat tersedia.
           </Text>
@@ -123,7 +123,7 @@ function FeaturedEarthquakeCard({
           />
 
           <Text style={styles.featuredLocation}>
-            {earthquake.Wilayah ?? "Lokasi tidak diketahui"}
+            {earthquake.Wilayah ?? "Unknown location"}
           </Text>
         </View>
 
@@ -204,11 +204,11 @@ function MiniEarthquakeCard({
 
       <View style={styles.miniInfo}>
         <Text style={styles.miniTitle} numberOfLines={2}>
-          {earthquake.Wilayah ?? "Lokasi tidak diketahui"}
+          {earthquake.Wilayah ?? "Unknown location"}
         </Text>
 
         <Text style={styles.miniSubtitle}>
-          {earthquake.Jam ?? "-"} · {earthquake.Kedalaman ?? "-"}
+          {earthquake.Jam ?? "-"} - {earthquake.Kedalaman ?? "-"}
         </Text>
       </View>
     </AppCard>

@@ -15,6 +15,7 @@ import {
   subscribeToIncidentVerifications,
 } from "../../../services/incidentService";
 import type {
+  CommunityUpdateType,
   IncidentAccuracyVote,
   IncidentAccuracyVoteType,
   IncidentReply,
@@ -48,6 +49,8 @@ export function useIncidentThread({
   const [replyText, setReplyText] = useState("");
   const [replyImageUri, setReplyImageUri] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<IncidentReply | null>(null);
+  const [selectedUpdateType, setSelectedUpdateType] =
+    useState<CommunityUpdateType>("additional_info");
 
   const [replySubmitting, setReplySubmitting] = useState(false);
   const [accuracySubmitting, setAccuracySubmitting] = useState(false);
@@ -82,6 +85,7 @@ export function useIncidentThread({
       setReplyText("");
       setReplyImageUri(null);
       setReplyingTo(null);
+      setSelectedUpdateType("additional_info");
       setLoadingThread(false);
       return;
     }
@@ -133,6 +137,7 @@ export function useIncidentThread({
     }
 
     return (
+      incident.reporterUid === user.uid ||
       incident.reporterEmail === user.email ||
       incident.reportedBy === user.displayName ||
       incident.reportedBy === user.email
@@ -166,17 +171,17 @@ export function useIncidentThread({
       accuracyVotes.find((item) => item.actorKey === actorKey)?.voteType ??
       null;
 
-    let label = "Belum diverifikasi";
+    let label = "Not verified yet";
     let tone: "neutral" | "success" | "warning" | "danger" = "neutral";
 
     if (accurateCount >= 2 && accurateCount > inaccurateCount) {
-      label = "Dikonfirmasi warga";
+      label = "Confirmed by community";
       tone = "success";
     } else if (inaccurateCount >= 2 && inaccurateCount > accurateCount) {
-      label = "Dipertanyakan";
+      label = "Questioned";
       tone = "danger";
     } else if (accurateCount > 0 || inaccurateCount > 0) {
-      label = "Menunggu lebih banyak sinyal";
+      label = "Waiting for more signals";
       tone = "warning";
     }
 
@@ -195,6 +200,7 @@ export function useIncidentThread({
     setReplyText("");
     setReplyImageUri(null);
     setReplyingTo(null);
+    setSelectedUpdateType("additional_info");
     onClose();
   };
 
@@ -233,6 +239,7 @@ export function useIncidentThread({
 
   const startReplyTo = (reply: IncidentReply) => {
     setReplyingTo(reply);
+    setSelectedUpdateType("additional_info");
   };
 
   const cancelReplyTo = () => {
@@ -263,7 +270,7 @@ export function useIncidentThread({
 
       if (!user?.uid) {
         setVoteFeedbackStatus("error");
-        setVoteFeedbackMessage("Silakan login untuk menilai laporan.");
+        setVoteFeedbackMessage("Please log in to rate this report.");
         return;
       }
 
@@ -343,7 +350,7 @@ export function useIncidentThread({
     } catch (error) {
       setVoteFeedbackStatus("error");
       setVoteFeedbackMessage(
-        error instanceof Error ? error.message : "Gagal menyimpan penilaian."
+        error instanceof Error ? error.message : "Could not save your rating."
       );
     } finally {
       setAccuracySubmitting(false);
@@ -382,7 +389,7 @@ export function useIncidentThread({
         imageUri: uploadedImageUrl,
         parentReplyId,
         replyToUserName: replyingTo?.userName ?? replyingTo?.userEmail ?? null,
-        updateType: "additional_info",
+        updateType: replyingTo ? "additional_info" : selectedUpdateType,
         userName: user.displayName ?? user.email ?? "Anonymous",
         userEmail: user.email ?? null,
         actorKey: user.uid,
@@ -391,6 +398,7 @@ export function useIncidentThread({
       setReplyText("");
       setReplyImageUri(null);
       setReplyingTo(null);
+      setSelectedUpdateType("additional_info");
 
       Haptics.selectionAsync().catch(() => {});
     } catch (error) {
@@ -412,7 +420,7 @@ export function useIncidentThread({
   const openLocationSettings = () => {
     Linking.openSettings().catch(() => {
       setVoteFeedbackStatus("error");
-      setVoteFeedbackMessage("Gagal membuka pengaturan lokasi.");
+      setVoteFeedbackMessage("Could not open location settings.");
     });
   };
 
@@ -427,6 +435,8 @@ export function useIncidentThread({
     setReplyText,
     replyImageUri,
     replyingTo,
+    selectedUpdateType,
+    setSelectedUpdateType,
     replySubmitting,
     replyIsValid,
 

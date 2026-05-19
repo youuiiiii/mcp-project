@@ -4,6 +4,7 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import AppCard from "../../../components/ui/AppCard";
 import IconBadge from "../../../components/ui/IconBadge";
 import SectionHeader from "../../../components/ui/SectionHeader";
+import { useI18n } from "../../../i18n";
 import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
 import { typography } from "../../../theme/typography";
@@ -25,13 +26,14 @@ export default function ReportEvidenceSection({
   onPickFromGallery,
   onRemovePhoto,
 }: ReportEvidenceSectionProps) {
+  const { t } = useI18n();
   const canAddMore = photoUris.length < MAX_REPORT_PHOTOS && !disabled;
 
   return (
     <View style={styles.section}>
       <SectionHeader
-        title="4. Evidence"
-        subtitle="Tambahkan 1–4 foto kejadian. Foto pertama akan menjadi cover laporan."
+        title={t("report.evidence.title")}
+        subtitle={t("report.evidence.subtitle")}
       />
 
       <View style={styles.photoRow}>
@@ -45,7 +47,7 @@ export default function ReportEvidenceSection({
             <Ionicons name="camera" size={22} color={colors.danger} />
           </IconBadge>
 
-          <Text style={styles.photoButtonText}>Camera</Text>
+          <Text style={styles.photoButtonText}>{t("common.camera")}</Text>
         </AppCard>
 
         <AppCard
@@ -58,12 +60,15 @@ export default function ReportEvidenceSection({
             <Ionicons name="image" size={22} color={colors.info} />
           </IconBadge>
 
-          <Text style={styles.photoButtonText}>Gallery</Text>
+          <Text style={styles.photoButtonText}>{t("common.gallery")}</Text>
         </AppCard>
       </View>
 
       <Text style={styles.counterText}>
-        {photoUris.length}/{MAX_REPORT_PHOTOS} foto dipilih
+        {t("report.evidence.counter", {
+          count: photoUris.length,
+          max: MAX_REPORT_PHOTOS,
+        })}
       </Text>
 
       {photoUris.length > 0 ? (
@@ -74,7 +79,9 @@ export default function ReportEvidenceSection({
 
               {index === 0 ? (
                 <View style={styles.coverBadge}>
-                  <Text style={styles.coverBadgeText}>Cover</Text>
+                  <Text style={styles.coverBadgeText}>
+                    {t("report.evidence.cover")}
+                  </Text>
                 </View>
               ) : null}
 
@@ -97,9 +104,9 @@ export default function ReportEvidenceSection({
           <Ionicons name="images-outline" size={22} color={colors.textMuted} />
 
           <View style={styles.emptyTextGroup}>
-            <Text style={styles.emptyTitle}>Belum ada foto</Text>
+            <Text style={styles.emptyTitle}>{t("report.evidence.emptyTitle")}</Text>
             <Text style={styles.emptyText}>
-              Minimal 1 foto wajib agar laporan bisa tampil sebagai pin publik.
+              {t("report.evidence.emptyText")}
             </Text>
           </View>
         </AppCard>

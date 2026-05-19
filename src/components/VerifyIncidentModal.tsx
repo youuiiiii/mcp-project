@@ -58,22 +58,22 @@ type ConditionOption = {
 const VERIFICATION_OPTIONS: VerificationOption[] = [
   {
     value: "valid",
-    label: "Benar Terjadi",
-    description: "Saya melihat kejadian ini benar terjadi.",
+    label: "Confirmed",
+    description: "I saw that this incident is real.",
     color: colors.success,
     icon: "checkmark-circle",
   },
   {
     value: "condition_update",
-    label: "Update Kondisi",
-    description: "Kejadian ada, tetapi kondisinya perlu diperbarui.",
+    label: "Condition Update",
+    description: "The incident exists, but the condition needs an update.",
     color: colors.warning,
     icon: "sync-circle",
   },
   {
     value: "invalid",
-    label: "Tidak Sesuai",
-    description: "Saya tidak menemukan kejadian sesuai laporan.",
+    label: "Not Accurate",
+    description: "I could not find an incident matching this report.",
     color: colors.danger,
     icon: "close-circle",
   },
@@ -82,36 +82,36 @@ const VERIFICATION_OPTIONS: VerificationOption[] = [
 const CONDITION_OPTIONS: ConditionOption[] = [
   {
     value: "still_happening",
-    label: "Masih Terjadi",
-    description: "Kejadian masih berlangsung di lokasi.",
+    label: "Still Happening",
+    description: "The incident is still happening at the location.",
     color: colors.warning,
     icon: "radio",
   },
   {
     value: "getting_worse",
-    label: "Semakin Parah",
-    description: "Kondisi terlihat semakin memburuk.",
+    label: "Getting Worse",
+    description: "The condition appears to be getting worse.",
     color: colors.danger,
     icon: "trending-up",
   },
   {
     value: "partially_resolved",
-    label: "Mulai Terkendali",
-    description: "Kondisi mulai membaik, tetapi belum selesai.",
+    label: "Improving",
+    description: "The condition is improving, but not resolved yet.",
     color: colors.info,
     icon: "construct",
   },
   {
     value: "resolved_but_not_closed",
-    label: "Tampak Selesai",
-    description: "Kejadian tampak selesai, tetapi butuh konfirmasi lanjutan.",
+    label: "Appears Resolved",
+    description: "The incident appears resolved, but still needs confirmation.",
     color: colors.success,
     icon: "checkmark-done",
   },
   {
     value: "not_found",
-    label: "Tidak Ditemukan",
-    description: "Kejadian tidak ditemukan di sekitar lokasi.",
+    label: "Not Found",
+    description: "The incident was not found around the location.",
     color: colors.textMuted,
     icon: "search",
   },
@@ -134,7 +134,7 @@ export default function VerifyIncidentModal({
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const actorKey = user?.email ?? user?.uid ?? null;
+  const actorKey = user?.uid ?? user?.email ?? null;
 
   const conditionOptions = useMemo(() => {
     if (verificationType === "invalid") {
@@ -186,8 +186,8 @@ export default function VerifyIncidentModal({
 
       if (!permission.granted) {
         Alert.alert(
-          "Izin Kamera Ditolak",
-          "Aplikasi membutuhkan izin kamera untuk mengambil bukti verifikasi."
+          "Camera Permission Denied",
+          "The app needs camera permission to capture verification evidence."
         );
         return;
       }
@@ -205,7 +205,7 @@ export default function VerifyIncidentModal({
       const uri = result.assets?.[0]?.uri;
 
       if (!uri) {
-        Alert.alert("Foto Tidak Valid", "Gagal membaca hasil foto.");
+        Alert.alert("Invalid Photo", "Could not read the captured photo.");
         return;
       }
 
@@ -213,10 +213,10 @@ export default function VerifyIncidentModal({
       Haptics.selectionAsync().catch(() => {});
     } catch (error) {
       Alert.alert(
-        "Gagal Membuka Kamera",
+        "Could Not Open Camera",
         error instanceof Error
           ? error.message
-          : "Terjadi kesalahan saat membuka kamera."
+          : "Something went wrong while opening the camera."
       );
     }
   };
@@ -227,8 +227,8 @@ export default function VerifyIncidentModal({
 
       if (!permission.granted) {
         Alert.alert(
-          "Izin Galeri Ditolak",
-          "Aplikasi membutuhkan izin galeri untuk memilih bukti verifikasi."
+          "Gallery Permission Denied",
+          "The app needs gallery permission to choose verification evidence."
         );
         return;
       }
@@ -247,7 +247,7 @@ export default function VerifyIncidentModal({
       const uri = result.assets?.[0]?.uri;
 
       if (!uri) {
-        Alert.alert("Foto Tidak Valid", "Gagal membaca gambar dari galeri.");
+        Alert.alert("Invalid Photo", "Could not read the selected gallery image.");
         return;
       }
 
@@ -255,29 +255,29 @@ export default function VerifyIncidentModal({
       Haptics.selectionAsync().catch(() => {});
     } catch (error) {
       Alert.alert(
-        "Gagal Membuka Galeri",
+        "Could Not Open Gallery",
         error instanceof Error
           ? error.message
-          : "Terjadi kesalahan saat membuka galeri."
+          : "Something went wrong while opening the gallery."
       );
     }
   };
 
   const validateForm = () => {
     if (!user || !actorKey) {
-      Alert.alert("Belum Login", "Silakan login untuk mengirim update.");
+      Alert.alert("Login Required", "Please log in to send an update.");
       return false;
     }
 
     if (!incident) {
-      Alert.alert("Incident Tidak Valid", "Data incident tidak ditemukan.");
+      Alert.alert("Invalid Incident", "Incident data was not found.");
       return false;
     }
 
     if (!userLocation) {
       Alert.alert(
-        "Lokasi Tidak Tersedia",
-        "Aplikasi belum mendapatkan lokasi realtime Anda."
+        "Location Unavailable",
+        "The app has not received your realtime location yet."
       );
       return false;
     }
@@ -289,41 +289,53 @@ export default function VerifyIncidentModal({
 
     if (distance > VERIFICATION_DISTANCE_METERS) {
       Alert.alert(
-        "Terlalu Jauh dari Incident",
-        `Anda hanya bisa mengirim verifikasi/update jika berada maksimal ${VERIFICATION_DISTANCE_METERS} meter dari lokasi kejadian.\n\nJarak Anda saat ini sekitar ${formatDistance(
+        "Too Far From Incident",
+        `You can only send verification or updates when you are within ${VERIFICATION_DISTANCE_METERS} meters of the incident location.\n\nYour current distance is about ${formatDistance(
           distance
         )}.`
       );
       return false;
     }
 
-    const isOwnIncident =
-      incident.reporterEmail === actorKey || incident.reportedBy === actorKey;
+    const actorAliases = [user?.uid, user?.email, user?.displayName].filter(
+      (item): item is string => Boolean(item)
+    );
 
-    const hasVerified =
-      incident.verifiedBy?.includes(actorKey) ||
-      incident.disputedBy?.includes(actorKey);
+    const isOwnIncident = actorAliases.some((item) => {
+      return (
+        incident.reporterUid === item ||
+        incident.reporterEmail === item ||
+        incident.reportedBy === item
+      );
+    });
+
+    const hasVerified = actorAliases.some((item) => {
+      return (
+        incident.verifiedBy?.includes(item) ||
+        incident.disputedBy?.includes(item)
+      );
+    });
 
     if (verificationType !== "condition_update" && isOwnIncident) {
       Alert.alert(
-        "Tidak Bisa Verifikasi",
-        "Anda tidak dapat memverifikasi laporan yang Anda buat sendiri. Gunakan Update Kondisi jika ingin memperbarui kondisi."
+        "Cannot Verify",
+        "You cannot verify a report you created. Use Condition Update if you want to update the condition."
       );
       return false;
     }
 
     if (verificationType !== "condition_update" && hasVerified) {
       Alert.alert(
-        "Sudah Diverifikasi",
-        "Anda sudah pernah memberi verifikasi valid/tidak sesuai. Gunakan Update Kondisi untuk memberi informasi terbaru."
+        "Already Verified",
+        "You have already submitted a valid/not accurate verification. Use Condition Update to add newer information."
       );
       return false;
     }
 
     if (!imageUri) {
       Alert.alert(
-        "Bukti Foto Wajib",
-        "Verifikasi atau update kondisi wajib menyertakan foto terbaru."
+        "Evidence Photo Required",
+        "Verification or condition updates must include a fresh photo."
       );
       return false;
     }
@@ -332,14 +344,14 @@ export default function VerifyIncidentModal({
 
     if (!cleanNote) {
       Alert.alert(
-        "Catatan Wajib Diisi",
-        "Tambahkan catatan singkat tentang kondisi incident."
+        "Notes Required",
+        "Add a short note about the incident condition."
       );
       return false;
     }
 
     if (cleanNote.length < 8) {
-      Alert.alert("Catatan Terlalu Pendek", "Catatan minimal 8 karakter.");
+      Alert.alert("Notes Too Short", "Notes must be at least 8 characters.");
       return false;
     }
 
@@ -383,8 +395,8 @@ export default function VerifyIncidentModal({
       );
 
       Alert.alert(
-        "Update Terkirim",
-        "Bukti foto dan catatan berhasil dikirim ke timeline incident.",
+        "Update Sent",
+        "The evidence photo and notes were sent to the incident timeline.",
         [
           {
             text: "OK",
@@ -398,10 +410,10 @@ export default function VerifyIncidentModal({
       );
     } catch (error) {
       Alert.alert(
-        "Gagal Mengirim Update",
+        "Could Not Send Update",
         error instanceof Error
           ? error.message
-          : "Terjadi kesalahan saat menyimpan update."
+          : "Something went wrong while saving the update."
       );
     } finally {
       setSubmitting(false);
@@ -411,14 +423,14 @@ export default function VerifyIncidentModal({
   return (
     <IncidentModalShell
       visible={visible}
-      title="Verifikasi / Update Kondisi"
-      subtitle="Kirim bukti foto terbaru dan catatan kondisi di lokasi."
+      title="Verification / Condition Update"
+      subtitle="Send a fresh evidence photo and condition notes from the location."
       submitting={submitting}
       onClose={handleClose}
       footer={
         <>
           <AppButton
-            title="Batal"
+            title="Cancel"
             variant="secondary"
             size="lg"
             disabled={submitting}
@@ -427,7 +439,7 @@ export default function VerifyIncidentModal({
           />
 
           <AppButton
-            title="Kirim ke Timeline"
+            title="Send to Timeline"
             variant="primary"
             size="lg"
             loading={submitting}
@@ -445,8 +457,8 @@ export default function VerifyIncidentModal({
 
       <View style={styles.section}>
         <SectionHeader
-          title="Jenis Kontribusi"
-          subtitle="Pilih apakah kamu memverifikasi, membantah, atau memperbarui kondisi."
+          title="Contribution Type"
+          subtitle="Choose whether you are confirming, disputing, or updating the condition."
         />
 
         <View style={styles.optionList}>
@@ -467,8 +479,8 @@ export default function VerifyIncidentModal({
 
       <View style={styles.section}>
         <SectionHeader
-          title="Kondisi Terbaru"
-          subtitle="Pilih kondisi yang paling sesuai di lokasi."
+          title="Latest Condition"
+          subtitle="Choose the condition that best matches the location."
         />
 
         <View style={styles.optionList}>
@@ -488,10 +500,10 @@ export default function VerifyIncidentModal({
       </View>
 
       <EvidencePicker
-        title="Foto Bukti Terbaru"
-        subtitle="Foto wajib untuk membuktikan kondisi incident terbaru."
-        emptyTitle="Belum ada foto"
-        emptyMessage="Foto wajib untuk membuktikan kondisi incident terbaru."
+        title="Latest Evidence Photo"
+        subtitle="A photo is required to prove the latest incident condition."
+        emptyTitle="No photo yet"
+        emptyMessage="A photo is required to prove the latest incident condition."
         imageUri={imageUri}
         disabled={submitting}
         onTakePhoto={handleTakePhoto}
@@ -501,14 +513,14 @@ export default function VerifyIncidentModal({
 
       <View style={styles.section}>
         <SectionHeader
-          title="Catatan Kondisi"
-          subtitle="Tulis catatan singkat dan jelas berdasarkan kondisi lapangan."
+          title="Condition Notes"
+          subtitle="Write short and clear notes based on the on-site condition."
         />
 
         <TextInput
           value={note}
           onChangeText={setNote}
-          placeholder="Contoh: Kejadian masih terjadi, satu jalur sudah bisa dilewati."
+          placeholder="Example: The incident is still active, but one lane can be used."
           placeholderTextColor={colors.textSoft}
           style={styles.input}
           multiline
@@ -517,7 +529,7 @@ export default function VerifyIncidentModal({
         />
 
         <StatusBadge
-          label={`${Math.max(note.trim().length, 0)}/8 minimum karakter`}
+          label={`${Math.max(note.trim().length, 0)}/8 minimum characters`}
           variant={note.trim().length >= 8 ? "success" : "neutral"}
           size="sm"
         />

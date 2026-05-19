@@ -10,27 +10,27 @@ import { typography } from "../../theme/typography";
 
 const EDUCATION_ITEMS = [
   {
-    title: "Keselamatan saat melapor",
+    title: "Safety while reporting",
     description:
-      "Laporkan kejadian dari jarak aman. Jangan mengambil foto saat berkendara atau mendekati area berbahaya.",
+      "Report incidents from a safe distance. Do not take photos while driving or approaching dangerous areas.",
     iconName: "shield-checkmark-outline" as const,
   },
   {
-    title: "Membaca laporan warga",
+    title: "Reading community reports",
     description:
-      "Laporan warga adalah informasi awal. Perhatikan status akurasi dan komentar terbaru sebelum mengambil keputusan.",
+      "Community reports are early signals. Check accuracy status and latest comments before making decisions.",
     iconName: "information-circle-outline" as const,
   },
   {
-    title: "Saat melihat kecelakaan",
+    title: "When you see an accident",
     description:
-      "Utamakan keselamatan diri. Hindari kerumunan, beri ruang untuk petugas, dan laporkan jika aman.",
+      "Prioritize your own safety. Avoid crowds, give responders space, and report only when safe.",
     iconName: "warning-outline" as const,
   },
   {
-    title: "Saat terjadi kebakaran",
+    title: "During a fire",
     description:
-      "Jauhi sumber api, jangan menghirup asap, dan ikuti arahan petugas atau warga setempat.",
+      "Stay away from fire sources, avoid smoke, and follow responder or local guidance.",
     iconName: "flame-outline" as const,
   },
 ];
@@ -40,7 +40,7 @@ export default function EducationScreen() {
     <AppScreen contentContainerStyle={styles.content}>
       <SectionHeader
         title="Education"
-        subtitle="Panduan singkat keselamatan dan penggunaan laporan warga."
+        subtitle="A quick guide for safety and using community reports."
       />
 
       <View style={styles.list}>
@@ -61,10 +61,10 @@ export default function EducationScreen() {
       <AppCard variant="muted" style={styles.noteCard}>
         <Ionicons name="construct-outline" size={22} color={colors.textMuted} />
         <View style={styles.textGroup}>
-          <Text style={styles.noteTitle}>Konten masih bisa dikembangkan</Text>
+          <Text style={styles.noteTitle}>More guidance can be added later</Text>
           <Text style={styles.noteText}>
-            Screen ini sudah dikembalikan ke UI supaya fitur Education bisa
-            dilanjutkan tanpa mengganggu core flow.
+            This screen is back in the UI so the education feature can keep
+            growing without disrupting the core incident flow.
           </Text>
         </View>
       </AppCard>

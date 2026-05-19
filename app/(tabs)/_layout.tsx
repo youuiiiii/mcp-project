@@ -7,13 +7,15 @@ import {
   View,
 } from "react-native";
 
-import { useAuth } from "../../src/contexts/AuthContext";
-import { colors } from "../../src/theme/colors";
+import { useAuth } from "@/contexts/AuthContext";
+import { useI18n } from "@/i18n";
+import { colors } from "@/theme/colors";
 
 const LOGIN_ROUTE = "/login" as Href;
 
 export default function TabsLayout() {
   const { user, loading } = useAuth();
+  const { t } = useI18n();
 
   if (loading) {
     return (
@@ -41,7 +43,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
+          title: t("tabs.home"),
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
               name={focused ? "home" : "home-outline"}
@@ -56,7 +58,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="incidents"
         options={{
-          title: "Incidents",
+          title: t("tabs.map"),
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
               name={focused ? "list" : "list-outline"}
@@ -96,7 +98,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="report"
         options={{
-          title: "Report",
+          title: t("tabs.report"),
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
               name={focused ? "document-text" : "document-text-outline"}
@@ -111,7 +113,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
+          title: t("tabs.profile"),
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
               name={focused ? "person" : "person-outline"}

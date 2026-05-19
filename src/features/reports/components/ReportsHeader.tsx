@@ -43,19 +43,19 @@ export default function ReportsHeader({
       color: colors.info,
     },
     {
-      label: "Aktif",
+      label: "Active",
       value: summary.active,
       iconName: "radio",
       color: colors.danger,
     },
     {
-      label: "Selesai",
+      label: "Resolved",
       value: summary.resolved,
       iconName: "checkmark-circle",
       color: colors.success,
     },
     {
-      label: "Tinggi",
+      label: "High urgency",
       value: summary.highSeverity,
       iconName: "alert-circle",
       color: colors.warningDark,
@@ -70,8 +70,8 @@ export default function ReportsHeader({
         <Text style={styles.title}>Reports</Text>
 
         <Text style={styles.subtitle}>
-          Pantau laporan warga, buka detail thread, lihat status, dan tindak
-          lanjuti laporan yang membutuhkan verifikasi atau penyelesaian.
+          Monitor community reports, open detail threads, check status, and
+          follow up on reports that need verification or resolution.
         </Text>
       </View>
 
@@ -95,7 +95,7 @@ export default function ReportsHeader({
           <TextInput
             value={searchQuery}
             onChangeText={onSearchChange}
-            placeholder="Cari laporan, kategori, status, atau pelapor..."
+            placeholder="Search reports, categories, status, or reporter..."
             placeholderTextColor={colors.textSoft}
             style={styles.searchInput}
           />
