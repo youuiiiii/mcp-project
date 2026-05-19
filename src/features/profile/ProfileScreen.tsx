@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Modal, StyleSheet, Text, View } from "react-native";
 
 import { type Href, useRouter } from "expo-router";
 import AppButton from "../../components/ui/AppButton";
@@ -27,6 +28,7 @@ export default function ProfileScreen() {
 
   const router = useRouter();
   const isModerator = isModeratorEmail(userEmail);
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 
   const openModeration = () => {
     router.push("/moderation" as Href);
@@ -51,17 +53,11 @@ export default function ProfileScreen() {
           <Text style={styles.name} numberOfLines={1}>
             {displayName}
           </Text>
-
           <Text style={styles.email} numberOfLines={1}>
             {userEmail}
           </Text>
-
           <View style={styles.rolePill}>
-            <Ionicons
-              name="shield-checkmark"
-              size={14}
-              color={colors.info}
-            />
+            <Ionicons name="shield-checkmark" size={14} color={colors.info} />
             <Text style={styles.roleText}>Community Reporter</Text>
           </View>
         </View>
@@ -76,10 +72,9 @@ export default function ProfileScreen() {
 
       <View style={styles.section}>
         <SectionHeader
-          title="Kontribusi"
-          subtitle="Report summary for this account."
+          title="Contribution"
+          subtitle="Summary of reports from this account."
         />
-
         <StatsStrip stats={stats} />
       </View>
 
@@ -88,8 +83,8 @@ export default function ProfileScreen() {
           title="Account"
           subtitle="Basic information and account settings."
         />
-
         <AppCard style={styles.accountCard}>
+          <AccountRow iconName="person-outline" label="Name" value={displayName} />
           <AccountRow
             iconName="person-outline"
             label="Name"
@@ -97,16 +92,15 @@ export default function ProfileScreen() {
           />
 
           <View style={styles.divider} />
-
-          <AccountRow
-            iconName="mail-outline"
-            label="Email"
-            value={userEmail}
-          />
+          <AccountRow iconName="mail-outline" label="Email" value={userEmail} />
         </AppCard>
       </View>
 
       {isModerator ? (
+        <View style={styles.section}>
+          <SectionHeader
+            title="Moderator"
+            subtitle="Review content reports from community."
       <View style={styles.section}>
         <SectionHeader
           title="Moderator"
@@ -131,25 +125,75 @@ export default function ProfileScreen() {
             size="sm"
             onPress={openModeration}
           />
-        </AppCard>
-      </View>
-    ) : null}
+          <AppCard style={styles.moderatorCard}>
+            <View style={styles.moderatorIcon}>
+              <Ionicons name="shield-checkmark" size={22} color={colors.info} />
+            </View>
+            <View style={styles.moderatorText}>
+              <Text style={styles.moderatorTitle}>Moderation Queue</Text>
+              <Text style={styles.moderatorDescription}>
+                Review reported content and hide problematic reports.
+              </Text>
+            </View>
+            <AppButton
+              title="Open"
+              variant="secondary"
+              size="sm"
+              onPress={openModeration}
+            />
+          </AppCard>
+        </View>
+      ) : null}
 
       <AppButton
         title="Logout"
         variant="danger"
         size="lg"
         fullWidth
-        onPress={handleLogout}
+        onPress={() => setLogoutModalVisible(true)}
         leftIcon={
-          <Ionicons
-            name="log-out-outline"
-            size={20}
-            color={colors.textInverse}
-          />
+          <Ionicons name="log-out-outline" size={20} color={colors.textInverse} />
         }
         style={styles.logoutButton}
       />
+
+      <Modal
+        visible={logoutModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLogoutModalVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconWrap}>
+              <Ionicons name="log-out-outline" size={32} color={colors.danger} />
+            </View>
+            <Text style={styles.modalTitle}>Logout</Text>
+            <Text style={styles.modalMessage}>
+              Are you sure you want to log out of your account?
+            </Text>
+            <View style={styles.modalBtnRow}>
+              <AppButton
+                title="Cancel"
+                variant="secondary"
+                size="md"
+                onPress={() => setLogoutModalVisible(false)}
+                style={styles.modalBtnCancel}
+              />
+              <AppButton
+                title="Logout"
+                variant="danger"
+                size="md"
+                onPress={() => {
+                  setLogoutModalVisible(false);
+                  handleLogout();
+                }}
+                style={styles.modalBtnLogout}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </AppScreen>
   );
 }
@@ -189,7 +233,6 @@ function StatsStrip({ stats }: { stats: ProfileStats }) {
           <Ionicons name={item.iconName} size={18} color={item.color} />
           <Text style={styles.statValue}>{item.value}</Text>
           <Text style={styles.statLabel}>{item.label}</Text>
-
           {index < items.length - 1 ? <View style={styles.statDivider} /> : null}
         </View>
       ))}
@@ -211,7 +254,6 @@ function AccountRow({
       <View style={styles.accountIcon}>
         <Ionicons name={iconName} size={19} color={colors.textMuted} />
       </View>
-
       <View style={styles.accountText}>
         <Text style={styles.accountLabel}>{label}</Text>
         <Text style={styles.accountValue} numberOfLines={1}>
@@ -223,36 +265,6 @@ function AccountRow({
 }
 
 const styles = StyleSheet.create({
-
-  moderatorCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  moderatorIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: radius.lg,
-    backgroundColor: colors.infoSoft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  moderatorText: {
-    flex: 1,
-  },
-  moderatorTitle: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  moderatorDescription: {
-    marginTop: 2,
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-
-
-  
   loadingContainer: {
     justifyContent: "center",
   },
@@ -389,4 +401,77 @@ const styles = StyleSheet.create({
     ...shadow.floating,
     shadowColor: colors.primaryDark,
   },
+  moderatorCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  moderatorIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.lg,
+    backgroundColor: colors.infoSoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  moderatorText: {
+    flex: 1,
+  },
+  moderatorTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: colors.text,
+  },
+  moderatorDescription: {
+    marginTop: 2,
+    ...typography.caption,
+    color: colors.textMuted,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  modalContainer: {
+    width: "100%",
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 24,
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  modalIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.dangerSoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "900",
+    color: colors.text,
+  },
+  modalMessage: {
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  modalBtnRow: {
+    flexDirection: "row",
+    gap: spacing.md,
+    width: "100%",
+    marginTop: spacing.sm,
+  },
+  modalBtnCancel: {
+    flex: 1,
+  },
+  modalBtnLogout: {
+    flex: 1,
+  },
+});
 });
