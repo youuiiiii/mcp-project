@@ -1,5 +1,3 @@
-import * as ImagePicker from "expo-image-picker";
-import * as Location from "expo-location";
 import { type Href, useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert } from "react-native";
@@ -8,16 +6,27 @@ import {
   calculateIncidentUrgency,
   DEFAULT_IMPACT_ANSWERS,
   getReportKindOption,
-  IMPACT_QUESTION_OPTIONS,
-  type ReportKindOption,
 } from "../../../constants/reportTaxonomy";
 import { useAuth } from "../../../contexts/AuthContext";
-import { type TFunction, useI18n } from "../../../i18n";
+import {
+  DUPLICATE_CHECK_RADIUS_METERS,
+  MAX_REPORT_PHOTOS,
+} from "./reportFormConstants";
+import {
+  buildReportDraft,
+  confirmNewReportDespiteDuplicate,
+} from "./reportFormHelpers";
+import {
+  alertReportPhotoLimit,
+  pickReportPhotos,
+  requestReportLocation,
+  takeReportPhoto,
+} from "./reportFormMedia";
+import { useI18n } from "../../../i18n";
 import { uploadImageAsync } from "../../../services/cloudinaryService";
 import {
   createIncidentReport,
   findNearbyActiveIncidentCandidates,
-  type NearbyIncidentCandidate,
 } from "../../../services/incidentService";
 import type {
   Coordinate,
@@ -26,13 +35,8 @@ import type {
   IncidentKind,
   ReportLocationDraft,
 } from "../../../types/incident";
-import { formatDistance } from "../../../utils/geo";
 
 const MAP_ROUTE = "/(tabs)/map" as Href;
-
-const LOCATION_MAX_ACCURACY_METERS = 80;
-const MAX_REPORT_PHOTOS = 4;
-const DUPLICATE_CHECK_RADIUS_METERS = 150;
 
 export const useReportForm = () => {
   const router = useRouter();
@@ -83,37 +87,7 @@ export const useReportForm = () => {
   };
 
   const requestCurrentLocation = async (): Promise<ReportLocationDraft | null> => {
-    const permission = await Location.requestForegroundPermissionsAsync();
-
-    if (permission.status !== "granted") {
-      Alert.alert(
-        t("report.validation.locationPermission.title"),
-        t("report.validation.locationPermission.message")
-      );
-      return null;
-    }
-
-    const location = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.High,
-    });
-    const accuracy = location.coords.accuracy ?? 999;
-
-    if (accuracy > LOCATION_MAX_ACCURACY_METERS) {
-      Alert.alert(
-        t("report.validation.lowAccuracy.title"),
-        t("report.validation.lowAccuracy.message", {
-          accuracy: Math.round(accuracy),
-        })
-      );
-      return null;
-    }
-
-    return {
-      latitude: location.coords.latitude,
-      longitude: location.coords.longitude,
-      accuracyMeters: Math.round(accuracy),
-      source: "current_location",
-    };
+    return requestReportLocation(t);
   };
 
   const useCurrentLocationForIncident = async (): Promise<ReportLocationDraft | null> => {
@@ -150,92 +124,32 @@ export const useReportForm = () => {
 
   const takePhoto = async () => {
     if (loading) return;
+
     if (photoUris.length >= MAX_REPORT_PHOTOS) {
-      Alert.alert(
-        t("report.validation.photoLimit.title"),
-        t("common.photoLimit", { max: MAX_REPORT_PHOTOS })
-      );
+      alertReportPhotoLimit(t);
       return;
     }
-    try {
-      const permission = await ImagePicker.requestCameraPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert(
-          t("report.validation.cameraPermission.title"),
-          t("report.validation.cameraPermission.message")
-        );
-        return;
-      }
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: false,
-        quality: 0.75,
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      });
-      if (result.canceled) return;
-      const assetUri = result.assets?.[0]?.uri;
-      if (!assetUri) {
-        Alert.alert(
-          t("report.validation.invalidPhoto.title"),
-          t("report.validation.invalidCapturedPhoto.message")
-        );
-        return;
-      }
+
+    const assetUri = await takeReportPhoto(t);
+
+    if (assetUri) {
       appendPhotos([assetUri]);
-    } catch (error) {
-      Alert.alert(
-        t("report.error.openCamera.title"),
-        error instanceof Error
-          ? error.message
-          : t("report.error.openCamera.fallback")
-      );
     }
   };
 
   const pickFromGallery = async () => {
     if (loading) return;
+
     if (photoUris.length >= MAX_REPORT_PHOTOS) {
-      Alert.alert(
-        t("report.validation.photoLimit.title"),
-        t("common.photoLimit", { max: MAX_REPORT_PHOTOS })
-      );
+      alertReportPhotoLimit(t);
       return;
     }
-    try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert(
-          t("report.validation.galleryPermission.title"),
-          t("report.validation.galleryPermission.message")
-        );
-        return;
-      }
-      const remainingSlots = MAX_REPORT_PHOTOS - photoUris.length;
-      const result = await ImagePicker.launchImageLibraryAsync({
-        allowsEditing: false,
-        allowsMultipleSelection: true,
-        selectionLimit: remainingSlots,
-        quality: 0.75,
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      });
-      if (result.canceled) return;
-      const uris = result.assets
-        .map((asset) => asset.uri)
-        .filter((uri): uri is string => Boolean(uri));
-      if (uris.length === 0) {
-        Alert.alert(
-          t("report.validation.invalidPhoto.title"),
-          t("report.validation.invalidSelectedPhoto.message")
-        );
-        return;
-      }
+
+    const remainingSlots = MAX_REPORT_PHOTOS - photoUris.length;
+    const uris = await pickReportPhotos(t, remainingSlots);
+
+    if (uris.length > 0) {
       appendPhotos(uris);
-    } catch (error) {
-      Alert.alert(
-        t("report.error.openGallery.title"),
-        error instanceof Error
-          ? error.message
-          : t("report.error.openGallery.fallback")
-      );
     }
   };
 
@@ -429,62 +343,3 @@ export const useReportForm = () => {
     handleSubmit,
   };
 };
-
-function buildReportDraft({
-  cleanTitle,
-  cleanDescription,
-  impactAnswers,
-  kindOption,
-  t,
-}: {
-  cleanTitle: string;
-  cleanDescription: string;
-  impactAnswers: IncidentImpactAnswers;
-  kindOption: ReportKindOption;
-  t: TFunction;
-}) {
-  const kindLabel = t(kindOption.labelKey);
-  const title = cleanTitle || kindOption.defaultTitle;
-  const selectedImpacts = IMPACT_QUESTION_OPTIONS.filter((item) => {
-    return impactAnswers[item.value] === true;
-  }).map((item) => t(item.labelKey));
-  const impactSentence =
-    selectedImpacts.length > 0
-      ? `Current impact: ${selectedImpacts.join(", ")}.`
-      : "No additional impact flags selected.";
-  const description =
-    cleanDescription ||
-    `${kindLabel} reported near the selected map pin. ${impactSentence}`;
-
-  return {
-    title,
-    description,
-  };
-}
-
-function confirmNewReportDespiteDuplicate(
-  candidate: NearbyIncidentCandidate,
-  t: TFunction
-): Promise<boolean> {
-  return new Promise((resolve) => {
-    Alert.alert(
-      t("report.duplicate.title"),
-      t("report.duplicate.message", {
-        title: candidate.incident.title,
-        distance: formatDistance(candidate.distanceMeters),
-      }),
-      [
-        {
-          text: t("report.duplicate.reviewMap"),
-          style: "cancel",
-          onPress: () => resolve(false),
-        },
-        {
-          text: t("report.duplicate.submitNew"),
-          style: "destructive",
-          onPress: () => resolve(true),
-        },
-      ]
-    );
-  });
-}

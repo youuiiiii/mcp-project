@@ -1,5 +1,4 @@
 import * as Haptics from "expo-haptics";
-import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Linking, Platform } from "react-native";
@@ -21,6 +20,14 @@ import type {
   IncidentVerification,
 } from "../../../types/incident";
 import { getIncidentProximity } from "../../../utils/proximity";
+import {
+  buildAccuracySummary,
+  getAccuracyErrorMessage,
+} from "./incidentThreadHelpers";
+import {
+  pickReplyImageFromGallery,
+  takeReplyImagePhoto,
+} from "./incidentThreadMedia";
 import type { VoteFeedbackStatus } from "./IncidentVoteFeedbackModal";
 
 type UseIncidentThreadParams = {
@@ -129,39 +136,7 @@ export function useIncidentThread({
   }, [incident, user]);
 
   const accuracySummary = useMemo(() => {
-    const accurateCount = accuracyVotes.filter((item) => {
-      return item.voteType === "accurate";
-    }).length;
-
-    const inaccurateCount = accuracyVotes.filter((item) => {
-      return item.voteType === "inaccurate";
-    }).length;
-
-    const currentUserVote =
-      accuracyVotes.find((item) => item.actorKey === actorKey)?.voteType ??
-      null;
-
-    let label = "Not verified yet";
-    let tone: "neutral" | "success" | "warning" | "danger" = "neutral";
-
-    if (accurateCount >= 2 && accurateCount > inaccurateCount) {
-      label = "Confirmed by community";
-      tone = "success";
-    } else if (inaccurateCount >= 2 && inaccurateCount > accurateCount) {
-      label = "Questioned";
-      tone = "danger";
-    } else if (accurateCount > 0 || inaccurateCount > 0) {
-      label = "Waiting for more signals";
-      tone = "warning";
-    }
-
-    return {
-      accurateCount,
-      inaccurateCount,
-      currentUserVote,
-      label,
-      tone,
-    };
+    return buildAccuracySummary(accuracyVotes, actorKey);
   }, [accuracyVotes, actorKey]);
 
   const replyIsValid =
@@ -179,39 +154,10 @@ export function useIncidentThread({
       return;
     }
 
-    try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const assetUri = await pickReplyImageFromGallery();
 
-      if (!permission.granted) {
-        Alert.alert(
-          "Gallery Permission Needed",
-          "Enable gallery permission to add an image update."
-        );
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        allowsEditing: false,
-        quality: 0.75,
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      });
-
-      if (result.canceled) {
-        return;
-      }
-
-      const assetUri = result.assets?.[0]?.uri;
-
-      if (assetUri) {
-        setReplyImageUri(assetUri);
-      }
-    } catch (error) {
-      Alert.alert(
-        "Could Not Open Gallery",
-        error instanceof Error
-          ? error.message
-          : "Something went wrong while opening the gallery."
-      );
+    if (assetUri) {
+      setReplyImageUri(assetUri);
     }
   };
 
@@ -220,39 +166,10 @@ export function useIncidentThread({
       return;
     }
 
-    try {
-      const permission = await ImagePicker.requestCameraPermissionsAsync();
+    const assetUri = await takeReplyImagePhoto();
 
-      if (!permission.granted) {
-        Alert.alert(
-          "Camera Permission Needed",
-          "Enable camera permission to capture an image update."
-        );
-        return;
-      }
-
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: false,
-        quality: 0.75,
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      });
-
-      if (result.canceled) {
-        return;
-      }
-
-      const assetUri = result.assets?.[0]?.uri;
-
-      if (assetUri) {
-        setReplyImageUri(assetUri);
-      }
-    } catch (error) {
-      Alert.alert(
-        "Could Not Open Camera",
-        error instanceof Error
-          ? error.message
-          : "Something went wrong while opening the camera."
-      );
+    if (assetUri) {
+      setReplyImageUri(assetUri);
     }
   };
 
@@ -497,17 +414,4 @@ export function useIncidentThread({
     closeVoteFeedback,
     openLocationSettings,
   };
-}
-
-function getAccuracyErrorMessage(error: unknown) {
-  if (
-    error &&
-    typeof error === "object" &&
-    "code" in error &&
-    error.code === "permission-denied"
-  ) {
-    return "Could not save this check because Firestore rules do not allow it yet. Deploy the latest firestore.rules, then try again.";
-  }
-
-  return error instanceof Error ? error.message : "Could not save your check.";
 }

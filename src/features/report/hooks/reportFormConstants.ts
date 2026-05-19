@@ -1,0 +1,3 @@
+export const LOCATION_MAX_ACCURACY_METERS = 80;
+export const MAX_REPORT_PHOTOS = 4;
+export const DUPLICATE_CHECK_RADIUS_METERS = 150;

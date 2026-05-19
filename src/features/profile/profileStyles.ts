@@ -1,0 +1,276 @@
+import { StyleSheet } from "react-native";
+
+import { colors } from "../../theme/colors";
+import { radius, shadow, spacing } from "../../theme/layout";
+import { typography } from "../../theme/typography";
+
+export const profileStyles = StyleSheet.create({
+  loadingContainer: {
+    justifyContent: "center",
+  },
+  content: {
+    gap: spacing["2xl"],
+  },
+  headerCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.lg,
+  },
+  avatar: {
+    width: 68,
+    height: 68,
+    borderRadius: radius["2xl"],
+    backgroundColor: colors.dark,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: radius["2xl"],
+    resizeMode: "cover",
+  },
+  avatarText: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: colors.textInverse,
+  },
+  identity: {
+    flex: 1,
+  },
+  name: {
+    fontSize: 25,
+    fontWeight: "800",
+    color: colors.text,
+  },
+  editNameButton: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.full,
+    backgroundColor: colors.surfaceMuted,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  inlineActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  inlineActionButton: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    backgroundColor: colors.surfaceMuted,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  inlineActionPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.96 }],
+  },
+  email: {
+    marginTop: 3,
+    ...typography.caption,
+    color: colors.textMuted,
+  },
+  rolePill: {
+    marginTop: spacing.sm,
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: colors.infoSoft,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+  },
+  roleText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: colors.infoDark,
+  },
+  errorCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: colors.dangerSoft,
+    borderColor: "#FECACA",
+  },
+  errorText: {
+    flex: 1,
+    ...typography.caption,
+    color: colors.primaryDark,
+  },
+  section: {
+    gap: spacing.md,
+  },
+  statsCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.md,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: "center",
+    gap: 4,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: colors.text,
+  },
+  statLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.textMuted,
+  },
+  statDivider: {
+    position: "absolute",
+    right: 0,
+    top: 8,
+    bottom: 8,
+    width: 1,
+    backgroundColor: colors.border,
+  },
+  accountCard: {
+    paddingVertical: spacing.md,
+  },
+  avatarPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
+  },
+  cameraBadge: {
+    position: "absolute",
+    right: -3,
+    bottom: -3,
+    width: 28,
+    height: 28,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary,
+    borderWidth: 2,
+    borderColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  accountRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  accountIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surfaceMuted,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  accountText: {
+    flex: 1,
+  },
+  accountLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.textMuted,
+  },
+  accountValue: {
+    marginTop: 2,
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  accountNameInput: {
+    marginTop: 4,
+    minHeight: 38,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceMuted,
+    paddingHorizontal: spacing.md,
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: spacing.md,
+  },
+  logoutButton: {
+    ...shadow.floating,
+    shadowColor: colors.primaryDark,
+  },
+  moderatorCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  moderatorIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.lg,
+    backgroundColor: colors.infoSoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  moderatorText: {
+    flex: 1,
+  },
+  moderatorTitle: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: colors.text,
+  },
+  moderatorDescription: {
+    marginTop: 2,
+    ...typography.caption,
+    color: colors.textMuted,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  modalContainer: {
+    width: "100%",
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 24,
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  modalIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.dangerSoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "900",
+    color: colors.text,
+  },
+  modalMessage: {
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  modalBtnRow: {
+    flexDirection: "row",
+    gap: spacing.md,
+    width: "100%",
+    marginTop: spacing.sm,
+  },
+  modalBtnCancel: {
+    flex: 1,
+  },
+  modalBtnLogout: {
+    flex: 1,
+  },
+});
