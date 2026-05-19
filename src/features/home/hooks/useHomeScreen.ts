@@ -7,7 +7,6 @@ import type { IncidentReport } from "../../../types/incident";
 
 const MAP_ROUTE = "/(tabs)/map" as Href;
 const REPORT_ROUTE = "/(tabs)/report" as Href;
-const REPORTS_ROUTE = "/(tabs)/reports" as Href;
 const ANALYTICS_ROUTE = "/(tabs)/analytics" as Href;
 const PROFILE_ROUTE = "/(tabs)/profile" as Href;
 const EDUCATION_ROUTE = "/(tabs)/education" as Href;
@@ -82,10 +81,6 @@ export function useHomeScreen() {
     router.push(REPORT_ROUTE);
   };
 
-  const openReports = () => {
-    router.push(REPORTS_ROUTE);
-  };
-
   const openAnalytics = () => {
     router.push(ANALYTICS_ROUTE);
   };
@@ -116,7 +111,6 @@ export function useHomeScreen() {
 
     openMap,
     openReport,
-    openReports,
     openAnalytics,
     openProfile,
     openEducation,

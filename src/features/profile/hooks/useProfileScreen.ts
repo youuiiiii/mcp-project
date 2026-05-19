@@ -1,8 +1,10 @@
+import * as ImagePicker from "expo-image-picker";
 import { type Href, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Alert } from "react-native";
 
 import { useAuth } from "../../../contexts/AuthContext";
+import { uploadImageAsync } from "../../../services/cloudinaryService";
 import { subscribeToIncidents } from "../../../services/incidentService";
 import type { IncidentReport } from "../../../types/incident";
 
@@ -36,11 +38,14 @@ const getInitials = (value: string): string => {
 
 export const useProfileScreen = () => {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, updateUserProfile } = useAuth();
 
   const [reports, setReports] = useState<IncidentReport[]>([]);
   const [loading, setLoading] = useState(true);
+  const [savingProfile, setSavingProfile] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [draftName, setDraftName] = useState("");
+  const [draftPhotoUri, setDraftPhotoUri] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -65,9 +70,15 @@ export const useProfileScreen = () => {
     return (
       user?.displayName || user?.email?.split("@")[0] || "Community Reporter"
     );
-  }, [user]);
+  }, [user?.displayName, user?.email]);
 
   const userEmail = user?.email || "-";
+  const photoURL = user?.photoURL ?? null;
+
+  useEffect(() => {
+    setDraftName(displayName);
+    setDraftPhotoUri(photoURL);
+  }, [displayName, photoURL]);
 
   const userInitial = useMemo(() => {
     return getInitials(displayName);
@@ -129,13 +140,127 @@ export const useProfileScreen = () => {
     ]);
   };
 
+  const pickProfilePhoto = async () => {
+    if (savingProfile) {
+      return;
+    }
+
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permission.granted) {
+        Alert.alert(
+          "Izin Galeri Dibutuhkan",
+          "Aktifkan izin galeri untuk memilih foto profil."
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.75,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const assetUri = result.assets?.[0]?.uri;
+
+      if (!assetUri) {
+        Alert.alert("Foto Tidak Valid", "Gagal membaca gambar dari galeri.");
+        return;
+      }
+
+      setSavingProfile(true);
+      setDraftPhotoUri(assetUri);
+
+      const nextPhotoURL = await uploadImageAsync(assetUri, "profile-images");
+
+      await updateUserProfile({
+        displayName,
+        photoURL: nextPhotoURL,
+      });
+
+      setDraftPhotoUri(nextPhotoURL);
+      Alert.alert("Foto Profil Tersimpan", "Foto profil berhasil diperbarui.");
+    } catch (error) {
+      setDraftPhotoUri(photoURL);
+      Alert.alert(
+        "Gagal Mengubah Foto",
+        error instanceof Error
+          ? error.message
+          : "Terjadi kesalahan saat mengubah foto profil."
+      );
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const saveProfile = async () => {
+    const cleanName = draftName.trim();
+
+    if (!user) {
+      Alert.alert("Belum Login", "Silakan login terlebih dahulu.");
+      return;
+    }
+
+    if (cleanName.length < 2) {
+      Alert.alert("Nama Terlalu Pendek", "Nama minimal 2 karakter.");
+      return;
+    }
+
+    try {
+      setSavingProfile(true);
+
+      const shouldUploadPhoto =
+        draftPhotoUri &&
+        draftPhotoUri !== photoURL &&
+        !draftPhotoUri.startsWith("http");
+
+      const nextPhotoURL = shouldUploadPhoto
+        ? await uploadImageAsync(draftPhotoUri, "profile-images")
+        : draftPhotoUri;
+
+      await updateUserProfile({
+        displayName: cleanName,
+        photoURL: nextPhotoURL,
+      });
+
+      setDraftPhotoUri(nextPhotoURL);
+      Alert.alert(
+        "Profil Tersimpan",
+        "Nama dan foto profil berhasil diperbarui."
+      );
+    } catch (error) {
+      console.error("Update profile error:", error);
+      Alert.alert(
+        "Gagal Menyimpan Profil",
+        error instanceof Error
+          ? error.message
+          : "Terjadi kesalahan saat menyimpan profil."
+      );
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
   return {
     loading,
+    savingProfile,
     errorMessage,
     displayName,
     userEmail,
     userInitial,
+    photoURL,
+    draftName,
+    setDraftName,
+    draftPhotoUri,
     stats,
+    pickProfilePhoto,
+    saveProfile,
     handleLogout,
   };
 };

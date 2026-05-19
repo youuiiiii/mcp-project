@@ -45,7 +45,6 @@ export default function HomeScreen() {
         onOpenProfile={home.openProfile}
         onOpenMap={home.openMap}
         onOpenReport={home.openReport}
-        onOpenReports={home.openReports}
         onOpenAnalytics={home.openAnalytics}
         onOpenEarthquake={home.openEarthquake}
         onOpenEducation={home.openEducation}

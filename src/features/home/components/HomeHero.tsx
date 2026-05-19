@@ -16,7 +16,6 @@ type HomeHeroProps = {
   onOpenProfile: () => void;
   onOpenMap: () => void;
   onOpenReport: () => void;
-  onOpenReports: () => void;
   onOpenAnalytics: () => void;
   onOpenEarthquake: () => void;
   onOpenEducation: () => void;
@@ -30,7 +29,6 @@ export default function HomeHero({
   onOpenProfile,
   onOpenMap,
   onOpenReport,
-  onOpenReports,
   onOpenAnalytics,
   onOpenEarthquake,
   onOpenEducation,
@@ -101,17 +99,6 @@ export default function HomeHero({
           size="md"
           onPress={onOpenMap}
           leftIcon={<Ionicons name="map" size={18} color={colors.text} />}
-          style={styles.gridAction}
-        />
-
-        <AppButton
-          title="Reports"
-          variant="secondary"
-          size="md"
-          onPress={onOpenReports}
-          leftIcon={
-            <Ionicons name="list-circle" size={18} color={colors.text} />
-          }
           style={styles.gridAction}
         />
 

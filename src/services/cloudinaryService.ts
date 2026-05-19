@@ -1,6 +1,9 @@
 import { CLOUDINARY_CONFIG } from "../constants/cloudinaryConfig";
 
-type CloudinaryFolder = "incident-images" | "resolution-images";
+type CloudinaryFolder =
+  | "incident-images"
+  | "resolution-images"
+  | "profile-images";
 
 type CloudinaryResponse = {
   secure_url?: string;
