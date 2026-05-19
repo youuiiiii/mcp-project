@@ -4,7 +4,13 @@ import { getIncidentDisplayMeta } from "../../../constants/incident";
 import { subscribeToIncidents } from "../../../services/incidentService";
 import type { IncidentReport } from "../../../types/incident";
 
-export type ReportFilter = "all" | "active" | "resolved" | "high";
+export type ReportFilter =
+  | "all"
+  | "active"
+  | "resolved"
+  | "high"
+  | "medium"
+  | "low";
 
 export const REPORT_FILTER_OPTIONS: readonly {
   value: ReportFilter;
@@ -25,6 +31,14 @@ export const REPORT_FILTER_OPTIONS: readonly {
   {
     value: "high",
     label: "High Urgency",
+  },
+  {
+    value: "medium",
+    label: "Severity Sedang",
+  },
+  {
+    value: "low",
+    label: "Severity Rendah",
   },
 ];
 
@@ -97,6 +111,14 @@ export const useReportsScreen = () => {
       const urgencyLevel = report.urgencyLevel ?? report.severity;
 
       if (selectedFilter === "high" && urgencyLevel !== "high") {
+        return false;
+      }
+
+      if (selectedFilter === "medium" && report.severity !== "medium") {
+        return false;
+      }
+
+      if (selectedFilter === "low" && report.severity !== "low") {
         return false;
       }
 

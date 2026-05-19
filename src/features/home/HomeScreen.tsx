@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import HomeEarthquakeSection from "./components/HomeEarthquakeSection";
 import { useBmkgEarthquakes } from "./hooks/useBmkgEarthquakes";
 
+import EarthquakeAlertModal from "../../components/EarthquakeAlertModal";
 import IncidentThreadModal from "../../components/IncidentThreadModal";
 import ResolveIncidentModal from "../../components/ResolveIncidentModal";
 import VerifyIncidentModal from "../../components/VerifyIncidentModal";
@@ -22,6 +23,8 @@ import type { IncidentReport } from "../../types/incident";
 import { getIncidentConfidenceMeta } from "../../utils/incidentConfidence";
 import HomeHero from "./components/HomeHero";
 import { useHomeScreen } from "./hooks/useHomeScreen";
+
+const ALERT_MAGNITUDE_THRESHOLD = 5.0;
 
 export default function HomeScreen() {
   const home = useHomeScreen();
@@ -68,7 +71,6 @@ export default function HomeScreen() {
         onOpenProfile={home.openProfile}
         onOpenMap={home.openMap}
         onOpenReport={home.openReport}
-        onOpenReports={home.openReports}
         onOpenAnalytics={home.openAnalytics}
         onOpenEarthquake={home.openEarthquake}
         onOpenEducation={home.openEducation}
@@ -89,7 +91,6 @@ export default function HomeScreen() {
             <Ionicons name="warning" size={18} color={colors.danger} />
             <Text style={styles.errorTitle}>Data incomplete</Text>
           </View>
-
           <Text style={styles.errorMessage}>{home.errorMessage}</Text>
         </AppCard>
       ) : null}
@@ -146,6 +147,12 @@ export default function HomeScreen() {
         incident={selectedResolveIncident}
         onClose={closeResolveModal}
       />
+
+      <EarthquakeAlertModal
+        visible={alertVisible}
+        earthquake={earthquake.mainEarthquake}
+        onClose={() => setAlertVisible(false)}
+      />
     </AppScreen>
   );
 }
@@ -169,9 +176,7 @@ function LatestReportCard({
         variant="neutral"
         size="md"
         rounded={false}
-        style={{
-          backgroundColor: meta.lightColor,
-        }}
+        style={{ backgroundColor: meta.lightColor }}
       >
         <Ionicons name={meta.iconName} size={21} color={meta.color} />
       </IconBadge>
@@ -181,7 +186,6 @@ function LatestReportCard({
           <Text style={styles.reportTitle} numberOfLines={1}>
             {report.title}
           </Text>
-
           <StatusBadge
             label={`Confidence ${confidence.score}`}
             variant={getConfidenceVariant(confidence.level)}
@@ -201,40 +205,10 @@ function LatestReportCard({
   );
 }
 
-function getUrgencyLabel(report: IncidentReport) {
-  const urgency = report.urgencyLevel ?? report.severity;
-
-  if (typeof report.urgencyScore === "number") {
-    return `Urgency ${report.urgencyScore}`;
-  }
-
-  if (urgency === "high") {
-    return "High urgency";
-  }
-
-  if (urgency === "medium") {
-    return "Medium urgency";
-  }
-
-  return "Low urgency";
-}
-
-function getConfidenceVariant(
-  level: ReturnType<typeof getIncidentConfidenceMeta>["level"]
-) {
-  if (level === "confirmed" || level === "resolved") {
-    return "success";
-  }
-
-  if (level === "questioned") {
-    return "danger";
-  }
-
-  if (level === "credible") {
-    return "info";
-  }
-
-  return "warning";
+function getSeverityLabel(severity: IncidentReport["severity"]) {
+  if (severity === "high") return "High severity";
+  if (severity === "medium") return "Medium severity";
+  return "Low severity";
 }
 
 const styles = StyleSheet.create({
