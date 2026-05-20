@@ -5,6 +5,7 @@ import AppButton from "../../../components/ui/AppButton";
 import AppCard from "../../../components/ui/AppCard";
 import StatusBadge from "../../../components/ui/StatusBadge";
 import { colors } from "../../../theme/colors";
+import { getIncidentConfidenceMeta } from "../../../utils/incidentConfidence";
 import type {
   IncidentContentReport,
   IncidentReport,
@@ -29,6 +30,8 @@ export function ModerationTicketCard({
   onDismiss: () => void;
   onHide: () => void;
 }) {
+  const confidence = incident ? getIncidentConfidenceMeta(incident) : null;
+
   return (
     <AppCard style={styles.ticketCard}>
       <View style={styles.ticketHeader}>
@@ -89,7 +92,47 @@ export function ModerationTicketCard({
                 }
                 size="sm"
               />
+
+              {confidence ? (
+                <>
+                  <StatusBadge
+                    label={`Trust ${confidence.score}`}
+                    variant={
+                      confidence.score >= 70
+                        ? "success"
+                        : confidence.score >= 40
+                          ? "warning"
+                          : "danger"
+                    }
+                    size="sm"
+                  />
+
+                  <StatusBadge
+                    label={`Review ${confidence.reviewPriorityScore}`}
+                    variant={
+                      confidence.reviewPriorityScore >= 70
+                        ? "danger"
+                        : confidence.reviewPriorityScore >= 40
+                          ? "warning"
+                          : "neutral"
+                    }
+                    size="sm"
+                  />
+                </>
+              ) : null}
             </View>
+
+            {confidence ? (
+              <View style={styles.confidenceBox}>
+                <Text style={styles.confidenceLabel}>{confidence.reviewLabel}</Text>
+                <Text style={styles.confidenceText}>
+                  {confidence.reviewDescription}
+                </Text>
+                <Text style={styles.confidenceText}>
+                  Location {confidence.components.location.score}/100 · Community {confidence.components.community.score}/100 · Evidence {confidence.components.evidence.score}/100
+                </Text>
+              </View>
+            ) : null}
           </>
         ) : (
           <Text style={styles.previewMissing}>

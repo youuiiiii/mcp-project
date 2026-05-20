@@ -144,6 +144,24 @@ export const moderationStyles = StyleSheet.create({
     ...typography.caption,
     color: colors.textMuted,
   },
+  confidenceBox: {
+    marginTop: spacing.sm,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surfaceMuted,
+    padding: spacing.sm,
+    gap: 3,
+  },
+  confidenceLabel: {
+    fontSize: 11,
+    fontWeight: "900",
+    color: colors.text,
+  },
+  confidenceText: {
+    fontSize: 11,
+    lineHeight: 16,
+    fontWeight: "600",
+    color: colors.textMuted,
+  },
   reasonInput: {
     minHeight: 76,
     borderRadius: radius.xl,

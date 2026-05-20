@@ -13,6 +13,7 @@ import type {
   IncidentContentReport,
   IncidentReport,
 } from "../../../types/incident";
+import { getIncidentReviewPriorityScore } from "../../../utils/incidentConfidence";
 import { getReasonLabel } from "../moderationLabels";
 
 export function useModerationScreen() {
@@ -72,6 +73,29 @@ export function useModerationScreen() {
       return acc;
     }, {});
   }, [incidents]);
+
+  const sortedContentReports = useMemo(() => {
+    return [...contentReports].sort((first, second) => {
+      const firstIncident = incidentById[first.reportId];
+      const secondIncident = incidentById[second.reportId];
+
+      const firstPriority = firstIncident
+        ? getIncidentReviewPriorityScore(firstIncident)
+        : 100;
+      const secondPriority = secondIncident
+        ? getIncidentReviewPriorityScore(secondIncident)
+        : 100;
+
+      if (secondPriority !== firstPriority) {
+        return secondPriority - firstPriority;
+      }
+
+      const firstCreatedAt = first.createdAt?.getTime() ?? 0;
+      const secondCreatedAt = second.createdAt?.getTime() ?? 0;
+
+      return secondCreatedAt - firstCreatedAt;
+    });
+  }, [contentReports, incidentById]);
 
   const checkingAccess = authLoading || roleLoading;
   const loading = checkingAccess || loadingReports || loadingIncidents;
@@ -184,7 +208,7 @@ export function useModerationScreen() {
     checkingAccess,
     loading,
     errorMessage,
-    contentReports,
+    contentReports: sortedContentReports,
     incidentById,
     selectedTicketId,
     moderationReason,
