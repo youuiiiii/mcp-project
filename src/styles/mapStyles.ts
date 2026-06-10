@@ -28,12 +28,12 @@ export const mapStyles = StyleSheet.create({
 
   compactHeader: {
     minHeight: 62,
-    backgroundColor: "rgba(255,255,255,0.94)",
-    borderRadius: radius["2xl"],
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderWidth: 1,
-    borderColor: "rgba(226,232,240,0.9)",
+    borderColor: "rgba(196, 200, 188, 0.3)",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -47,16 +47,16 @@ export const mapStyles = StyleSheet.create({
 
   headerEyebrow: {
     fontSize: 11,
-    fontWeight: "900",
+    fontWeight: "700", // Terra label weight
     color: colors.textMuted,
-    letterSpacing: 0.2,
+    letterSpacing: 0.5,
     textTransform: "uppercase",
   },
 
   headerTitle: {
     marginTop: 2,
     fontSize: 20,
-    fontWeight: "900",
+    fontWeight: "700",
     color: colors.text,
   },
 
@@ -79,7 +79,7 @@ export const mapStyles = StyleSheet.create({
 
   liveText: {
     fontSize: 11,
-    fontWeight: "900",
+    fontWeight: "700", // Terra label weight
     color: colors.successDark,
   },
 
@@ -96,13 +96,13 @@ export const mapStyles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderWidth: 1,
-    borderColor: "#FECACA",
+    borderColor: colors.dangerSoft,
   },
 
   errorText: {
     flex: 1,
     ...typography.caption,
-    color: colors.primaryDark,
+    color: colors.dangerDark,
   },
 
   mapActions: {
@@ -118,11 +118,11 @@ export const mapStyles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: radius.full,
-    backgroundColor: "rgba(255,255,255,0.96)",
+    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(226,232,240,0.92)",
+    borderColor: "rgba(196, 200, 188, 0.3)",
     ...shadow.card,
   },
 
@@ -133,7 +133,7 @@ export const mapStyles = StyleSheet.create({
 
   reportButton: {
     ...shadow.floating,
-    shadowColor: colors.primaryDark,
+    shadowColor: colors.primary,
   },
 
   bottomOverlay: {
@@ -144,12 +144,12 @@ export const mapStyles = StyleSheet.create({
   },
 
   infoCard: {
-    backgroundColor: "rgba(255,255,255,0.96)",
-    borderRadius: radius["2xl"],
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderWidth: 1,
-    borderColor: "rgba(226,232,240,0.92)",
+    borderColor: "rgba(196, 200, 188, 0.3)",
     ...shadow.card,
   },
 
@@ -166,14 +166,14 @@ export const mapStyles = StyleSheet.create({
 
   infoTitle: {
     fontSize: 14,
-    fontWeight: "900",
+    fontWeight: "700",
     color: colors.text,
   },
 
   infoDescription: {
     marginTop: 3,
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "500", // Terra body weight
     color: colors.textMuted,
   },
 
@@ -181,7 +181,7 @@ export const mapStyles = StyleSheet.create({
     marginTop: spacing.sm,
     paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: "rgba(196, 200, 188, 0.3)",
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
@@ -190,34 +190,65 @@ export const mapStyles = StyleSheet.create({
   nearestText: {
     flex: 1,
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "500",
     color: colors.textMuted,
   },
 
   sosButton: {
-  minWidth: 74,
-  height: 52,
-  borderRadius: radius.full,
-  backgroundColor: colors.danger,
-  alignItems: "center",
-  justifyContent: "center",
-  flexDirection: "row",
-  gap: 6,
-  paddingHorizontal: spacing.md,
-  borderWidth: 3,
-  borderColor: colors.dangerSoft,
-  ...shadow.floating,
-  shadowColor: colors.dangerDark,
-},
+    minWidth: 74,
+    height: 52,
+    borderRadius: radius.full,
+    backgroundColor: colors.danger,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 6,
+    paddingHorizontal: spacing.md,
+    borderWidth: 3,
+    borderColor: colors.dangerSoft,
+    ...shadow.floating,
+    shadowColor: colors.dangerDark,
+  },
 
-sosButtonPressed: {
-  opacity: 0.88,
-  transform: [{ scale: 0.96 }],
-},
+  sosButtonPressed: {
+    opacity: 0.88,
+    transform: [{ scale: 0.96 }],
+  },
 
-sosButtonText: {
-  fontSize: 12,
-  fontWeight: "900",
-  color: colors.textInverse,
-},
+  sosButtonText: {
+    fontSize: 12,
+    fontWeight: "700", // Terra label weight
+    color: colors.textInverse,
+  },
+
+  activeFilterRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: spacing.xs,
+  },
+
+  activeFilterBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    backgroundColor: "rgba(255, 255, 255, 0.92)",
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: "rgba(196, 200, 188, 0.3)",
+    ...shadow.card,
+  },
+
+  activeFilterText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.text,
+  },
+
+  clearFilterButton: {
+    padding: 2,
+    marginLeft: spacing.xs,
+  },
 });

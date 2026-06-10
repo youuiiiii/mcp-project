@@ -34,10 +34,16 @@ type FilterItem = {
   color: string;
 };
 
+/**
+ * Terra Design System — Filter Bar
+ *
+ * Active chip: solid forest green with white text.
+ * Inactive chip: warm cream (surfaceContainer) with dark text, thin outline border.
+ */
 const STATIC_FILTERS: FilterItem[] = [
-  { value: "all", label: "All", iconName: "globe", color: colors.dark },
+  { value: "all", label: "All", iconName: "globe", color: colors.primary },
   { value: "active", label: "Active", iconName: "radio", color: colors.danger },
-  { value: "resolved", label: "Resolved", iconName: "checkmark-circle", color: colors.success },
+  { value: "resolved", label: "Resolved", iconName: "checkmark-circle", color: colors.primary },
 ];
 
 export default function FilterBar({ selectedFilter, onChange }: FilterBarProps) {
@@ -72,16 +78,16 @@ export default function FilterBar({ selectedFilter, onChange }: FilterBarProps) 
               onPress={() => onChange(item.value)}
               style={({ pressed }) => [
                 styles.chip,
-                active && { backgroundColor: item.color, borderColor: item.color },
+                active && styles.chipActive,
                 pressed && styles.pressed,
               ]}
             >
               <Ionicons
                 name={item.iconName}
                 size={15}
-                color={active ? colors.textInverse : item.color}
+                color={active ? colors.textInverse : colors.textMuted}
               />
-              <Text style={[styles.label, active && { color: colors.textInverse }]}>
+              <Text style={[styles.label, active && styles.labelActive]}>
                 {item.label}
               </Text>
             </Pressable>
@@ -93,25 +99,22 @@ export default function FilterBar({ selectedFilter, onChange }: FilterBarProps) 
           onPress={() => setDropdownVisible(true)}
           style={({ pressed }) => [
             styles.chip,
-            selectedCategory && {
-              backgroundColor: selectedCategory.color,
-              borderColor: selectedCategory.color,
-            },
+            selectedCategory && styles.chipActive,
             pressed && styles.pressed,
           ]}
         >
           <Ionicons
             name={selectedCategory ? selectedCategory.iconName : "filter"}
             size={15}
-            color={selectedCategory ? colors.textInverse : colors.text}
+            color={selectedCategory ? colors.textInverse : colors.textMuted}
           />
-          <Text style={[styles.label, selectedCategory && { color: colors.textInverse }]}>
+          <Text style={[styles.label, selectedCategory && styles.labelActive]}>
             {selectedCategory ? selectedCategory.shortLabel : "Category"}
           </Text>
           <Ionicons
             name="chevron-down"
             size={13}
-            color={selectedCategory ? colors.textInverse : colors.text}
+            color={selectedCategory ? colors.textInverse : colors.textMuted}
           />
         </Pressable>
       </ScrollView>
@@ -125,16 +128,16 @@ export default function FilterBar({ selectedFilter, onChange }: FilterBarProps) 
       >
         <Pressable style={styles.backdrop} onPress={() => setDropdownVisible(false)}>
           <View style={styles.dropdown}>
-            <Text style={styles.dropdownTitle}>Filter by Category</Text>
+            <Text style={styles.dropdownTitle}>FILTER BY CATEGORY</Text>
 
             <TouchableOpacity
               style={[styles.dropdownItem, !selectedCategory && styles.dropdownItemActive]}
               onPress={handleClearCategory}
             >
-              <Ionicons name="globe" size={18} color={colors.dark} />
+              <Ionicons name="globe" size={18} color={colors.primary} />
               <Text style={styles.dropdownItemLabel}>All Categories</Text>
               {!selectedCategory && (
-                <Ionicons name="checkmark" size={16} color={colors.dark} />
+                <Ionicons name="checkmark" size={16} color={colors.primary} />
               )}
             </TouchableOpacity>
 
@@ -143,15 +146,15 @@ export default function FilterBar({ selectedFilter, onChange }: FilterBarProps) 
               return (
                 <TouchableOpacity
                   key={item.value}
-                  style={[styles.dropdownItem, active && { backgroundColor: item.lightColor }]}
+                  style={[styles.dropdownItem, active && { backgroundColor: colors.primarySoft }]}
                   onPress={() => handleSelectCategory(item.value)}
                 >
                   <Ionicons name={item.iconName} size={18} color={item.color} />
-                  <Text style={[styles.dropdownItemLabel, active && { color: item.color }]}>
+                  <Text style={[styles.dropdownItemLabel, active && { color: colors.primaryDark }]}>
                     {item.label}
                   </Text>
                   {active && (
-                    <Ionicons name="checkmark" size={16} color={item.color} />
+                    <Ionicons name="checkmark" size={16} color={colors.primaryDark} />
                   )}
                 </TouchableOpacity>
               );
@@ -176,9 +179,13 @@ const styles = StyleSheet.create({
     gap: 7,
     paddingHorizontal: spacing.md,
     borderRadius: radius.full,
-    backgroundColor: "rgba(255,255,255,0.94)",
+    backgroundColor: colors.surfaceContainer,   // Warm cream inactive
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.border,                  // outline-variant
+  },
+  chipActive: {
+    backgroundColor: colors.primary,             // Solid forest green
+    borderColor: colors.primary,
   },
   pressed: {
     opacity: 0.84,
@@ -186,32 +193,36 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12,
-    fontWeight: "800",
-    color: colors.text,
+    fontWeight: "700",
+    color: colors.textMuted,
+  },
+  labelActive: {
+    color: colors.textInverse,
   },
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.3)",
+    backgroundColor: "rgba(46, 50, 48, 0.3)",   // Warm dark overlay
     justifyContent: "flex-start",
     paddingTop: 160,
     paddingHorizontal: spacing.lg,
   },
   dropdown: {
-    backgroundColor: colors.background,
-    borderRadius: radius["2xl"],
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
     padding: spacing.md,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
     elevation: 8,
   },
   dropdownTitle: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.textSoft,
     marginBottom: spacing.sm,
     paddingHorizontal: spacing.sm,
+    letterSpacing: 0.8,
   },
   dropdownItem: {
     flexDirection: "row",
@@ -219,10 +230,10 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.sm,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
   },
   dropdownItemActive: {
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: colors.primarySoft,         // Light green accent
   },
   dropdownItemLabel: {
     flex: 1,

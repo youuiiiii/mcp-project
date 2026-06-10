@@ -1,3 +1,10 @@
+/**
+ * Terra Design System — Layout Tokens
+ *
+ * 8px base rhythm with 4px sub-step.
+ * Soft shadows only. Prefer tonal separation over aggressive shadows.
+ * Shapes: buttons/inputs 12px, cards 12px, sheets 24px.
+ */
 export const spacing = {
   xs: 4,
   sm: 8,
@@ -9,34 +16,36 @@ export const spacing = {
 } as const;
 
 export const radius = {
-  sm: 10,
-  md: 14,
-  lg: 18,
-  xl: 22,
-  "2xl": 26,
-  "3xl": 32,
-  full: 999,
+  sm: 8,       // Small elements (chips, mini badges)
+  md: 12,      // Buttons, inputs, cards — Terra default
+  lg: 12,      // Cards match buttons for visual harmony
+  xl: 16,      // Larger containers
+  "2xl": 20,   // Prominent sections
+  "3xl": 24,   // Bottom sheets, modals (top corners)
+  full: 999,   // Pill shapes
 } as const;
 
 export const shadow = {
+  /** Very soft card shadow — Terra "tonal separation" philosophy */
   card: {
-    shadowColor: "#0F172A",
+    shadowColor: "#2E3230",
     shadowOffset: {
       width: 0,
-      height: 6,
+      height: 4,
     },
     shadowOpacity: 0.06,
-    shadowRadius: 12,
+    shadowRadius: 20,
     elevation: 2,
   },
+  /** Floating elements — slightly more visible but still restrained */
   floating: {
-    shadowColor: "#0F172A",
+    shadowColor: "#2E3230",
     shadowOffset: {
       width: 0,
-      height: 12,
+      height: 10,
     },
-    shadowOpacity: 0.18,
-    shadowRadius: 20,
-    elevation: 6,
+    shadowOpacity: 0.08,
+    shadowRadius: 15,
+    elevation: 4,
   },
 } as const;

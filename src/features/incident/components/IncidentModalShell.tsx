@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: "flex-end",
-    backgroundColor: "rgba(15, 23, 42, 0.35)",
+    backgroundColor: "rgba(46, 50, 48, 0.35)",      // Warm dark gray shadow tint
   },
   backdropPressArea: {
     flex: 1,
@@ -134,14 +134,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: "rgba(196, 200, 188, 0.3)", // outline-variant at 30%
   },
   headerText: {
     flex: 1,
   },
   title: {
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: "700",
     color: colors.text,
   },
   subtitle: {
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: "rgba(196, 200, 188, 0.3)", // outline-variant at 30%
   },
   closeButtonPressed: {
     opacity: 0.75,
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: "rgba(196, 200, 188, 0.3)", // outline-variant at 30%
     backgroundColor: colors.background,
   },
 });

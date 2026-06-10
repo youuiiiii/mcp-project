@@ -25,6 +25,14 @@ type StatusBadgeProps = {
   textStyle?: StyleProp<TextStyle>;
 };
 
+/**
+ * Terra Design System — Status Badge
+ *
+ * Pill-shaped badges using Terra's earthy color palette.
+ * Verified/success uses primarySoft/primary (green).
+ * Warning uses warningSoft/warningDark (warm amber).
+ * Danger/active uses dangerSoft/dangerDark (deep red).
+ */
 export default function StatusBadge({
   label,
   variant = "neutral",
@@ -68,7 +76,7 @@ const variantStyles: Record<
       backgroundColor: colors.dangerSoft,
     },
     text: {
-      color: colors.primaryDark,
+      color: colors.dangerDark,
     },
   },
   resolved: {
@@ -81,15 +89,15 @@ const variantStyles: Record<
   },
   verified: {
     container: {
-      backgroundColor: colors.successSoft,
+      backgroundColor: colors.primarySoft,     // Light green accent
     },
     text: {
-      color: colors.successDark,
+      color: colors.primaryDark,               // Dark forest green text
     },
   },
   pending: {
     container: {
-      backgroundColor: colors.warningSoft,
+      backgroundColor: colors.warningSoft,     // Warm amber
     },
     text: {
       color: colors.warningDark,
@@ -100,7 +108,7 @@ const variantStyles: Record<
       backgroundColor: colors.dangerSoft,
     },
     text: {
-      color: colors.primaryDark,
+      color: colors.dangerDark,
     },
   },
   danger: {
@@ -108,7 +116,7 @@ const variantStyles: Record<
       backgroundColor: colors.dangerSoft,
     },
     text: {
-      color: colors.primaryDark,
+      color: colors.dangerDark,
     },
   },
   success: {
@@ -121,7 +129,7 @@ const variantStyles: Record<
   },
   warning: {
     container: {
-      backgroundColor: colors.warningSoft,
+      backgroundColor: colors.warningSoft,     // Warm amber
     },
     text: {
       color: colors.warningDark,
@@ -129,7 +137,7 @@ const variantStyles: Record<
   },
   info: {
     container: {
-      backgroundColor: colors.infoSoft,
+      backgroundColor: colors.infoSoft,        // Light green-teal
     },
     text: {
       color: colors.infoDark,
@@ -137,7 +145,7 @@ const variantStyles: Record<
   },
   neutral: {
     container: {
-      backgroundColor: colors.surfaceMuted,
+      backgroundColor: colors.surfaceMuted,    // Warm cream
     },
     text: {
       color: colors.textMuted,
@@ -155,7 +163,7 @@ const sizeStyles: Record<
   sm: {
     container: {
       paddingHorizontal: 8,
-      paddingVertical: 4,
+      paddingVertical: 3,
     },
     text: {
       fontSize: 10,
@@ -164,7 +172,7 @@ const sizeStyles: Record<
   md: {
     container: {
       paddingHorizontal: 10,
-      paddingVertical: 6,
+      paddingVertical: 5,
     },
     text: {
       fontSize: 11,
@@ -174,12 +182,13 @@ const sizeStyles: Record<
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: radius.full,
+    borderRadius: radius.full,                  // Pill shape
     alignSelf: "flex-start",
     maxWidth: "100%",
   },
   text: {
-    fontWeight: "900",
+    fontWeight: "700",                          // Terra bold labels
     textTransform: "uppercase",
+    letterSpacing: 0.3,
   },
 });

@@ -8,6 +8,7 @@ export const en = {
   "tabs.home": "Home",
   "tabs.map": "Map",
   "tabs.report": "Report",
+  "tabs.incidents": "Incidents",
   "tabs.profile": "Profile",
 
   "report.header.badge": "Community Report",
@@ -274,4 +275,69 @@ export const en = {
   "incident.severity.high.label": "High",
   "incident.severity.high.description":
     "Dangerous, urgent, and needs quick attention.",
+
+  // Auth Translation Keys
+  "auth.signInToSigap": "Sign in to SIGAP",
+  "auth.signUpToSigap": "Create Your Account",
+  "auth.dontHaveAccount": "Don't have an account?",
+  "auth.alreadyHaveAccount": "Already have an account?",
+  "auth.signUp": "Sign up",
+  "auth.signUpBtn": "Sign Up",
+  "auth.signIn": "Log In",
+  "auth.email": "Email",
+  "auth.emailPlaceholder": "Enter your email",
+  "auth.password": "Password",
+  "auth.passwordPlaceholder": "Enter your password",
+  "auth.rememberMe": "Remember me",
+  "auth.forgotPassword": "Forgot Password?",
+  "auth.continueWithGoogle": "Continue with Google",
+  "auth.continueWithApple": "Continue with Apple",
+  "auth.forgotPasswordTitle": "Forgot Password",
+  "auth.forgotPasswordDesc": "We will send you a link to reset your password. Please enter your email address.",
+  "auth.send": "Send",
+  "auth.backToLogin": "Back to Login",
+  "auth.checkYourEmail": "Check your email",
+  "auth.checkYourEmailDesc": "We have sent an email with instructions to reset your password.",
+  "auth.fullName": "Full Name",
+  "auth.fullNamePlaceholder": "Enter your full name",
+  "auth.confirmPassword": "Confirm Password",
+  "auth.confirmPasswordPlaceholder": "Re-enter your password",
+
+  // Onboarding & Welcome
+  "onboarding.slide0.title": "Crisis Map",
+  "onboarding.slide0.desc": "Monitor real-time disaster alerts and view active crisis maps around your community easily.",
+  "onboarding.slide1.title": "SOS Rescue Info",
+  "onboarding.slide1.desc": "Quickly access emergency responder contact info and simulate direct calls to emergency lines.",
+  "onboarding.slide2.title": "Volunteer Activities",
+  "onboarding.slide2.desc": "Join community rescue programs and safety training classes. Shape a safer neighborhood together.",
+  "onboarding.continue": "Continue",
+  "onboarding.getStarted": "Get Started",
+  "auth.welcomeTitle": "Welcome to SIGAP",
+  "auth.welcomeDesc": "Helping you monitor situations and stay cautious anywhere.",
+  "auth.createAccount": "Create an account",
+  "auth.successTitle": "Your account was successfully created!",
+  "auth.successDesc": "Only one step to explore safety situation. Log in to start using SIGAP.",
+  "auth.legalText": "By using SIGAP, you agree to the Terms and Privacy Policy.",
+
+  // Home Screen
+  "home.hero.greeting": "Good morning",
+  "home.hero.statusBadge": "All Clear",
+  "home.hero.title": "All Clear Near You",
+  "home.hero.summary": "There are {activeCount} active reports in your area ({attentionCount} urgent).",
+  "home.actions.reportIncident": "Report Incident",
+  "home.actions.viewMap": "View Map",
+
+  // Incident Trust Statuses
+  "incident.trust.unverified": "Unverified",
+  "incident.trust.gainingTrust": "Gaining Trust",
+  "incident.trust.communityVerified": "Community Verified",
+  "incident.trust.moderatorConfirmed": "Confirmed",
+  "incident.trust.resolved": "Resolved",
+
+  // Incident Card
+  "incident.card.untitled": "Untitled Report",
+  "incident.card.timeUnavailable": "Time unavailable",
+  "incident.card.share": "Share Incident",
+  "incident.card.confirmationCount.one": "1 community confirmation",
+  "incident.card.confirmationCount.other": "{count} community confirmations",
 } as const;

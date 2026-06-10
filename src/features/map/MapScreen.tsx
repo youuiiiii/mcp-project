@@ -109,7 +109,7 @@ export default function MapScreen() {
 
         {errorMessage ? (
           <View style={styles.errorBanner}>
-            <Ionicons name="warning" size={16} color={colors.primaryDark} />
+            <Ionicons name="warning" size={16} color={colors.dangerDark} />
             <Text style={styles.errorText}>{errorMessage}</Text>
           </View>
         ) : null}
@@ -141,12 +141,12 @@ export default function MapScreen() {
             pressed && styles.locateButtonPressed,
           ]}
         >
-          <Ionicons name="locate" size={23} color={colors.text} />
+          <Ionicons name="locate" size={23} color={colors.primary} />
         </Pressable>
 
         <AppButton
           title="Report"
-          variant="danger"
+          variant="primary"
           size="md"
           onPress={handleOpenReport}
           leftIcon={

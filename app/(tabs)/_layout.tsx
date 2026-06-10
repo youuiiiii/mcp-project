@@ -20,7 +20,7 @@ export default function TabsLayout() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.danger} />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -33,7 +33,7 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.danger,
+        tabBarActiveTintColor: colors.primary, // Wecare Primary Forest Green
         tabBarInactiveTintColor: colors.textSoft,
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
@@ -58,7 +58,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="incidents"
         options={{
-          title: "Incidents",
+          title: t("tabs.incidents"), // Localized
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
               name={focused ? "list" : "list-outline"}
@@ -145,12 +145,12 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: "rgba(196, 200, 188, 0.3)", // outline-variant at 30%
   },
 
   tabBarLabel: {
     fontSize: 11,
-    fontWeight: "700",
+    fontWeight: "700", // Terra label style
   },
 
   mapButtonContainer: {
@@ -163,19 +163,19 @@ const styles = StyleSheet.create({
     width: 62,
     height: 62,
     borderRadius: 31,
-    backgroundColor: colors.danger,
+    backgroundColor: colors.primary, // Forest Green background for center button
 
     justifyContent: "center",
     alignItems: "center",
 
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
     shadowOffset: {
       width: 0,
       height: 4,
     },
 
-    elevation: 8,
+    elevation: 4,
   },
 });

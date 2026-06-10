@@ -30,6 +30,14 @@ type AppButtonProps = {
   textStyle?: StyleProp<TextStyle>;
 };
 
+/**
+ * Terra Design System — Primary Button
+ *
+ * Primary: solid forest green (#4A7C59) with white text, 12px radius.
+ * Secondary: cream bg + green text + thin green border.
+ * Danger: deep warm red (#B83230).
+ * Ghost: transparent with green text.
+ */
 export default function AppButton({
   title,
   onPress,
@@ -62,7 +70,7 @@ export default function AppButton({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === "primary" || variant === "danger" ? colors.textInverse : colors.text}
+          color={variant === "primary" || variant === "danger" ? colors.textInverse : colors.primary}
         />
       ) : (
         <View style={styles.content}>
@@ -94,8 +102,8 @@ const variantStyles: Record<
 > = {
   primary: {
     container: {
-      backgroundColor: colors.dark,
-      borderColor: colors.dark,
+      backgroundColor: colors.primary,      // Forest green solid
+      borderColor: colors.primary,
     },
     text: {
       color: colors.textInverse,
@@ -103,17 +111,17 @@ const variantStyles: Record<
   },
   secondary: {
     container: {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
+      backgroundColor: colors.surfaceMuted,  // Warm cream bg
+      borderColor: colors.primary,            // Green border
     },
     text: {
-      color: colors.text,
+      color: colors.primary,                  // Green text
     },
   },
   danger: {
     container: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
+      backgroundColor: colors.danger,         // Deep warm red
+      borderColor: colors.danger,
     },
     text: {
       color: colors.textInverse,
@@ -125,7 +133,7 @@ const variantStyles: Record<
       borderColor: "transparent",
     },
     text: {
-      color: colors.text,
+      color: colors.primary,
     },
   },
 };
@@ -139,7 +147,7 @@ const sizeStyles: Record<
 > = {
   sm: {
     container: {
-      minHeight: 36,
+      minHeight: 38,
       paddingHorizontal: spacing.md,
     },
     text: {
@@ -148,7 +156,7 @@ const sizeStyles: Record<
   },
   md: {
     container: {
-      minHeight: 44,
+      minHeight: 48,                          // Large touch target per Terra spec
       paddingHorizontal: spacing.lg,
     },
     text: {
@@ -169,7 +177,7 @@ const sizeStyles: Record<
 const styles = StyleSheet.create({
   base: {
     borderWidth: 1,
-    borderRadius: radius.full,
+    borderRadius: radius.md,                  // 12px Terra rounded
     alignItems: "center",
     justifyContent: "center",
   },
@@ -183,11 +191,11 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   text: {
-    fontWeight: "900",
+    fontWeight: "700",                        // Terra bold labels
   },
   pressed: {
     opacity: 0.85,
-    transform: [{ scale: 0.99 }],
+    transform: [{ scale: 0.98 }],
   },
   disabled: {
     opacity: 0.55,

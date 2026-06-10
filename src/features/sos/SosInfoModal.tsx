@@ -165,7 +165,7 @@ export default function SosInfoModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.4)",
+    backgroundColor: "rgba(46, 50, 48, 0.4)",          // Warm gray tint
     alignItems: "center",
     justifyContent: "center",
     padding: spacing.lg,
@@ -185,14 +185,14 @@ const styles = StyleSheet.create({
   iconBox: {
     width: 64,
     height: 64,
-    borderRadius: radius.full,
+    borderRadius: radius.xl,                        // Rounded square
     backgroundColor: colors.danger,
     alignItems: "center",
     justifyContent: "center",
   },
   title: {
     fontSize: 24,
-    fontWeight: "900",
+    fontWeight: "700",
     color: colors.text,
   },
   description: {
@@ -206,9 +206,9 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.xl,
-    backgroundColor: colors.surface,
+    borderColor: "rgba(196, 200, 188, 0.3)",       // outline-variant at 30%
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceMuted,          // Warm cream input bg
     padding: spacing.md,
   },
   locationText: {

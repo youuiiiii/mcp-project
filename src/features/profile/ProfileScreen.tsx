@@ -118,7 +118,7 @@ export default function ProfileScreen() {
             <Ionicons
               name="shield-checkmark"
               size={14}
-              color={colors.info}
+              color={colors.primary}
             />
             <Text style={styles.roleText}>{roleLabel}</Text>
           </View>
@@ -171,7 +171,7 @@ export default function ProfileScreen() {
 
         <AppCard style={styles.moderatorCard}>
           <View style={styles.moderatorIcon}>
-            <Ionicons name="shield-checkmark" size={22} color={colors.info} />
+            <Ionicons name="shield-checkmark" size={22} color="#FFFFFF" />
           </View>
 
           <View style={styles.moderatorText}>
@@ -193,14 +193,15 @@ export default function ProfileScreen() {
 
       <AppButton
         title="Logout"
-        variant="danger"
+        variant="ghost"
         size="lg"
         fullWidth
         onPress={() => setLogoutModalVisible(true)}
         leftIcon={
-          <Ionicons name="log-out-outline" size={20} color={colors.textInverse} />
+          <Ionicons name="log-out-outline" size={20} color={colors.danger} />
         }
         style={styles.logoutButton}
+        textStyle={styles.logoutButtonText}
       />
 
       <Modal

@@ -10,18 +10,37 @@ import VerifyIncidentModal from "../../components/VerifyIncidentModal";
 import AppCard from "../../components/ui/AppCard";
 import AppScreen from "../../components/ui/AppScreen";
 import EmptyState from "../../components/ui/EmptyState";
-import IconBadge from "../../components/ui/IconBadge";
 import LoadingState from "../../components/ui/LoadingState";
 import SectionHeader from "../../components/ui/SectionHeader";
-import StatusBadge, { type StatusBadgeVariant } from "../../components/ui/StatusBadge";
+import StatusBadge from "../../components/ui/StatusBadge";
 import { getIncidentDisplayMeta } from "../../constants/incident";
 import { colors } from "../../theme/colors";
 import { spacing } from "../../theme/layout";
 import { typography } from "../../theme/typography";
 import type { IncidentReport } from "../../types/incident";
-import { getIncidentConfidenceMeta } from "../../utils/incidentConfidence";
 import HomeHero from "./components/HomeHero";
 import { useHomeScreen } from "./hooks/useHomeScreen";
+import { useI18n } from "../../i18n";
+import SosInfoModal from "../sos/SosInfoModal";
+
+function getReportTrustStatus(report: IncidentReport) {
+  if (report.status === "resolved" || report.resolvedAt) {
+    return { labelKey: "incident.trust.resolved", variant: "resolved" as const };
+  }
+  if (report.moderationStatus === "visible" && report.moderatedBy) {
+    return { labelKey: "incident.trust.moderatorConfirmed", variant: "verified" as const };
+  }
+  const verifications = report.verificationCount ?? 0;
+  const disputes = report.disputeCount ?? 0;
+  if (verifications >= 2 && verifications > disputes) {
+    return { labelKey: "incident.trust.communityVerified", variant: "verified" as const };
+  }
+  if (verifications > disputes) {
+    return { labelKey: "incident.trust.gainingTrust", variant: "info" as const };
+  }
+  return { labelKey: "incident.trust.unverified", variant: "neutral" as const };
+}
+
 
 const ALERT_MAGNITUDE_THRESHOLD = 5.0;
 
@@ -37,6 +56,7 @@ export default function HomeScreen() {
     useState<IncidentReport | null>(null);
 
   const [alertVisible, setAlertVisible] = useState(false);
+  const [sosVisible, setSosVisible] = useState(false);
 
   useEffect(() => {
     const magnitude = Number.parseFloat(
@@ -82,6 +102,7 @@ export default function HomeScreen() {
         onOpenProfile={home.openProfile}
         onOpenMap={home.openMap}
         onOpenReport={home.openReport}
+        onOpenSos={() => setSosVisible(true)}
         onOpenAnalytics={home.openAnalytics}
         onOpenEarthquake={home.openEarthquake}
         onOpenEducation={home.openEducation}
@@ -164,6 +185,12 @@ export default function HomeScreen() {
         earthquake={earthquake.mainEarthquake}
         onClose={() => setAlertVisible(false)}
       />
+
+      <SosInfoModal
+        visible={sosVisible}
+        userLocation={null}
+        onClose={() => setSosVisible(false)}
+      />
     </AppScreen>
   );
 }
@@ -175,22 +202,18 @@ function LatestReportCard({
   report: IncidentReport;
   onPress: () => void;
 }) {
+  const { t } = useI18n();
   const meta = getIncidentDisplayMeta({
     category: report.category,
     subcategory: report.subcategory ?? report.type,
   });
-  const confidence = getIncidentConfidenceMeta(report);
+  const trust = getReportTrustStatus(report);
 
   return (
     <AppCard onPress={onPress} style={styles.reportCard}>
-      <IconBadge
-        variant="neutral"
-        size="md"
-        rounded={false}
-        style={{ backgroundColor: meta.lightColor }}
-      >
-        <Ionicons name={meta.iconName} size={21} color={meta.color} />
-      </IconBadge>
+      <View style={[styles.reportIconCircle, { backgroundColor: meta.lightColor }]}>
+        <Ionicons name={meta.iconName} size={20} color={meta.color} />
+      </View>
 
       <View style={styles.reportContent}>
         <View style={styles.reportHeader}>
@@ -198,8 +221,8 @@ function LatestReportCard({
             {report.title}
           </Text>
           <StatusBadge
-            label={`Confidence ${confidence.score}`}
-            variant={getConfidenceVariant(confidence.level)}
+            label={t(trust.labelKey as any)}
+            variant={trust.variant}
             size="sm"
           />
         </View>
@@ -234,23 +257,7 @@ function getUrgencyLabel(incident: IncidentReport) {
   return "Low urgency";
 }
 
-function getConfidenceVariant(
-  level: ReturnType<typeof getIncidentConfidenceMeta>["level"]
-): StatusBadgeVariant {
-  if (level === "confirmed" || level === "resolved") {
-    return "success";
-  }
 
-  if (level === "questioned") {
-    return "danger";
-  }
-
-  if (level === "credible") {
-    return "info";
-  }
-
-  return "warning";
-}
 
 const styles = StyleSheet.create({
   content: {
@@ -262,7 +269,8 @@ const styles = StyleSheet.create({
   errorCard: {
     gap: spacing.sm,
     backgroundColor: colors.dangerSoft,
-    borderColor: "#FECACA",
+    borderColor: colors.dangerSoft,
+    borderWidth: 1,
   },
   errorHeader: {
     flexDirection: "row",
@@ -271,12 +279,12 @@ const styles = StyleSheet.create({
   },
   errorTitle: {
     fontSize: 14,
-    fontWeight: "800",
-    color: colors.primaryDark,
+    fontWeight: "700",
+    color: colors.dangerDark,
   },
   errorMessage: {
     ...typography.caption,
-    color: colors.primaryDark,
+    color: colors.dangerDark,
   },
   loadingCard: {
     minHeight: 100,
@@ -287,8 +295,15 @@ const styles = StyleSheet.create({
   },
   reportCard: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center", // Align items vertically center matching Wecare feed
     gap: spacing.md,
+  },
+  reportIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
   },
   reportContent: {
     flex: 1,
@@ -301,19 +316,20 @@ const styles = StyleSheet.create({
   reportTitle: {
     flex: 1,
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: "700", // Terra headline weight
     color: colors.text,
   },
   reportMeta: {
-    marginTop: 4,
-    ...typography.caption,
+    marginTop: 2,
+    fontSize: 11,
+    fontWeight: "700", // Terra label/metadata weight
     color: colors.textMuted,
   },
   reportDescription: {
-    marginTop: spacing.sm,
+    marginTop: 4,
     fontSize: 12,
     lineHeight: 18,
-    fontWeight: "500",
-    color: "#475569",
+    fontWeight: "500", // Terra body weight
+    color: colors.textMuted,
   },
 });

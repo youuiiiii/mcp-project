@@ -10,6 +10,7 @@ export const id: TranslationResources = {
   "tabs.home": "Beranda",
   "tabs.map": "Peta",
   "tabs.report": "Lapor",
+  "tabs.incidents": "Laporan",
   "tabs.profile": "Profil",
 
   "report.header.badge": "Laporan Komunitas",
@@ -277,4 +278,69 @@ export const id: TranslationResources = {
   "incident.severity.high.label": "Tinggi",
   "incident.severity.high.description":
     "Berbahaya, mendesak, dan membutuhkan perhatian cepat.",
+
+  // Auth Translation Keys
+  "auth.signInToSigap": "Masuk ke SIGAP",
+  "auth.signUpToSigap": "Buat Akun Anda",
+  "auth.dontHaveAccount": "Belum punya akun?",
+  "auth.alreadyHaveAccount": "Sudah punya akun?",
+  "auth.signUp": "Daftar",
+  "auth.signUpBtn": "Daftar Sekarang",
+  "auth.signIn": "Masuk",
+  "auth.email": "Email",
+  "auth.emailPlaceholder": "Masukkan email Anda",
+  "auth.password": "Kata Sandi",
+  "auth.passwordPlaceholder": "Masukkan kata sandi Anda",
+  "auth.rememberMe": "Ingat saya",
+  "auth.forgotPassword": "Lupa Kata Sandi?",
+  "auth.continueWithGoogle": "Lanjutkan dengan Google",
+  "auth.continueWithApple": "Lanjutkan dengan Apple",
+  "auth.forgotPasswordTitle": "Lupa Kata Sandi",
+  "auth.forgotPasswordDesc": "Kami akan mengirimkan tautan untuk mengatur ulang kata sandi Anda. Silakan masukkan alamat email Anda.",
+  "auth.send": "Kirim",
+  "auth.backToLogin": "Kembali ke Login",
+  "auth.checkYourEmail": "Periksa email Anda",
+  "auth.checkYourEmailDesc": "Kami telah mengirimkan email berisi petunjuk untuk mengatur ulang kata sandi Anda.",
+  "auth.fullName": "Nama Lengkap",
+  "auth.fullNamePlaceholder": "Masukkan nama lengkap Anda",
+  "auth.confirmPassword": "Konfirmasi Kata Sandi",
+  "auth.confirmPasswordPlaceholder": "Masukkan kembali kata sandi Anda",
+
+  // Onboarding & Welcome
+  "onboarding.slide0.title": "Peta Krisis",
+  "onboarding.slide0.desc": "Pantau peringatan bencana secara real-time dan lihat peta krisis aktif di sekitar komunitas Anda dengan mudah.",
+  "onboarding.slide1.title": "Info Penyelamatan SOS",
+  "onboarding.slide1.desc": "Akses info kontak petugas tanggap darurat dengan cepat dan simulasikan panggilan langsung ke nomor darurat.",
+  "onboarding.slide2.title": "Aktivitas Relawan",
+  "onboarding.slide2.desc": "Bergabunglah dengan program penyelamatan komunitas dan kelas pelatihan keselamatan. Ciptakan lingkungan yang lebih aman bersama.",
+  "onboarding.continue": "Lanjutkan",
+  "onboarding.getStarted": "Mulai",
+  "auth.welcomeTitle": "Selamat Datang di SIGAP",
+  "auth.welcomeDesc": "Membantu Anda memantau situasi dan tetap waspada di mana saja.",
+  "auth.createAccount": "Buat akun",
+  "auth.successTitle": "Akun Anda berhasil dibuat!",
+  "auth.successDesc": "Tinggal satu langkah lagi untuk menjelajahi situasi keselamatan. Masuk untuk mulai menggunakan SIGAP.",
+  "auth.legalText": "Dengan menggunakan SIGAP, Anda menyetujui Ketentuan dan Kebijakan Privasi kami.",
+
+  // Home Screen
+  "home.hero.greeting": "Selamat pagi",
+  "home.hero.statusBadge": "Semua Aman",
+  "home.hero.title": "Semua Aman di Sekitar Anda",
+  "home.hero.summary": "Ada {activeCount} laporan aktif di sekitar Anda ({attentionCount} darurat).",
+  "home.actions.reportIncident": "Laporkan Kejadian",
+  "home.actions.viewMap": "Lihat Peta",
+
+  // Incident Trust Statuses
+  "incident.trust.unverified": "Belum Terverifikasi",
+  "incident.trust.gainingTrust": "Mulai Dipercaya",
+  "incident.trust.communityVerified": "Terverifikasi Warga",
+  "incident.trust.moderatorConfirmed": "Dikonfirmasi Staf",
+  "incident.trust.resolved": "Selesai",
+
+  // Incident Card
+  "incident.card.untitled": "Laporan Tanpa Judul",
+  "incident.card.timeUnavailable": "Waktu tidak tersedia",
+  "incident.card.share": "Bagikan Kejadian",
+  "incident.card.confirmationCount.one": "1 konfirmasi warga",
+  "incident.card.confirmationCount.other": "{count} konfirmasi warga",
 };

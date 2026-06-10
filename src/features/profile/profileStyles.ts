@@ -19,7 +19,7 @@ export const profileStyles = StyleSheet.create({
   avatar: {
     width: 68,
     height: 68,
-    borderRadius: radius["2xl"],
+    borderRadius: radius.full,
     backgroundColor: colors.dark,
     alignItems: "center",
     justifyContent: "center",
@@ -27,12 +27,12 @@ export const profileStyles = StyleSheet.create({
   avatarImage: {
     width: "100%",
     height: "100%",
-    borderRadius: radius["2xl"],
+    borderRadius: radius.full,
     resizeMode: "cover",
   },
   avatarText: {
     fontSize: 24,
-    fontWeight: "800",
+    fontWeight: "600",
     color: colors.textInverse,
   },
   identity: {
@@ -40,7 +40,7 @@ export const profileStyles = StyleSheet.create({
   },
   name: {
     fontSize: 25,
-    fontWeight: "800",
+    fontWeight: "700",
     color: colors.text,
   },
   editNameButton: {
@@ -79,15 +79,15 @@ export const profileStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: colors.infoSoft,
+    backgroundColor: colors.primarySoft,
     paddingHorizontal: spacing.md,
     paddingVertical: 6,
     borderRadius: radius.full,
   },
   roleText: {
     fontSize: 11,
-    fontWeight: "800",
-    color: colors.infoDark,
+    fontWeight: "600",
+    color: colors.primary,
   },
   errorCard: {
     flexDirection: "row",
@@ -117,12 +117,12 @@ export const profileStyles = StyleSheet.create({
   },
   statValue: {
     fontSize: 20,
-    fontWeight: "800",
+    fontWeight: "700",
     color: colors.text,
   },
   statLabel: {
     fontSize: 11,
-    fontWeight: "600",
+    fontWeight: "500",
     color: colors.textMuted,
   },
   statDivider: {
@@ -171,13 +171,13 @@ export const profileStyles = StyleSheet.create({
   },
   accountLabel: {
     fontSize: 11,
-    fontWeight: "700",
+    fontWeight: "600",
     color: colors.textMuted,
   },
   accountValue: {
     marginTop: 2,
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "600",
     color: colors.text,
   },
   accountNameInput: {
@@ -189,7 +189,7 @@ export const profileStyles = StyleSheet.create({
     backgroundColor: colors.surfaceMuted,
     paddingHorizontal: spacing.md,
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "600",
     color: colors.text,
   },
   divider: {
@@ -198,19 +198,28 @@ export const profileStyles = StyleSheet.create({
     marginVertical: spacing.md,
   },
   logoutButton: {
+    backgroundColor: colors.surfaceMuted,
+    borderColor: colors.danger,
+    borderWidth: 1,
     ...shadow.floating,
-    shadowColor: colors.primaryDark,
+    shadowColor: colors.dangerSoft,
+  },
+  logoutButtonText: {
+    color: colors.danger,
   },
   moderatorCard: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
+    backgroundColor: colors.primary,
+    padding: spacing.lg,
+    borderRadius: radius.lg,
   },
   moderatorIcon: {
     width: 42,
     height: 42,
     borderRadius: radius.lg,
-    backgroundColor: colors.infoSoft,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -219,13 +228,13 @@ export const profileStyles = StyleSheet.create({
   },
   moderatorTitle: {
     fontSize: 14,
-    fontWeight: "800",
-    color: colors.text,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
   moderatorDescription: {
     marginTop: 2,
     ...typography.caption,
-    color: colors.textMuted,
+    color: "rgba(250, 246, 240, 0.85)",
   },
   modalBackdrop: {
     flex: 1,
@@ -252,7 +261,7 @@ export const profileStyles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: "900",
+    fontWeight: "700",
     color: colors.text,
   },
   modalMessage: {
