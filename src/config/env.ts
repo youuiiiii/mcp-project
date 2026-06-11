@@ -7,6 +7,10 @@ type EnvKey =
   | "EXPO_PUBLIC_FIREBASE_APP_ID"
   | "EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME"
   | "EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET"
+  | "EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY"
+  | "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID"
+  | "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID"
+  | "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID"
   | "EXPO_PUBLIC_MODERATOR_EMAILS";
 
 const readRequiredEnv = (key: EnvKey, value: string | undefined): string => {
@@ -61,6 +65,16 @@ export const cloudinaryConfig = {
     "EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET",
     process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET
   ),
+};
+
+export const googleMapsAndroidApiKey = readOptionalEnv(
+  process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_API_KEY
+);
+
+export const googleAuthClientIds = {
+  web: readOptionalEnv(process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID),
+  android: readOptionalEnv(process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID),
+  ios: readOptionalEnv(process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID),
 };
 
 export const demoModeratorEmails = (

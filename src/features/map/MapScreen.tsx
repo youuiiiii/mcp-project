@@ -2,8 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { type Href, useRouter } from "expo-router";
 import { useRef, useState } from "react";
-import { Pressable, Text, View } from "react-native";
-import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
+import { Platform, Pressable, Text, View } from "react-native";
+import MapView from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import FilterBar, { type MapFilterValue } from "../../components/FilterBar";
@@ -11,14 +11,18 @@ import IncidentThreadModal from "../../components/IncidentThreadModal";
 import ResolveIncidentModal from "../../components/ResolveIncidentModal";
 import VerifyIncidentModal from "../../components/VerifyIncidentModal";
 import LoadingState from "../../components/ui/LoadingState";
+import { googleMapsAndroidApiKey } from "../../config/env";
 import { mapStyles as styles } from "../../styles/mapStyles";
 import { colors } from "../../theme/colors";
 import IncidentMapMarker from "./components/IncidentMapMarker";
+import OpenStreetIncidentMap from "./components/OpenStreetIncidentMap";
 import { useMapIncidents } from "./hooks/useMapIncidents";
 import { useMapModalState } from "./hooks/useMapModalState";
 import { useStableUserLocation } from "./hooks/useStableUserLocation";
 
-const REPORT_ROUTE = "/(tabs)/report" as Href;
+const ACTIVITY_ROUTE = "/(tabs)/activity" as Href;
+const canRenderNativeMap =
+  Platform.OS !== "android" || Boolean(googleMapsAndroidApiKey);
 
 const CLEAN_MAP_STYLE = [
   {
@@ -78,10 +82,6 @@ export default function MapScreen() {
   const activeCount = reports.filter((report) => report.status === "active").length;
   const showLoadingOverlay = loadingLocation || loadingReports;
 
-  const handleOpenReport = () => {
-    router.push(REPORT_ROUTE);
-  };
-
   return (
     <>
       <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -120,26 +120,33 @@ export default function MapScreen() {
           </View>
 
           <View style={styles.mapPanel}>
-            <MapView
-              ref={mapRef}
-              provider={PROVIDER_GOOGLE}
-              style={styles.map}
-              initialRegion={region}
-              customMapStyle={CLEAN_MAP_STYLE}
-              showsUserLocation
-              showsMyLocationButton={false}
-              showsCompass={false}
-              showsScale={false}
-              toolbarEnabled={false}
-            >
-              {filteredReports.map((incident) => (
-                <IncidentMapMarker
-                  key={incident.id}
-                  incident={incident}
-                  onPress={modalState.openThreadModal}
-                />
-              ))}
-            </MapView>
+            {canRenderNativeMap ? (
+              <MapView
+                ref={mapRef}
+                style={styles.map}
+                initialRegion={region}
+                customMapStyle={CLEAN_MAP_STYLE}
+                showsUserLocation
+                showsMyLocationButton={false}
+                showsCompass={false}
+                showsScale={false}
+                toolbarEnabled={false}
+              >
+                {filteredReports.map((incident) => (
+                  <IncidentMapMarker
+                    key={incident.id}
+                    incident={incident}
+                    onPress={modalState.openThreadModal}
+                  />
+                ))}
+              </MapView>
+            ) : (
+              <OpenStreetIncidentMap
+                incidents={filteredReports}
+                userLocation={userLocation}
+                onIncidentPress={modalState.openThreadModal}
+              />
+            )}
 
             {showLoadingOverlay ? (
               <View style={styles.loadingOverlay}>
@@ -158,7 +165,14 @@ export default function MapScreen() {
 
             <View style={styles.mapActions}>
               <Pressable
-                onPress={focusUserLocation}
+                onPress={() => {
+                  if (canRenderNativeMap) {
+                    focusUserLocation();
+                    return;
+                  }
+
+                  router.push(ACTIVITY_ROUTE);
+                }}
                 style={({ pressed }) => [
                   styles.roundActionButton,
                   pressed && styles.iconButtonPressed,
@@ -166,7 +180,11 @@ export default function MapScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Focus on my location"
               >
-                <Ionicons name="navigate" size={24} color={colors.primaryContainer} />
+                <Ionicons
+                  name={canRenderNativeMap ? "navigate" : "list-outline"}
+                  size={24}
+                  color={colors.primaryContainer}
+                />
               </Pressable>
             </View>
           </View>

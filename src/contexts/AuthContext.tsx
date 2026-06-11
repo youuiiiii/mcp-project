@@ -1,20 +1,27 @@
 import {
   User,
+  GoogleAuthProvider,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  signInWithCredential,
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
-  GoogleAuthProvider,
 } from "firebase/auth";
+import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
 import {
   ReactNode,
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
+import { Platform } from "react-native";
+import { googleAuthClientIds } from "../config/env";
 import { auth } from "../services/firebase";
 import {
   getUserAccess,
@@ -40,7 +47,10 @@ type AuthContextValue = {
   loginWithGoogle: () => Promise<void>;
 };
 
+WebBrowser.maybeCompleteAuthSession();
+
 const AuthContext = createContext<AuthContextValue | null>(null);
+const missingGoogleClientId = "missing-google-client-id.apps.googleusercontent.com";
 
 type AuthProviderProps = {
   children: ReactNode;
@@ -54,6 +64,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [roleLoading, setRoleLoading] = useState(false);
   const [isModerator, setIsModerator] = useState(false);
   const [profileRevision, setProfileRevision] = useState(0);
+  const pendingGoogleLoginRef = useRef<{
+    resolve: () => void;
+    reject: (error: Error) => void;
+  } | null>(null);
+
+  const activeGoogleClientId = Platform.select({
+    android: googleAuthClientIds.android,
+    ios: googleAuthClientIds.ios,
+    default: googleAuthClientIds.web,
+  });
+
+  const [, googleAuthResponse, promptGoogleAuth] = Google.useIdTokenAuthRequest({
+    androidClientId: googleAuthClientIds.android ?? missingGoogleClientId,
+    iosClientId: googleAuthClientIds.ios ?? missingGoogleClientId,
+    webClientId: googleAuthClientIds.web ?? missingGoogleClientId,
+    selectAccount: true,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -106,6 +133,50 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, []);
 
+  useEffect(() => {
+    const pendingGoogleLogin = pendingGoogleLoginRef.current;
+
+    if (!pendingGoogleLogin || !googleAuthResponse) {
+      return;
+    }
+
+    if (googleAuthResponse.type !== "success") {
+      pendingGoogleLoginRef.current = null;
+      pendingGoogleLogin.reject(new Error("Google sign-in was cancelled."));
+      return;
+    }
+
+    const finishGoogleLogin = async () => {
+      const idToken =
+        googleAuthResponse.params.id_token ??
+        googleAuthResponse.authentication?.idToken;
+      const accessToken =
+        googleAuthResponse.params.access_token ??
+        googleAuthResponse.authentication?.accessToken;
+
+      if (!idToken && !accessToken) {
+        throw new Error("Google did not return an auth token.");
+      }
+
+      const credential = GoogleAuthProvider.credential(idToken, accessToken);
+      await signInWithCredential(auth, credential);
+    };
+
+    finishGoogleLogin()
+      .then(() => {
+        pendingGoogleLoginRef.current = null;
+        pendingGoogleLogin.resolve();
+      })
+      .catch((error) => {
+        pendingGoogleLoginRef.current = null;
+        pendingGoogleLogin.reject(
+          error instanceof Error
+            ? error
+            : new Error("Could not sign in with Google.")
+        );
+      });
+  }, [googleAuthResponse]);
+
   const login = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email.trim(), password);
   };
@@ -144,9 +215,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setProfileRevision((current) => current + 1);
   };
 
-  const loginWithGoogle = async () => {
-    alert("Google Sign In is not available on this platform yet.");
-  };
+  const loginWithGoogle = useCallback(async () => {
+    if (!activeGoogleClientId) {
+      throw new Error(
+        "Google sign-in needs OAuth client IDs. Add EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID for Android builds."
+      );
+    }
+
+    const googleLoginCompletion = new Promise<void>((resolve, reject) => {
+      pendingGoogleLoginRef.current = { resolve, reject };
+    });
+
+    const promptResult = await promptGoogleAuth();
+
+    if (promptResult.type !== "success") {
+      pendingGoogleLoginRef.current = null;
+      throw new Error("Google sign-in was cancelled.");
+    }
+
+    if (promptResult.params.id_token || promptResult.authentication?.idToken) {
+      pendingGoogleLoginRef.current = null;
+      const credential = GoogleAuthProvider.credential(
+        promptResult.params.id_token ?? promptResult.authentication?.idToken,
+        promptResult.params.access_token ?? promptResult.authentication?.accessToken
+      );
+      await signInWithCredential(auth, credential);
+      return;
+    }
+
+    await googleLoginCompletion;
+  }, [activeGoogleClientId, promptGoogleAuth]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -163,7 +261,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       logout,
       loginWithGoogle,
     }),
-    [user, loading, role, roleSource, roleLoading, isModerator, profileRevision]
+    [
+      user,
+      loading,
+      role,
+      roleSource,
+      roleLoading,
+      isModerator,
+      profileRevision,
+      loginWithGoogle,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

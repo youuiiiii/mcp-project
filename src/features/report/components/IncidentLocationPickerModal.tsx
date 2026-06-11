@@ -1,9 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import MapView, { Marker } from "react-native-maps";
+import { WebView } from "react-native-webview";
 
 import AppButton from "../../../components/ui/AppButton";
+import { googleMapsAndroidApiKey } from "../../../config/env";
 import { useI18n } from "../../../i18n";
 import { colors } from "../../../theme/colors";
 import { radius, shadow, spacing } from "../../../theme/layout";
@@ -45,6 +47,75 @@ export default function IncidentLocationPickerModal({
     return null;
   }
 
+  if (Platform.OS === "android" && !googleMapsAndroidApiKey) {
+    return (
+      <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <View style={styles.titleGroup}>
+              <Text style={styles.title}>{t("report.location.picker.title")}</Text>
+              <Text style={styles.subtitle}>
+                {t("report.location.picker.subtitle")}
+              </Text>
+            </View>
+
+            <Pressable onPress={onClose} style={styles.closeButton}>
+              <Ionicons name="close" size={24} color={colors.text} />
+            </Pressable>
+          </View>
+
+          <WebView
+            originWhitelist={["*"]}
+            source={{ html: buildPickerHtml(draftCoordinate) }}
+            javaScriptEnabled
+            domStorageEnabled
+            onMessage={(event) => {
+              try {
+                const coordinate = JSON.parse(event.nativeEvent.data);
+
+                if (
+                  typeof coordinate.latitude === "number" &&
+                  typeof coordinate.longitude === "number"
+                ) {
+                  setDraftCoordinate(coordinate);
+                }
+              } catch {
+                // Ignore malformed map messages.
+              }
+            }}
+            style={styles.map}
+          />
+
+          <View style={styles.footer}>
+            <Text style={styles.coordinateText}>
+              {draftCoordinate.latitude.toFixed(6)}, {draftCoordinate.longitude.toFixed(6)}
+            </Text>
+
+            <View style={styles.actions}>
+              <AppButton
+                title={t("common.cancel")}
+                variant="secondary"
+                size="md"
+                onPress={onClose}
+                style={styles.actionButton}
+              />
+              <AppButton
+                title={t("report.location.picker.save")}
+                variant="danger"
+                size="md"
+                onPress={handleSave}
+                style={styles.actionButton}
+                leftIcon={
+                  <Ionicons name="checkmark" size={17} color={colors.textInverse} />
+                }
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  }
+
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={styles.container}>
@@ -62,7 +133,6 @@ export default function IncidentLocationPickerModal({
         </View>
 
         <MapView
-          provider={PROVIDER_GOOGLE}
           style={styles.map}
           initialRegion={{
             latitude: draftCoordinate.latitude,
@@ -116,6 +186,71 @@ export default function IncidentLocationPickerModal({
       </View>
     </Modal>
   );
+}
+
+function buildPickerHtml(coordinate: Coordinate) {
+  return `<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+      html, body, #map {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      .pin {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        background: #0C7186;
+        border: 3px solid white;
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.28);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      const coordinate = ${JSON.stringify(coordinate)};
+      const map = L.map("map").setView([coordinate.latitude, coordinate.longitude], 16);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap contributors"
+      }).addTo(map);
+
+      const marker = L.marker([coordinate.latitude, coordinate.longitude], {
+        draggable: true,
+        icon: L.divIcon({
+          className: "",
+          html: '<div class="pin"></div>',
+          iconSize: [36, 36],
+          iconAnchor: [18, 36],
+        }),
+      }).addTo(map);
+
+      function send(latlng) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          latitude: latlng.lat,
+          longitude: latlng.lng
+        }));
+      }
+
+      map.on("click", (event) => {
+        marker.setLatLng(event.latlng);
+        send(event.latlng);
+      });
+
+      marker.on("dragend", () => {
+        send(marker.getLatLng());
+      });
+    </script>
+  </body>
+</html>`;
 }
 
 const styles = StyleSheet.create({
@@ -179,5 +314,23 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
+  },
+  unavailableContent: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.md,
+    paddingHorizontal: spacing["2xl"],
+  },
+  unavailableTitle: {
+    ...typography.sectionTitle,
+    color: colors.text,
+    textAlign: "center",
+  },
+  unavailableMessage: {
+    ...typography.body,
+    maxWidth: 360,
+    color: colors.textMuted,
+    textAlign: "center",
   },
 });
