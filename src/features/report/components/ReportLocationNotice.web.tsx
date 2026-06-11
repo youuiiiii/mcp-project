@@ -27,22 +27,27 @@ export default function ReportLocationNotice({
   const { t } = useI18n();
   const hasManualPin = incidentLocation?.source === "manual_pin";
   const hasLocation = !!incidentLocation;
-  
+
   const statusText = incidentLocation
     ? hasManualPin
       ? t("report.location.manualPin")
       : t("report.location.currentPin")
     : t("report.location.notSet");
 
-  // Determine GPS accuracy level & color
   let accuracyColor: string = colors.textSoft;
   let accuracyLabel = "";
-  if (incidentLocation && incidentLocation.accuracyMeters !== null && incidentLocation.accuracyMeters !== undefined) {
-    const acc = incidentLocation.accuracyMeters;
-    if (acc <= 10) {
+
+  if (
+    incidentLocation &&
+    incidentLocation.accuracyMeters !== null &&
+    incidentLocation.accuracyMeters !== undefined
+  ) {
+    const accuracy = incidentLocation.accuracyMeters;
+
+    if (accuracy <= 10) {
       accuracyColor = colors.success;
       accuracyLabel = "Akurasi Tinggi";
-    } else if (acc <= 35) {
+    } else if (accuracy <= 35) {
       accuracyColor = colors.warning;
       accuracyLabel = "Akurasi Sedang";
     } else {
@@ -54,11 +59,20 @@ export default function ReportLocationNotice({
   return (
     <AppCard variant="muted" style={styles.card}>
       <View style={styles.headerRow}>
-        <View style={[styles.iconContainer, { backgroundColor: hasLocation ? colors.primarySoft : colors.surfaceContainerHigh }]}>
-          <Ionicons 
-            name={hasLocation ? "location" : "location-outline"} 
-            size={22} 
-            color={hasLocation ? colors.primaryDark : colors.textSoft} 
+        <View
+          style={[
+            styles.iconContainer,
+            {
+              backgroundColor: hasLocation
+                ? colors.primarySoft
+                : colors.surfaceContainerHigh,
+            },
+          ]}
+        >
+          <Ionicons
+            name={hasLocation ? "location" : "location-outline"}
+            size={22}
+            color={hasLocation ? colors.primaryDark : colors.textSoft}
           />
         </View>
 
@@ -70,15 +84,15 @@ export default function ReportLocationNotice({
         </View>
       </View>
 
-      {incidentLocation && (
+      {incidentLocation ? (
         <View style={styles.coordinatePreview}>
-          <Ionicons name="navigate" size={17} color={colors.primary} />
-          <Text style={styles.coordinateText} numberOfLines={1}>
-            {incidentLocation.latitude.toFixed(5)},{" "}
-            {incidentLocation.longitude.toFixed(5)}
+          <Ionicons name="navigate" size={18} color={colors.primary} />
+          <Text style={styles.coordinateText}>
+            {incidentLocation.latitude.toFixed(6)},{" "}
+            {incidentLocation.longitude.toFixed(6)}
           </Text>
         </View>
-      )}
+      ) : null}
 
       <View style={styles.statusBox}>
         <View style={styles.statusTextGroup}>
@@ -87,11 +101,14 @@ export default function ReportLocationNotice({
           {incidentLocation?.accuracyMeters !== null &&
           incidentLocation?.accuracyMeters !== undefined ? (
             <View style={styles.accuracyRow}>
-              <View style={[styles.accuracyDot, { backgroundColor: accuracyColor }]} />
+              <View
+                style={[styles.accuracyDot, { backgroundColor: accuracyColor }]}
+              />
               <Text style={styles.accuracyText}>
                 {t("report.location.accuracy", {
                   accuracy: Math.round(incidentLocation.accuracyMeters),
-                })} ({accuracyLabel})
+                })}{" "}
+                ({accuracyLabel})
               </Text>
             </View>
           ) : null}
@@ -107,9 +124,7 @@ export default function ReportLocationNotice({
           disabled={disabled || loadingLocation}
           onPress={onUseCurrentLocation}
           style={styles.actionButton}
-          leftIcon={
-            <Ionicons name="locate" size={16} color={colors.primary} />
-          }
+          leftIcon={<Ionicons name="locate" size={16} color={colors.primary} />}
         />
 
         <AppButton
@@ -119,9 +134,7 @@ export default function ReportLocationNotice({
           disabled={disabled || !incidentLocation}
           onPress={onAdjustPin}
           style={styles.actionButton}
-          leftIcon={
-            <Ionicons name="map" size={16} color={colors.textInverse} />
-          }
+          leftIcon={<Ionicons name="map" size={16} color={colors.textInverse} />}
         />
       </View>
     </AppCard>
@@ -154,8 +167,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 15,
-    lineHeight: 20,
+    ...typography.cardTitle,
     color: colors.text,
     fontWeight: "700",
   },
@@ -170,24 +182,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.primarySoft,
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    flexDirection: "row",
     gap: spacing.xs,
-    paddingHorizontal: spacing.md,
+    padding: spacing.md,
   },
   coordinateText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "800",
     color: colors.primaryDark,
+    textAlign: "center",
   },
   statusBox: {
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
     borderColor: colors.border,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.sm,
   },
   statusTextGroup: {
     gap: 4,

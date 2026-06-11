@@ -28,7 +28,6 @@ export default function IncidentOverviewCard({
     subcategory: incident.subcategory ?? incident.type,
   });
 
-  const author = incident.reportedBy || incident.reporterEmail || "User";
   const urgencyScore = incident.urgencyScore ?? 20;
   
   let urgencyColor: string = colors.info;
@@ -43,19 +42,14 @@ export default function IncidentOverviewCard({
 
   const verifications = incident.verificationCount ?? 0;
   const disputes = incident.disputeCount ?? 0;
-  const accurate = incident.accurateCount ?? 0; // if used
+  const accurate = incident.accurateCount ?? 0;
   const totalConfirmations = verifications + accurate;
 
   const address = incident.address || `${incident.latitude.toFixed(4)}, ${incident.longitude.toFixed(4)}`;
 
   return (
     <View style={styles.container}>
-      {/* MASSIVE URGENCY HEADER */}
-      <View style={[styles.urgencyHeader, { backgroundColor: urgencyColor }]}>
-        <Ionicons name="warning" size={24} color={colors.textInverse} />
-        <Text style={styles.urgencyHeaderText}>{severityLabel}</Text>
-      </View>
-
+      {/* 1. What & Where */}
       <View style={styles.contentPadding}>
         <View style={styles.topMeta}>
           <View style={[styles.categoryBadge, { backgroundColor: meta.lightColor }]}>
@@ -72,36 +66,43 @@ export default function IncidentOverviewCard({
           <Text style={styles.locationBoxText}>{address}</Text>
         </View>
 
-        {incident.description && !incident.description.includes("reported near the selected map pin") && (
-          <Text style={styles.description}>{incident.description}</Text>
-        )}
+        {/* 2. Urgency & Trust */}
+        <View style={styles.metricsRow}>
+          <View style={[styles.metricCard, { backgroundColor: urgencyColor }]}>
+            <Ionicons name="warning" size={20} color={colors.textInverse} />
+            <Text style={styles.metricCardTitleInverse}>{severityLabel}</Text>
+            <Text style={styles.metricCardValueInverse}>{urgencyScore}/100</Text>
+          </View>
 
-        <IncidentImageGallery
-          imageUri={incident.imageUri}
-          imageUris={incident.imageUris}
-          variant="detail"
-          style={styles.gallery}
-        />
+          <View style={styles.metricCard}>
+            <Ionicons name="shield-checkmark" size={20} color={colors.success} />
+            <Text style={styles.metricCardTitle}>Confirmations</Text>
+            <Text style={styles.metricCardValue}>{totalConfirmations}</Text>
+          </View>
 
-        {/* TRUST STATE MODULE */}
-        <View style={styles.trustModule}>
-          <Text style={styles.trustModuleTitle}>Community Trust State</Text>
-          <View style={styles.trustRow}>
-            <View style={styles.trustStat}>
-              <Ionicons name="shield-checkmark" size={20} color={colors.success} />
-              <Text style={styles.trustStatNumber}>{totalConfirmations}</Text>
-              <Text style={styles.trustStatLabel}>Confirmations</Text>
-            </View>
-            <View style={styles.trustDivider} />
-            <View style={styles.trustStat}>
-              <Ionicons name="warning-outline" size={20} color={colors.danger} />
-              <Text style={styles.trustStatNumber}>{disputes}</Text>
-              <Text style={styles.trustStatLabel}>Disputes</Text>
-            </View>
+          <View style={styles.metricCard}>
+            <Ionicons name="warning-outline" size={20} color={colors.danger} />
+            <Text style={styles.metricCardTitle}>Disputes</Text>
+            <Text style={styles.metricCardValue}>{disputes}</Text>
           </View>
         </View>
 
-        {/* ACTIONS */}
+        {/* 3. Evidence (Photos & Description) */}
+        <View style={styles.evidenceSection}>
+          <Text style={styles.sectionTitle}>Evidence & Details</Text>
+          {incident.description && !incident.description.includes("reported near the selected map pin") && (
+            <Text style={styles.description}>{incident.description}</Text>
+          )}
+
+          <IncidentImageGallery
+            imageUri={incident.imageUri}
+            imageUris={incident.imageUris}
+            variant="detail"
+            style={styles.gallery}
+          />
+        </View>
+
+        {/* 4. Actions */}
         {showActions && incident.status === "active" && (
           <View style={styles.actionBlock}>
             {onOpenVerify && (
@@ -115,11 +116,12 @@ export default function IncidentOverviewCard({
                 style={styles.primaryAction}
               />
             )}
+            
             {onOpenResolve && (
               <AppButton
-                title="Resolve Incident"
+                title="Resolve Incident (Mod)"
                 variant="secondary"
-                size="lg"
+                size="md"
                 fullWidth
                 onPress={() => onOpenResolve(incident)}
                 leftIcon={<Ionicons name="checkmark-done" size={20} color={colors.text} />}
@@ -130,8 +132,8 @@ export default function IncidentOverviewCard({
         )}
 
         <Pressable onPress={onReportContent} style={styles.reportContentRow}>
-          <Ionicons name="flag-outline" size={16} color={colors.textSoft} />
-          <Text style={styles.reportContentText}>Report inappropriate content</Text>
+          <Ionicons name="flag-outline" size={16} color={colors.danger} />
+          <Text style={styles.reportContentText}>Report false information</Text>
         </Pressable>
       </View>
     </View>
@@ -141,20 +143,8 @@ export default function IncidentOverviewCard({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.surface,
-  },
-  urgencyHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.md,
-    gap: spacing.sm,
-  },
-  urgencyHeaderText: {
-    color: colors.textInverse,
-    fontSize: 16,
-    fontWeight: "800",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   contentPadding: {
     padding: spacing.lg,
@@ -196,7 +186,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radius.md,
     gap: spacing.sm,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
     borderWidth: 1,
     borderColor: colors.surfaceContainerHigh,
   },
@@ -207,56 +197,64 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     lineHeight: 20,
   },
+  metricsRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  metricCard: {
+    flex: 1,
+    backgroundColor: colors.surfaceContainer,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+  },
+  metricCardTitleInverse: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.textInverse,
+    textTransform: "uppercase",
+    textAlign: "center",
+  },
+  metricCardValueInverse: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.textInverse,
+  },
+  metricCardTitle: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.textMuted,
+    textTransform: "uppercase",
+  },
+  metricCardValue: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.text,
+  },
+  evidenceSection: {
+    marginBottom: spacing.xl,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    marginBottom: spacing.sm,
+  },
   description: {
     fontSize: 15,
-    color: colors.textMuted,
+    color: colors.text,
     lineHeight: 24,
     marginBottom: spacing.md,
   },
   gallery: {
-    marginBottom: spacing.md,
-  },
-  trustModule: {
-    backgroundColor: colors.surfaceContainer,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.xl,
-  },
-  trustModuleTitle: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.textMuted,
-    textTransform: "uppercase",
-    marginBottom: spacing.md,
-    textAlign: "center",
-  },
-  trustRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  trustStat: {
-    alignItems: "center",
-    flex: 1,
-    gap: 4,
-  },
-  trustDivider: {
-    width: 1,
-    height: 30,
-    backgroundColor: colors.border,
-  },
-  trustStatNumber: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: colors.text,
-  },
-  trustStatLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: colors.textSoft,
+    marginBottom: spacing.sm,
   },
   actionBlock: {
-    gap: spacing.md,
+    gap: spacing.sm,
     marginBottom: spacing.lg,
   },
   primaryAction: {
@@ -264,7 +262,7 @@ const styles = StyleSheet.create({
     height: 52, // massive operational button
   },
   secondaryAction: {
-    height: 52,
+    height: 48,
   },
   reportContentRow: {
     flexDirection: "row",
@@ -272,10 +270,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 6,
     paddingVertical: spacing.md,
+    backgroundColor: colors.dangerSoft,
+    borderRadius: radius.md,
   },
   reportContentText: {
     fontSize: 13,
-    fontWeight: "600",
-    color: colors.textSoft,
+    fontWeight: "700",
+    color: colors.danger,
   },
 });

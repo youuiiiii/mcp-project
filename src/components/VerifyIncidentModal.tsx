@@ -37,14 +37,14 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
   return (
     <IncidentModalShell
       visible={visible}
-      title="Konfirmasi Laporan"
-      subtitle="Bantu komunitas dengan mengonfirmasi atau memperbarui kondisi laporan ini."
+      title="Incident Verification"
+      subtitle="Help the community by confirming or updating the condition of this incident."
       submitting={submitting}
       onClose={handleClose}
       footer={
         <>
           <AppButton
-            title="Batal"
+            title="Cancel"
             variant="secondary"
             size="lg"
             disabled={submitting}
@@ -53,7 +53,7 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
           />
 
           <AppButton
-            title="Kirim Konfirmasi"
+            title="Submit Verification"
             variant="primary"
             size="lg"
             loading={submitting}
@@ -71,8 +71,8 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
 
       <View style={styles.section}>
         <SectionHeader
-          title="Jenis Konfirmasi"
-          subtitle="Pilih apakah kamu mengonfirmasi, membantah, atau memperbarui kondisi laporan."
+          title="Verification Type"
+          subtitle="Choose whether you are confirming, disputing, or updating the incident."
         />
 
         <View style={styles.optionList}>
@@ -93,8 +93,8 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
 
       <View style={styles.section}>
         <SectionHeader
-          title="Kondisi Saat Ini"
-          subtitle="Pilih kondisi yang paling sesuai dengan situasi di lokasi."
+          title="Current Condition"
+          subtitle="Select the condition that best matches the situation on the ground."
         />
 
         <View style={styles.optionList}>
@@ -114,10 +114,10 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
       </View>
 
       <EvidencePicker
-        title="Foto Bukti Terbaru"
-        subtitle="Foto diperlukan sebagai bukti kondisi terkini di lokasi."
-        emptyTitle="Belum ada foto"
-        emptyMessage="Tambahkan foto untuk memperkuat konfirmasimu."
+        title="Recent Evidence Photo"
+        subtitle="A photo is required as evidence of the current condition."
+        emptyTitle="No photo added"
+        emptyMessage="Add a photo to support your verification."
         imageUri={imageUri}
         disabled={submitting}
         onTakePhoto={handleTakePhoto}
@@ -127,14 +127,14 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
 
       <View style={styles.section}>
         <SectionHeader
-          title="Catatan Kondisi"
-          subtitle="Tulis catatan singkat tentang kondisi yang kamu lihat di lokasi."
+          title="Condition Notes"
+          subtitle="Write a brief note about the condition you observe at the location."
         />
 
         <TextInput
           value={note}
           onChangeText={setNote}
-          placeholder="Contoh: Jalan masih terblokir, satu lajur bisa digunakan."
+          placeholder="Example: Road is still blocked, one lane is passable."
           placeholderTextColor={colors.textSoft}
           style={styles.input}
           multiline
@@ -143,7 +143,7 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
         />
 
         <StatusBadge
-          label={note.trim().length >= 8 ? "Catatan sudah cukup" : "Minimal 8 karakter"}
+          label={note.trim().length >= 8 ? "Notes are sufficient" : "Minimum 8 characters"}
           variant={note.trim().length >= 8 ? "success" : "neutral"}
           size="sm"
         />

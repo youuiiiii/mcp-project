@@ -1,6 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Text, View } from "react-native";
-import { StyleSheet } from "react-native";
+import { Text, View , StyleSheet , TextInput } from "react-native";
 
 import EvidencePicker from "../features/incident/components/EvidencePicker";
 import IncidentModalShell from "../features/incident/components/IncidentModalShell";
@@ -13,7 +12,6 @@ import type { ResolveIncidentModalProps } from "./resolveIncident/types";
 import AppButton from "./ui/AppButton";
 import SectionHeader from "./ui/SectionHeader";
 import StatusBadge from "./ui/StatusBadge";
-import { TextInput } from "react-native";
 
 export default function ResolveIncidentModal(props: ResolveIncidentModalProps) {
   const { visible, incident } = props;

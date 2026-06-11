@@ -25,7 +25,6 @@ export default function IncidentKindSelector({
     <View style={styles.section}>
       <SectionHeader
         title={t("report.kind.title")}
-        subtitle={t("report.kind.subtitle")}
       />
 
       <View style={styles.grid}>
@@ -58,7 +57,7 @@ export default function IncidentKindSelector({
               >
                 <Ionicons
                   name={item.iconName}
-                  size={24}
+                  size={19}
                   color={active ? colors.textInverse : item.color}
                 />
               </View>
@@ -82,25 +81,26 @@ export default function IncidentKindSelector({
 
 const styles = StyleSheet.create({
   section: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    rowGap: spacing.md,
+    rowGap: spacing.sm,
   },
   card: {
     width: "48.5%",
-    aspectRatio: 1.1,
-    borderRadius: radius.lg,
+    minHeight: 56,
+    borderRadius: radius.md,
     borderWidth: 1.5,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    padding: spacing.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
     alignItems: "center",
     justifyContent: "center",
-    gap: spacing.sm,
+    gap: 6,
   },
   disabled: {
     opacity: 0.55,
@@ -110,17 +110,17 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.98 }],
   },
   iconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.md,
+    width: 32,
+    height: 32,
+    borderRadius: radius.sm,
     alignItems: "center",
     justifyContent: "center",
   },
   label: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "700",
     color: colors.text,
     textAlign: "center",
-    lineHeight: 16,
+    lineHeight: 14,
   },
 });

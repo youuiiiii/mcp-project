@@ -192,12 +192,7 @@ function getTime(date?: Date) {
 
 const styles = StyleSheet.create({
   section: {
-    marginTop: spacing["2xl"],
-    borderRadius: radius["2xl"],
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    padding: spacing.md,
+    marginTop: spacing.md,
   },
   header: {
     flexDirection: "row",

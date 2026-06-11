@@ -33,18 +33,17 @@ export default function ReportEvidenceSection({
     <View style={styles.section}>
       <SectionHeader
         title={t("report.evidence.title")}
-        subtitle={t("report.evidence.subtitle")}
       />
 
       <View style={styles.photoRow}>
         <AppCard
           onPress={canAddMore ? onTakePhoto : undefined}
-          padding="lg"
+          padding="sm"
           variant="outlined"
           style={[styles.photoButton, !canAddMore && styles.disabledCard]}
         >
           <IconBadge variant="danger" size="md" rounded={false}>
-            <Ionicons name="camera" size={22} color={colors.danger} />
+            <Ionicons name="camera" size={18} color={colors.danger} />
           </IconBadge>
 
           <Text style={styles.photoButtonText}>{t("common.camera")}</Text>
@@ -52,12 +51,12 @@ export default function ReportEvidenceSection({
 
         <AppCard
           onPress={canAddMore ? onPickFromGallery : undefined}
-          padding="lg"
+          padding="sm"
           variant="outlined"
           style={[styles.photoButton, !canAddMore && styles.disabledCard]}
         >
           <IconBadge variant="info" size="md" rounded={false}>
-            <Ionicons name="image" size={22} color={colors.info} />
+            <Ionicons name="image" size={18} color={colors.info} />
           </IconBadge>
 
           <Text style={styles.photoButtonText}>{t("common.gallery")}</Text>
@@ -117,18 +116,19 @@ export default function ReportEvidenceSection({
 
 const styles = StyleSheet.create({
   section: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   photoRow: {
     flexDirection: "row",
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   photoButton: {
     flex: 1,
     alignItems: "center",
     borderStyle: "dashed",
     borderColor: colors.border,
-    gap: spacing.sm,
+    gap: 6,
+    minHeight: 68,
   },
   disabledCard: {
     opacity: 0.55,
@@ -145,12 +145,12 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: spacing.sm,
+    gap: 6,
   },
   photoTile: {
-    width: "48.5%",
+    width: "23.5%",
     aspectRatio: 1,
-    borderRadius: radius.xl,
+    borderRadius: radius.md,
     overflow: "hidden",
     backgroundColor: colors.border,
   },
@@ -161,24 +161,24 @@ const styles = StyleSheet.create({
   },
   coverBadge: {
     position: "absolute",
-    left: spacing.sm,
-    top: spacing.sm,
+    left: 4,
+    top: 4,
     borderRadius: radius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
     backgroundColor: "rgba(15, 23, 42, 0.76)",
   },
   coverBadgeText: {
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: "900",
     color: colors.textInverse,
   },
   removeButton: {
     position: "absolute",
-    right: spacing.sm,
-    top: spacing.sm,
-    width: 28,
-    height: 28,
+    right: 4,
+    top: 4,
+    width: 22,
+    height: 22,
     borderRadius: radius.full,
     backgroundColor: "rgba(15, 23, 42, 0.72)",
     alignItems: "center",
@@ -194,13 +194,14 @@ const styles = StyleSheet.create({
   emptyCard: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
   },
   emptyTextGroup: {
     flex: 1,
   },
   emptyTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "900",
     color: colors.text,
   },

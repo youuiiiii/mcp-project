@@ -1,5 +1,5 @@
 import MapScreen from "@/features/map/MapScreen";
 
-export default function MapRoute() {
+export default function MapsRoute() {
   return <MapScreen />;
 }

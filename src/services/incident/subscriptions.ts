@@ -1,5 +1,6 @@
 import {
   collection,
+  doc,
   limit as limitQuery,
   onSnapshot,
   orderBy,
@@ -67,6 +68,25 @@ export const subscribeToIncidents = (
         });
 
       onSuccess(reports);
+    },
+    (error) => {
+      onError?.(error);
+    }
+  );
+};
+
+export const subscribeToIncident = (
+  reportId: string,
+  onSuccess: (report: IncidentReport | null) => void,
+  onError?: (error: Error) => void
+) => {
+  const reportRef = doc(db, REPORTS_COLLECTION, reportId);
+
+  return onSnapshot(
+    reportRef,
+    (snapshot) => {
+      const report = mapIncidentDocument(snapshot);
+      onSuccess(report?.moderationStatus === "hidden" ? null : report);
     },
     (error) => {
       onError?.(error);

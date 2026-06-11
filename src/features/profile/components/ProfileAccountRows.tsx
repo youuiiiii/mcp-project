@@ -14,19 +14,19 @@ export function StatsStrip({ stats }: { stats: ProfileStats }) {
       color: colors.info,
     },
     {
-      label: "Aktif",
+      label: "Active",
       value: stats.activeReports,
       iconName: "radio" as const,
       color: colors.danger,
     },
     {
-      label: "Selesai",
+      label: "Resolved",
       value: stats.resolvedReports,
       iconName: "checkmark-circle-outline" as const,
       color: colors.success,
     },
     {
-      label: "Darurat",
+      label: "Urgent",
       value: stats.highSeverityReports,
       iconName: "warning-outline" as const,
       color: colors.warningDark,
@@ -73,7 +73,7 @@ export function EditableNameRow({
       </View>
 
       <View style={styles.accountText}>
-        <Text style={styles.accountLabel}>Nama Lengkap</Text>
+        <Text style={styles.accountLabel}>Full Name</Text>
 
         {isEditing ? (
           <TextInput
@@ -81,7 +81,7 @@ export function EditableNameRow({
             onChangeText={onChange}
             editable={!saving}
             autoFocus
-            placeholder="Masukkan nama Anda"
+            placeholder="Enter your name"
             placeholderTextColor={colors.textSoft}
             style={styles.accountNameInput}
           />

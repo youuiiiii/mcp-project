@@ -1,8 +1,8 @@
 /**
- * Dispatch Terminal Layout Tokens
- * 
- * Hard flat design. No soft drop shadows. 
- * Minimal border radii. 
+ * Dispatch layout tokens.
+ *
+ * Compact radii keep operational screens tidy, while subtle shadows help the
+ * mobile dashboard cards read closer to the provided reference.
  */
 export const spacing = {
   xs: 4,
@@ -25,16 +25,27 @@ export const radius = {
 } as const;
 
 export const shadow = {
-  /** Flat operational "shadow" which is just a solid 1px border visually, or hard offset */
-  card: {
-    // In a flat dispatch design, shadows are avoided in favor of crisp borders
-    shadowColor: "transparent",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    elevation: 0,
+  sm: {
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  /** Used for critical floating elements (e.g. command buttons) */
+  md: {
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.09,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  card: {
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 1,
+  },
   floating: {
     shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 4 },

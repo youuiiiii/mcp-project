@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   Pressable,
   ScrollView,
@@ -14,6 +15,7 @@ import { typography } from "../../../theme/typography";
 import {
   INCIDENT_FILTER_OPTIONS,
   type IncidentFilter,
+  type IncidentSortMode,
   type IncidentsSummary,
 } from "../hooks/useIncidentsScreen";
 
@@ -21,126 +23,192 @@ type IncidentsHeaderProps = {
   summary: IncidentsSummary;
   searchQuery: string;
   selectedFilter: IncidentFilter;
+  sortMode: IncidentSortMode;
+  resultCount: number;
   onSearchChange: (value: string) => void;
   onFilterChange: (value: IncidentFilter) => void;
+  onToggleSort: () => void;
 };
 
 export default function IncidentsHeader({
   summary,
   searchQuery,
   selectedFilter,
+  sortMode,
+  resultCount,
   onSearchChange,
   onFilterChange,
+  onToggleSort,
 }: IncidentsHeaderProps) {
   return (
     <View style={styles.container}>
-      {/* Title */}
-      <View style={styles.hero}>
-        <Text style={styles.title}>Daftar Laporan</Text>
-        <Text style={styles.subtitle}>
-          {summary.total > 0
-            ? `${summary.active} Aktif • ${summary.resolved} Selesai • ${summary.total} Total`
-            : "BELUM ADA LAPORAN DI AREA INI"}
-        </Text>
-      </View>
-
-      {/* Search bar */}
-      <View style={styles.searchBar}>
-        <Ionicons name="search" size={20} color={colors.textSoft} />
-        <TextInput
-          value={searchQuery}
-          onChangeText={onSearchChange}
-          placeholder="Cari laporan, kategori, atau status..."
-          placeholderTextColor={colors.textSoft}
-          style={styles.searchInput}
-        />
-        {searchQuery.length > 0 && (
-          <Pressable onPress={() => onSearchChange("")}>
-            <Ionicons name="close-circle" size={18} color={colors.textSoft} />
-          </Pressable>
-        )}
-      </View>
-
-      {/* Filter chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterRow}
+      <LinearGradient
+        colors={[colors.primaryDark, "#0FB8D0"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.hero}
       >
-        {INCIDENT_FILTER_OPTIONS.map((filter) => {
-          const active = selectedFilter === filter.value;
+        <View style={styles.titleRow}>
+          <View style={styles.titleBlock}>
+            <Text style={styles.title}>Incident List</Text>
+            <Text style={styles.subtitle}>
+              {summary.total} incidents recorded today
+            </Text>
+          </View>
 
-          return (
-            <Pressable
-              key={filter.value}
-              onPress={() => onFilterChange(filter.value)}
-              style={({ pressed }) => [
-                styles.filterChip,
-                active && styles.filterChipActive,
-                pressed && styles.filterChipPressed,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.filterChipText,
-                  active && styles.filterChipTextActive,
+          <Pressable
+            onPress={onToggleSort}
+            accessibilityRole="button"
+            accessibilityLabel="Change incident sort"
+            style={({ pressed }) => [
+              styles.sortButton,
+              pressed && styles.sortButtonPressed,
+            ]}
+          >
+            <Ionicons name="swap-vertical" size={22} color={colors.textInverse} />
+          </Pressable>
+        </View>
+
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={18} color={colors.textSoft} />
+          <TextInput
+            value={searchQuery}
+            onChangeText={onSearchChange}
+            placeholder="Search incident or location..."
+            placeholderTextColor={colors.textSoft}
+            style={styles.searchInput}
+          />
+          {searchQuery.length > 0 ? (
+            <Pressable onPress={() => onSearchChange("")}>
+              <Ionicons name="close-circle" size={18} color={colors.textSoft} />
+            </Pressable>
+          ) : null}
+        </View>
+      </LinearGradient>
+
+      <View style={styles.filterShell}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterRow}
+        >
+          {INCIDENT_FILTER_OPTIONS.map((filter) => {
+            const active = selectedFilter === filter.value;
+
+            return (
+              <Pressable
+                key={filter.value}
+                onPress={() => onFilterChange(filter.value)}
+                style={({ pressed }) => [
+                  styles.filterChip,
+                  active && styles.filterChipActive,
+                  pressed && styles.filterChipPressed,
                 ]}
               >
-                {filter.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+                <Text
+                  style={[
+                    styles.filterChipText,
+                    active && styles.filterChipTextActive,
+                  ]}
+                >
+                  {filter.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        <View style={styles.sortMetaRow}>
+          <Text style={styles.sortMetaText}>
+            Sorted by:{" "}
+            <Text style={styles.sortMetaStrong}>
+              {sortMode === "latest" ? "Latest" : "Severity"}
+            </Text>
+          </Text>
+          <Text style={styles.sortMetaText}>{resultCount} results</Text>
+        </View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing.md,
+    backgroundColor: colors.background,
   },
   hero: {
-    gap: 4,
-    marginBottom: spacing.xs,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing["3xl"],
+    paddingBottom: spacing.xl,
+    gap: spacing.lg,
+  },
+  titleRow: {
+    minHeight: 56,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: spacing.md,
+  },
+  titleBlock: {
+    flex: 1,
+    minWidth: 0,
   },
   title: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: colors.text,
+    fontSize: 21,
+    fontWeight: "900",
+    color: colors.textInverse,
   },
   subtitle: {
-    fontSize: 13,
+    marginTop: 3,
+    fontSize: 12,
     fontWeight: "600",
-    color: colors.textMuted,
+    color: "rgba(255,255,255,0.88)",
+  },
+  sortButton: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.full,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.14)",
+  },
+  sortButtonPressed: {
+    opacity: 0.78,
+    transform: [{ scale: 0.98 }],
   },
   searchBar: {
+    minHeight: 42,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.surfaceContainer,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 12,
     gap: spacing.sm,
-  },
-  searchInput: {
-    flex: 1,
-    ...typography.body,
-    color: colors.text,
-    padding: 0,
-    fontWeight: "500",
-  },
-  filterRow: {
-    gap: spacing.sm,
-    paddingBottom: spacing.xs,
-  },
-  filterChip: {
     backgroundColor: colors.surface,
     borderRadius: radius.full,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    ...typography.caption,
+    padding: 0,
+    color: colors.text,
+    fontWeight: "600",
+  },
+  filterShell: {
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  filterRow: {
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  filterChip: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: "rgba(14,165,233,0.32)",
+    borderRadius: radius.full,
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 8,
   },
   filterChipActive: {
     backgroundColor: colors.primary,
@@ -151,10 +219,28 @@ const styles = StyleSheet.create({
   },
   filterChipText: {
     fontSize: 13,
-    fontWeight: "600",
-    color: colors.textMuted,
+    fontWeight: "800",
+    color: colors.primaryDark,
   },
   filterChipTextActive: {
     color: colors.textInverse,
+  },
+  sortMetaRow: {
+    minHeight: 36,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.xl,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  sortMetaText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#8090B5",
+  },
+  sortMetaStrong: {
+    color: colors.text,
+    fontWeight: "900",
   },
 });

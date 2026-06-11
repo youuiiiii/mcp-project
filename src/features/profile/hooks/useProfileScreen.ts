@@ -15,6 +15,9 @@ export type ProfileStats = {
   activeReports: number;
   resolvedReports: number;
   highSeverityReports: number;
+  points: number;
+  areas: number;
+  badges: number;
 };
 
 const normalizeText = (value?: string | null): string | null => {
@@ -111,16 +114,40 @@ export const useProfileScreen = () => {
   }, [reports, user?.uid, user?.email, user?.displayName]);
 
   const stats = useMemo<ProfileStats>(() => {
+    const totalReports = userReports.length;
+    const activeReports = userReports.filter((report) => report.status === "active")
+      .length;
+    const resolvedReports = userReports.filter(
+      (report) => report.status === "resolved"
+    ).length;
+    const highSeverityReports = userReports.filter((report) => {
+      return (report.urgencyLevel ?? report.severity) === "high";
+    }).length;
+    const areaKeys = new Set(
+      userReports.map((report) => {
+        if (report.address?.trim()) {
+          return report.address.trim().split(",").slice(-2).join(",").trim();
+        }
+
+        return `${report.latitude.toFixed(1)},${report.longitude.toFixed(1)}`;
+      })
+    );
+    const points =
+      totalReports * 35 + resolvedReports * 45 + highSeverityReports * 20;
+
     return {
-      totalReports: userReports.length,
-      activeReports: userReports.filter((report) => report.status === "active")
-        .length,
-      resolvedReports: userReports.filter(
-        (report) => report.status === "resolved"
-      ).length,
-      highSeverityReports: userReports.filter((report) => {
-        return (report.urgencyLevel ?? report.severity) === "high";
-      }).length,
+      totalReports,
+      activeReports,
+      resolvedReports,
+      highSeverityReports,
+      points,
+      areas: areaKeys.size,
+      badges: [
+        totalReports > 0,
+        resolvedReports > 0,
+        highSeverityReports > 0,
+        areaKeys.size >= 3,
+      ].filter(Boolean).length,
     };
   }, [userReports]);
 
@@ -264,6 +291,8 @@ export const useProfileScreen = () => {
     draftName,
     setDraftName,
     draftPhotoUri,
+    reports,
+    userReports,
     stats,
     pickProfilePhoto,
     saveProfile,

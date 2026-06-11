@@ -107,9 +107,7 @@ service cloud.firestore {
         && request.resource.data.verifiedBy is list
         && request.resource.data.disputedBy is list
         && request.resource.data.title is string
-        && request.resource.data.title.size() >= 5
         && request.resource.data.description is string
-        && request.resource.data.description.size() >= 10
         && request.resource.data.latitude is number
         && request.resource.data.longitude is number
         && request.resource.data.imageUri is string
@@ -122,8 +120,21 @@ service cloud.firestore {
     function validCommunityReportUpdate() {
       return signedIn()
         && resource.data.moderationStatus == "visible"
-        && request.resource.data.moderationStatus == resource.data.moderationStatus
+        && (
+          request.resource.data.moderationStatus == resource.data.moderationStatus
+          || (request.resource.data.moderationStatus == "under_review" && request.resource.data.moderationReason is string)
+        )
+        && (
+          request.resource.data.status == resource.data.status
+          || (request.resource.data.status == "resolved" && request.resource.data.resolvedBy == "System")
+        )
         && changedOnly([
+          "status",
+          "resolutionNote",
+          "resolvedBy",
+          "resolvedAt",
+          "moderationStatus",
+          "moderationReason",
           "verificationStatus",
           "verificationCount",
           "disputeCount",

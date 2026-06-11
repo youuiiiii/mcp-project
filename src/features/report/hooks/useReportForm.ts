@@ -6,7 +6,7 @@ import {
   calculateIncidentUrgency,
   DEFAULT_IMPACT_ANSWERS,
   getReportKindOption,
-} from "../../../constants/reportTaxonomy";
+ isIncidentKind } from "../../../constants/reportTaxonomy";
 import { useAuth } from "../../../contexts/AuthContext";
 import {
   DUPLICATE_CHECK_RADIUS_METERS,
@@ -36,9 +36,9 @@ import type {
   ReportLocationDraft,
 } from "../../../types/incident";
 
-const MAP_ROUTE = "/(tabs)" as any;
 
-import { isIncidentKind } from "../../../constants/reportTaxonomy";
+
+const MAP_ROUTE = "/(tabs)" as any;
 
 export const useReportForm = (options?: { onSuccess?: () => void; initialKind?: string }) => {
   const router = useRouter();

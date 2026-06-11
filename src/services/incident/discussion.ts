@@ -66,6 +66,9 @@ export const createIncidentReply = async (
       createdAt: serverTimestamp(),
     });
 
+    const reportData = reportSnapshot.data();
+    const currentConditionUpdateCount = reportData.conditionUpdateCount || 0;
+
     const reportUpdate: UpdateData<DocumentData> = {
       replyCount: increment(1),
       latestActivityAt: serverTimestamp(),
@@ -76,6 +79,14 @@ export const createIncidentReply = async (
       reportUpdate.latestCommunityUpdateType = updateType;
       reportUpdate.latestCommunityUpdateAt = serverTimestamp();
       reportUpdate.conditionUpdateCount = increment(1);
+
+      // Auto-Resolution: If there are 3 condition updates (including this one), resolve it.
+      if (currentConditionUpdateCount + 1 >= 3 && reportData.status === "active") {
+        reportUpdate.status = "resolved";
+        reportUpdate.resolutionNote = "Auto-resolved by community (3+ updates).";
+        reportUpdate.resolvedBy = "System";
+        reportUpdate.resolvedAt = serverTimestamp();
+      }
     }
 
     transaction.update(reportRef, reportUpdate);
@@ -155,13 +166,28 @@ export const submitIncidentAccuracyVote = async (
       });
     }
 
-    transaction.update(reportRef, {
+    const reportData = reportSnapshot.data();
+    const currentAccurate = reportData.accurateCount || 0;
+    const currentInaccurate = reportData.inaccurateCount || 0;
+    const nextAccurate = currentAccurate + accurateDelta;
+    const nextInaccurate = currentInaccurate + inaccurateDelta;
+    const totalVotes = nextAccurate + nextInaccurate;
+
+    const reportUpdate: UpdateData<DocumentData> = {
       accurateCount: increment(accurateDelta),
       inaccurateCount: increment(inaccurateDelta),
       latestAccuracyVoteAt: serverTimestamp(),
       latestActivityAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    });
+    };
+
+    // Auto-Moderation: If total votes > 5 and > 50% inaccurate, flag it.
+    if (totalVotes >= 5 && nextInaccurate / totalVotes > 0.5 && reportData.moderationStatus === "visible") {
+      reportUpdate.moderationStatus = "under_review";
+      reportUpdate.moderationReason = "Auto-flagged by community accuracy votes.";
+    }
+
+    transaction.update(reportRef, reportUpdate);
   });
 };
 

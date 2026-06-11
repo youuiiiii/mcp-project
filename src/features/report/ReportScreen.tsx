@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Alert, StyleSheet, Text, View, Modal, Pressable } from "react-native";
+import { Alert, StyleSheet, Text, View, Modal } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import AppButton from "../../components/ui/AppButton";
@@ -50,11 +50,11 @@ export default function ReportScreen() {
   const handleNextStep = () => {
     if (step === 1) {
       if (!form.incidentLocation) {
-        Alert.alert("Lokasi Diperlukan", "Tolong tentukan lokasi kejadian terlebih dahulu.");
+        Alert.alert("Location Required", "Please specify the incident location first.");
         return;
       }
       if (!form.kind) {
-        Alert.alert("Tipe Bencana Diperlukan", "Tolong pilih kategori bencana.");
+        Alert.alert("Category Required", "Please select an incident category.");
         return;
       }
       setStep(2);
@@ -81,7 +81,7 @@ export default function ReportScreen() {
       <AppScreen keyboardAvoiding contentContainerStyle={styles.content}>
         {/* SIGAP HEADER */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Lapor Kejadian</Text>
+          <Text style={styles.headerTitle}>Report Incident</Text>
           <View style={styles.stepIndicatorRow}>
             {[1, 2, 3].map((s) => (
               <View
@@ -127,10 +127,10 @@ export default function ReportScreen() {
               {computedUrgency && (
                 <View style={[styles.urgencyPreviewCard, isHighSeverity && { borderColor: colors.danger, backgroundColor: colors.dangerSoft }]}>
                   <View style={styles.urgencyHeaderRow}>
-                    <Text style={[styles.urgencyTitle, isHighSeverity && { color: colors.dangerDark }]}>Estimasi Tingkat Bahaya</Text>
+                    <Text style={[styles.urgencyTitle, isHighSeverity && { color: colors.dangerDark }]}>Estimated Urgency Level</Text>
                     <View style={[styles.urgencyBadge, isHighSeverity ? { backgroundColor: colors.danger } : { backgroundColor: colors.warning }]}>
                        <Text style={styles.urgencyBadgeText}>
-                          {isHighSeverity ? "TINGGI" : computedUrgency.level === "medium" ? "SEDANG" : "RENDAH"}
+                          {isHighSeverity ? "HIGH" : computedUrgency.level === "medium" ? "MEDIUM" : "LOW"}
                        </Text>
                     </View>
                   </View>
@@ -151,24 +151,24 @@ export default function ReportScreen() {
 
               {/* Summary Review Card */}
               <View style={styles.summaryBox}>
-                <Text style={styles.summaryTitle}>Ringkasan Laporan</Text>
+                <Text style={styles.summaryTitle}>Report Summary</Text>
                 
                 <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Kategori:</Text>
+                  <Text style={styles.summaryLabel}>Category:</Text>
                   <Text style={styles.summaryValue}>{selectedKindOpt ? t(selectedKindOpt.labelKey).toUpperCase() : ""}</Text>
                 </View>
 
                 <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Lokasi:</Text>
+                  <Text style={styles.summaryLabel}>Location:</Text>
                   <Text style={styles.summaryValue}>
-                    {form.incidentLocation?.source === "manual_pin" ? "Titik Manual" : "GPS"} 
+                    {form.incidentLocation?.source === "manual_pin" ? "Manual Pin" : "GPS"} 
                   </Text>
                 </View>
 
                 <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Tingkat Keparahan:</Text>
+                  <Text style={styles.summaryLabel}>Severity Level:</Text>
                   <Text style={[styles.summaryValue, isHighSeverity && { color: colors.danger }]}>
-                    {isHighSeverity ? "TINGGI" : "STANDAR"}
+                    {isHighSeverity ? "HIGH" : "STANDARD"}
                   </Text>
                 </View>
               </View>
@@ -180,9 +180,9 @@ export default function ReportScreen() {
         <View style={styles.navigationRow}>
           {step > 1 && (
             <AppButton
-              title="Kembali"
+              title="Back"
               variant="secondary"
-              size="lg"
+              size="md"
               disabled={form.loading}
               onPress={handlePrevStep}
               style={styles.backBtn}
@@ -192,22 +192,22 @@ export default function ReportScreen() {
 
           {step < 3 ? (
             <AppButton
-              title="Lanjut"
+              title="Next"
               variant="primary"
-              size="lg"
+              size="md"
               onPress={handleNextStep}
               style={styles.nextBtn}
               rightIcon={<Ionicons name="arrow-forward" size={18} color={colors.textInverse} />}
             />
           ) : (
             <AppButton
-              title={form.loading ? "MENGIRIM..." : "KIRIM LAPORAN"}
+              title={form.loading ? "SUBMITTING..." : "SUBMIT REPORT"}
               variant={isHighSeverity ? "danger" : "primary"}
-              size="lg"
+              size="md"
               loading={form.loading}
               disabled={!form.canSubmit}
               onPress={form.handleSubmit}
-              style={[styles.nextBtn, { height: 56 }]}
+              style={styles.nextBtn}
             />
           )}
         </View>
@@ -219,14 +219,14 @@ export default function ReportScreen() {
             <View style={styles.successIconCircle}>
               <Ionicons name="checkmark-done" size={48} color={colors.textInverse} />
             </View>
-            <Text style={styles.modalTitle}>Laporan Diterima</Text>
+            <Text style={styles.modalTitle}>Report Received</Text>
             <Text style={styles.modalMessage}>
-              Terima kasih, laporan Anda telah masuk ke sistem kami dan akan segera ditinjau.
+              Thank you. Your report has been submitted to the system and will be reviewed shortly.
             </Text>
 
             <View style={styles.modalActions}>
               <AppButton
-                title="KEMBALI KE BERANDA"
+                title="BACK TO MAP"
                 variant="primary"
                 size="lg"
                 fullWidth
@@ -254,19 +254,19 @@ export default function ReportScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    gap: spacing.lg,
+    gap: spacing.md,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing["3xl"],
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xl,
   },
   header: {
-    flexDirection: "column",
-    alignItems: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: spacing.sm,
-    marginBottom: spacing.md,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "800",
     color: colors.text,
   },
@@ -291,27 +291,28 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stepWrapper: {
-    gap: spacing.xl,
+    gap: spacing.md,
   },
   navigationRow: {
     flexDirection: "row",
     gap: spacing.md,
-    marginTop: spacing.xl,
+    marginTop: spacing.sm,
   },
   backBtn: {
     flex: 1,
-    height: 56,
+    height: 48,
   },
   nextBtn: {
     flex: 2,
-    height: 56,
+    height: 48,
   },
   urgencyPreviewCard: {
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     ...shadow.sm,
   },
   urgencyHeaderRow: {
@@ -339,17 +340,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.md,
-    padding: spacing.md,
-    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.xs,
   },
   summaryTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "700",
     color: colors.textMuted,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderStrong,
-    paddingBottom: spacing.sm,
-    marginBottom: spacing.xs,
+    paddingBottom: spacing.xs,
   },
   summaryRow: {
     flexDirection: "row",
@@ -357,12 +358,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   summaryLabel: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "600",
     color: colors.textSoft,
   },
   summaryValue: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "700",
     color: colors.text,
   },

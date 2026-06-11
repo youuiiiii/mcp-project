@@ -1,11 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, Pressable, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { getIncidentDisplayMeta } from "../constants/incident";
 import { colors } from "../theme/colors";
-import { radius, spacing, shadow } from "../theme/layout";
+import { radius, shadow, spacing } from "../theme/layout";
 import type { IncidentReport } from "../types/incident";
-import StatusBadge from "./ui/StatusBadge";
 
 type IncidentCardProps = {
   incident: IncidentReport;
@@ -25,188 +24,200 @@ export default function IncidentCard({
     subcategory: incident.subcategory ?? incident.type,
   });
 
-  const title = incident.title?.trim() || "Incident";
-  const dateLabel = formatDate(incident.createdAt);
-  const address = incident.address || `${incident.latitude.toFixed(4)}, ${incident.longitude.toFixed(4)}`;
-
-  const urgencyScore = incident.urgencyScore ?? 20;
-  let urgencyVariant: "danger" | "warning" | "success" = "success";
-  let severityLabel = "Low";
-  
-  if (urgencyScore >= 70) {
-    urgencyVariant = "danger";
-    severityLabel = "High";
-  } else if (urgencyScore >= 38) {
-    urgencyVariant = "warning";
-    severityLabel = "Moderate";
-  }
-
-  const verifications = incident.verificationCount ?? 0;
-  const disputes = incident.disputeCount ?? 0;
-  const totalVotes = verifications + disputes;
+  const title = incident.title?.trim() || meta.shortLabel || "Incident";
+  const address =
+    incident.address ||
+    `${incident.latitude.toFixed(4)}, ${incident.longitude.toFixed(4)}`;
+  const status = getIncidentStatusMeta(incident);
+  const reportCount =
+    (incident.verificationCount ?? 0) +
+    (incident.replyCount ?? 0) +
+    (incident.evidenceCount ?? 0);
 
   return (
     <Pressable
-      onPress={() => onPress && onPress(incident)}
+      onPress={() => onPress?.(incident)}
       style={({ pressed }) => [
         styles.card,
+        compact && styles.cardCompact,
         pressed && styles.cardPressed,
       ]}
     >
-      <View style={styles.header}>
-        <View style={[styles.iconBox, { backgroundColor: meta.color }]}>
-          <Ionicons name={meta.iconName} size={20} color={colors.textInverse} />
-        </View>
-        
-        <View style={styles.headerContent}>
-          <Text style={styles.title} numberOfLines={1}>{title}</Text>
-          <View style={styles.metaRow}>
-            <Text style={styles.metaText}>{meta.label}</Text>
-            <Text style={styles.dotSeparator}>•</Text>
-            <Text style={styles.metaText}>{dateLabel}</Text>
-          </View>
-        </View>
-
-        <StatusBadge label={severityLabel} variant={urgencyVariant} size="sm" />
+      <View style={[styles.iconBox, { backgroundColor: meta.lightColor }]}>
+        <Ionicons name={meta.iconName} size={22} color={meta.color} />
       </View>
 
-      <View style={styles.locationRow}>
-        <Ionicons name="location" size={14} color={colors.textSoft} />
-        <Text style={styles.locationText} numberOfLines={1}>{address}</Text>
-      </View>
-
-      {!compact && incident.description && !incident.description.includes("reported near the selected map pin") && !incident.description.includes("No additional impact") && (
-        <Text style={styles.description} numberOfLines={2}>
-          {incident.description}
-        </Text>
-      )}
-
-      {!compact && (
-        <View style={styles.footer}>
-          <View style={styles.verificationBadge}>
-            <Ionicons name="shield-checkmark" size={12} color={totalVotes > 0 && verifications >= disputes ? colors.success : colors.textSoft} />
-            <Text style={styles.verificationText}>
-              {totalVotes === 0 ? "Unverified" : `${verifications} Confirmations`}
+      <View style={styles.content}>
+        <View style={styles.titleRow}>
+          <Text style={styles.title} numberOfLines={1}>
+            {title}
+          </Text>
+          <View style={[styles.statusPill, { backgroundColor: status.bg }]}>
+            <Text style={[styles.statusText, { color: status.fg }]}>
+              {status.label}
             </Text>
           </View>
-          <View style={styles.footerRight}>
-            <Text style={styles.detailsLink}>View Details</Text>
-            <Ionicons name="chevron-forward" size={14} color={colors.primary} />
-          </View>
         </View>
-      )}
+
+        <View style={styles.infoRow}>
+          <Ionicons name="location-outline" size={13} color={colors.textSoft} />
+          <Text style={styles.locationText} numberOfLines={1}>
+            {address}
+          </Text>
+        </View>
+
+        <View style={styles.footerRow}>
+          <View style={styles.infoRow}>
+            <Ionicons name="time-outline" size={13} color={colors.textSoft} />
+            <Text style={styles.timeText} numberOfLines={1}>
+              {formatRelativeTime(incident.createdAt)}
+            </Text>
+          </View>
+
+          {!compact ? (
+            <Text style={styles.reportText}>
+              {reportCount || 1} {reportCount === 1 ? "report" : "reports"}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+
+      <Ionicons name="chevron-forward" size={18} color={colors.borderStrong} />
     </Pressable>
   );
 }
 
-function formatDate(date: Date | undefined): string {
+function getIncidentStatusMeta(incident: IncidentReport) {
+  if (incident.status === "resolved") {
+    return {
+      label: "Resolved",
+      bg: colors.successSoft,
+      fg: colors.successDark,
+    };
+  }
+
+  if (
+    incident.verificationStatus === "pending" ||
+    incident.trustStatus === "questioned" ||
+    (incident.conditionUpdateCount ?? 0) > 0
+  ) {
+    return {
+      label: "Monitoring",
+      bg: colors.warningSoft,
+      fg: colors.warningDark,
+    };
+  }
+
+  return {
+    label: "Active",
+    bg: colors.dangerSoft,
+    fg: colors.dangerDark,
+  };
+}
+
+function formatRelativeTime(date?: Date): string {
   if (!date) return "Unknown time";
-  return date.toLocaleString("en-US", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+
+  const diffMs = Date.now() - date.getTime();
+  const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
+
+  if (diffMinutes < 60) {
+    return `${diffMinutes} minutes ago`;
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60);
+
+  if (diffHours < 24) {
+    return `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`;
+  }
+
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays} ${diffDays === 1 ? "day" : "days"} ago`;
 }
 
 const styles = StyleSheet.create({
   card: {
+    minHeight: 94,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: radius["2xl"],
     borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
+    borderColor: "rgba(226,232,240,0.76)",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     ...shadow.sm,
   },
-  cardPressed: {
-    backgroundColor: colors.surfaceMuted,
+  cardCompact: {
+    minHeight: 82,
+    borderRadius: radius.xl,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
+  cardPressed: {
+    opacity: 0.84,
+    transform: [{ scale: 0.99 }],
   },
   iconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.sm,
+    width: 42,
+    height: 42,
+    borderRadius: radius.xl,
     alignItems: "center",
     justifyContent: "center",
   },
-  headerContent: {
+  content: {
     flex: 1,
-    justifyContent: "center",
+    minWidth: 0,
+    gap: 5,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   title: {
-    fontSize: 15,
-    fontWeight: "700",
+    flex: 1,
+    minWidth: 0,
+    fontSize: 14,
+    fontWeight: "900",
     color: colors.text,
-    marginBottom: 2,
   },
-  metaRow: {
+  statusPill: {
+    borderRadius: radius.full,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: "800",
+  },
+  infoRow: {
+    minWidth: 0,
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
   },
-  metaText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: colors.textSoft,
-  },
-  dotSeparator: {
-    fontSize: 10,
-    color: colors.borderStrong,
-  },
-  locationRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: spacing.xs,
-  },
   locationText: {
-    fontSize: 13,
-    color: colors.textSecondary,
     flex: 1,
+    minWidth: 0,
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#31517A",
   },
-  description: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textMuted,
-    marginBottom: spacing.sm,
-    marginTop: spacing.xs,
-  },
-  footer: {
+  footerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.surfaceContainer,
-    marginTop: spacing.xs,
+    gap: spacing.sm,
   },
-  verificationBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: colors.surfaceMuted,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: radius.sm,
-  },
-  verificationText: {
+  timeText: {
     fontSize: 11,
     fontWeight: "600",
-    color: colors.textMuted,
+    color: "#8290B6",
   },
-  footerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-  },
-  detailsLink: {
-    fontSize: 12,
+  reportText: {
+    flexShrink: 0,
+    fontSize: 11,
     fontWeight: "700",
-    color: colors.primary,
+    color: "#8290B6",
   },
 });

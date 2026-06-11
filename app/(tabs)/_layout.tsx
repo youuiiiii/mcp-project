@@ -1,10 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { type Href, Redirect, Tabs } from "expo-router";
-import {
-  ActivityIndicator,
-  StyleSheet,
-  View,
-} from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { colors } from "@/theme/colors";
@@ -36,75 +32,88 @@ export default function TabsLayout() {
         tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
-      {/* HOME */}
       <Tabs.Screen
         name="index"
         options={{
-          title: "HOME",
+          title: "Home",
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
               name={focused ? "home" : "home-outline"}
-              size={24}
+              size={22}
               color={color}
             />
           ),
         }}
       />
 
-      {/* MAP */}
       <Tabs.Screen
-        name="map"
+        name="maps"
         options={{
-          title: "MAPS",
+          title: "Maps",
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
               name={focused ? "map" : "map-outline"}
-              size={24}
+              size={22}
               color={color}
             />
           ),
         }}
       />
 
-      {/* REPORT - Central FAB */}
       <Tabs.Screen
         name="report"
         options={{
-          title: "",
+          title: "Report",
           tabBarIcon: ({ focused }) => (
             <View style={styles.fabContainer}>
               <View style={[styles.fab, focused && styles.fabFocused]}>
-                <Ionicons name="notifications" size={28} color={colors.surface} />
+                <Ionicons
+                  name={focused ? "megaphone" : "megaphone-outline"}
+                  size={28}
+                  color={colors.surface}
+                />
               </View>
             </View>
+          ),
+          tabBarLabel: ({ focused }) => (
+            <Text
+              style={[styles.reportLabel, focused && styles.reportLabelActive]}
+            >
+              Report
+            </Text>
           ),
         }}
       />
 
-      {/* ACTIVITY / INCIDENTS */}
       <Tabs.Screen
         name="activity"
         options={{
-          title: "INCIDENT",
+          title: "Incident",
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
-              name={focused ? "list" : "list-outline"}
-              size={24}
+              name={focused ? "warning" : "warning-outline"}
+              size={22}
               color={color}
             />
           ),
         }}
       />
 
-      {/* PROFILE */}
+      <Tabs.Screen
+        name="incident/[id]"
+        options={{
+          href: null,
+        }}
+      />
+
       <Tabs.Screen
         name="profile"
         options={{
-          title: "PROFILE",
+          title: "Profile",
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
               name={focused ? "person" : "person-outline"}
-              size={24}
+              size={22}
               color={color}
             />
           ),
@@ -123,9 +132,9 @@ const styles = StyleSheet.create({
   },
 
   tabBar: {
-    height: 70,
-    paddingBottom: 10,
-    paddingTop: 10,
+    height: 88,
+    paddingBottom: 14,
+    paddingTop: 12,
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.border,
@@ -138,13 +147,14 @@ const styles = StyleSheet.create({
 
   tabBarLabel: {
     fontSize: 10,
-    fontWeight: "700",
-    marginTop: 4,
+    fontWeight: "800",
+    marginTop: 3,
+    textTransform: "none",
   },
 
   fabContainer: {
     position: "absolute",
-    top: -20, // pull up from tab bar
+    top: -24,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -152,16 +162,27 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.danger,
+    backgroundColor: "#F04E4E",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: colors.danger,
+    borderWidth: 4,
+    borderColor: colors.surface,
+    shadowColor: "#F04E4E",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOpacity: 0.28,
+    shadowRadius: 12,
+    elevation: 8,
   },
   fabFocused: {
     backgroundColor: colors.dangerDark,
+  },
+  reportLabel: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: colors.textSoft,
+    marginTop: 12, // Tweaked to align properly without pushing it off the screen
+  },
+  reportLabelActive: {
+    color: colors.danger,
   },
 });

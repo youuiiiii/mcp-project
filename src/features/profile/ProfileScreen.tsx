@@ -1,12 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { type Href, useRouter } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Modal,
   Pressable,
   Text,
+  TextInput,
   View,
 } from "react-native";
 
@@ -14,16 +17,24 @@ import AppButton from "../../components/ui/AppButton";
 import AppCard from "../../components/ui/AppCard";
 import AppScreen from "../../components/ui/AppScreen";
 import LoadingState from "../../components/ui/LoadingState";
-import SectionHeader from "../../components/ui/SectionHeader";
 import { useAuth } from "../../contexts/AuthContext";
-import { colors } from "../../theme/colors";
+import { useI18n } from "../../i18n";
+import { fetchRecentBmkgEarthquakes } from "../../services/bmkgService";
 import {
-  AccountRow,
-  EditableNameRow,
-  StatsStrip,
-} from "./components/ProfileAccountRows";
+  checkAndNotifyNearbyDisaster,
+  checkAndNotifyNearbyIncidents,
+} from "../../services/notifications";
+import { colors } from "../../theme/colors";
+import type { ProfileStats } from "./hooks/useProfileScreen";
 import { useProfileScreen } from "./hooks/useProfileScreen";
 import { profileStyles as styles } from "./profileStyles";
+
+const EARTHQUAKE_ROUTE = "/earthquake" as Href;
+const EDUCATION_ROUTE = "/education" as Href;
+const MODERATION_ROUTE = "/moderation" as Href;
+const ACTIVITY_ROUTE = "/(tabs)/activity" as Href;
+
+type AppIconName = keyof typeof Ionicons.glyphMap;
 
 export default function ProfileScreen() {
   const {
@@ -33,10 +44,10 @@ export default function ProfileScreen() {
     displayName,
     userEmail,
     userInitial,
-    photoURL,
     draftName,
     setDraftName,
     draftPhotoUri,
+    reports,
     stats,
     pickProfilePhoto,
     saveProfile,
@@ -45,19 +56,14 @@ export default function ProfileScreen() {
 
   const router = useRouter();
   const { isModerator, roleLoading } = useAuth();
-  const roleLabel = isModerator ? "Moderator" : "Anggota Komunitas";
+  const { language, languageOptions, setLanguage } = useI18n();
   const [isEditingName, setIsEditingName] = useState(false);
-  const profileImageUri = draftPhotoUri ?? photoURL;
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [checkingAlerts, setCheckingAlerts] = useState(false);
+  const [checkingBmkg, setCheckingBmkg] = useState(false);
 
-  const openModeration = () => {
-    router.push("/moderation" as Href);
-  };
-
-  const cancelEditName = () => {
-    setDraftName(displayName);
-    setIsEditingName(false);
-  };
+  const roleLabel = isModerator ? "Moderator" : "Community Member";
+  const profileImageUri = draftPhotoUri;
 
   const submitName = async () => {
     if (draftName.trim() === displayName) {
@@ -66,6 +72,7 @@ export default function ProfileScreen() {
     }
 
     if (draftName.trim().length < 2) {
+      Alert.alert("Name too short", "Name must be at least 2 characters.");
       return;
     }
 
@@ -73,136 +80,288 @@ export default function ProfileScreen() {
     setIsEditingName(false);
   };
 
+  const cancelEditName = () => {
+    setDraftName(displayName);
+    setIsEditingName(false);
+  };
+
+  const handleNearbyAlerts = async () => {
+    setCheckingAlerts(true);
+
+    const result = await checkAndNotifyNearbyIncidents(reports);
+
+    setCheckingAlerts(false);
+    Alert.alert(
+      result.notified ? "Nearby alert sent" : "Nearby alerts checked",
+      result.message
+    );
+  };
+
+  const handleBmkgAlerts = async () => {
+    try {
+      setCheckingBmkg(true);
+      const earthquakes = await fetchRecentBmkgEarthquakes();
+      await checkAndNotifyNearbyDisaster(earthquakes);
+      router.push(EARTHQUAKE_ROUTE);
+    } catch (error) {
+      Alert.alert(
+        "Could not load BMKG",
+        error instanceof Error
+          ? error.message
+          : "Could not fetch BMKG earthquake data."
+      );
+    } finally {
+      setCheckingBmkg(false);
+    }
+  };
+
+  const handleModerationPress = () => {
+    if (isModerator) {
+      router.push(MODERATION_ROUTE);
+      return;
+    }
+
+    Alert.alert(
+      "Moderation is protected",
+      "Fake-report moderation is available for moderator accounts. You can still report suspicious content from an incident detail."
+    );
+  };
+
   if (loading || roleLoading) {
     return (
       <AppScreen scroll={false} contentContainerStyle={styles.loadingContainer}>
-        <LoadingState message="Memuat profil..." />
+        <LoadingState message="Loading profile..." />
       </AppScreen>
     );
   }
 
   return (
-    <AppScreen contentContainerStyle={styles.content}>
-      <AppCard style={styles.headerCard}>
-        <Pressable
-          onPress={pickProfilePhoto}
-          disabled={savingProfile}
-          style={({ pressed }) => [
-            styles.avatar,
-            pressed && !savingProfile && styles.avatarPressed,
-          ]}
+    <>
+      <AppScreen withPadding={false} contentContainerStyle={styles.content}>
+        <LinearGradient
+          colors={["#0C7186", "#11B7D2"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.hero}
         >
-          {profileImageUri ? (
-            <Image source={{ uri: profileImageUri }} style={styles.avatarImage} />
-          ) : (
-            <Text style={styles.avatarText}>{userInitial}</Text>
-          )}
-
-          <View style={styles.cameraBadge}>
-            {savingProfile ? (
-              <ActivityIndicator size="small" color={colors.textInverse} />
+          <Pressable
+            onPress={pickProfilePhoto}
+            disabled={savingProfile}
+            style={({ pressed }) => [
+              styles.avatar,
+              pressed && !savingProfile && styles.avatarPressed,
+            ]}
+          >
+            {profileImageUri ? (
+              <Image source={{ uri: profileImageUri }} style={styles.avatarImage} />
             ) : (
-              <Ionicons name="camera" size={14} color={colors.textInverse} />
+              <Text style={styles.avatarText}>{userInitial}</Text>
             )}
-          </View>
-        </Pressable>
 
-        <View style={styles.identity}>
-          <Text style={styles.name} numberOfLines={1}>
-            {displayName}
-          </Text>
-          <Text style={styles.email} numberOfLines={1}>
-            {userEmail}
-          </Text>
-          <View style={styles.rolePill}>
-            <Ionicons
-              name="shield-checkmark"
-              size={14}
-              color={colors.primary}
+            <View style={styles.cameraBadge}>
+              {savingProfile ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Ionicons name="pencil" size={15} color={colors.primary} />
+              )}
+            </View>
+          </Pressable>
+
+          <View style={styles.identity}>
+            <View style={styles.nameRow}>
+              <Text style={styles.name} numberOfLines={1}>
+                {displayName}
+              </Text>
+              <Pressable
+                onPress={() => setIsEditingName(true)}
+                style={({ pressed }) => [
+                  styles.nameEditButton,
+                  pressed && styles.inlineActionPressed,
+                ]}
+              >
+                <Ionicons name="pencil" size={15} color={colors.textInverse} />
+              </Pressable>
+            </View>
+
+            <Text style={styles.email} numberOfLines={1}>
+              {userEmail}
+            </Text>
+
+            <View style={styles.rolePill}>
+              <Ionicons name="location-outline" size={13} color={colors.textInverse} />
+              <Text style={styles.roleText}>{roleLabel} - Indonesia</Text>
+            </View>
+          </View>
+        </LinearGradient>
+
+        <View style={styles.body}>
+          <StatsPanel stats={stats} />
+
+          {errorMessage ? (
+            <AppCard variant="muted" style={styles.errorCard}>
+              <Ionicons name="warning" size={18} color={colors.danger} />
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            </AppCard>
+          ) : null}
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Achievement Badges</Text>
+            <View style={styles.badgeGrid}>
+              <AchievementBadge
+                label="Active Reporter"
+                iconName="flame"
+                active={stats.totalReports > 0}
+                color={colors.danger}
+              />
+              <AchievementBadge
+                label="Quick Responder"
+                iconName="flash"
+                active={stats.highSeverityReports > 0}
+                color={colors.warning}
+              />
+              <AchievementBadge
+                label="Contributor"
+                iconName="ribbon"
+                active={stats.points > 0}
+                color={colors.success}
+              />
+              <AchievementBadge
+                label="Volunteer"
+                iconName="shield"
+                active={stats.areas >= 3}
+                color={colors.info}
+              />
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Settings</Text>
+            <AppCard style={styles.settingsCard} padding="none">
+              <SettingsRow
+                iconName="notifications-outline"
+                title="Nearby Incident Alerts"
+                subtitle="Check and notify incidents near you"
+                busy={checkingAlerts}
+                onPress={handleNearbyAlerts}
+              />
+              <SettingsRow
+                iconName="pulse-outline"
+                title="BMKG Integration"
+                subtitle="Latest earthquake feed and alerts"
+                busy={checkingBmkg}
+                onPress={handleBmkgAlerts}
+              />
+              <SettingsRow
+                iconName="book-outline"
+                title="Safety Education"
+                subtitle="Preparedness guide"
+                onPress={() => router.push(EDUCATION_ROUTE)}
+              />
+              <SettingsRow
+                iconName="document-text-outline"
+                title="Report History"
+                subtitle="Your previous reports"
+                onPress={() => router.push(ACTIVITY_ROUTE)}
+              />
+              <SettingsRow
+                iconName="shield-checkmark-outline"
+                title="Fake Report Moderation"
+                subtitle={
+                  isModerator
+                    ? "Review reported content"
+                    : "Report suspicious content from incident detail"
+                }
+                onPress={handleModerationPress}
+              />
+              <View style={styles.languageRow}>
+                <View style={styles.settingsIcon}>
+                  <Ionicons name="language-outline" size={20} color={colors.primary} />
+                </View>
+                <View style={styles.settingsText}>
+                  <Text style={styles.settingsTitle}>Language</Text>
+                  <Text style={styles.settingsSubtitle}>English / Indonesian</Text>
+                </View>
+                <View style={styles.languageSwitch}>
+                  {languageOptions.map((item) => {
+                    const active = language === item.code;
+                    return (
+                      <Pressable
+                        key={item.code}
+                        onPress={() => setLanguage(item.code)}
+                        style={({ pressed }) => [
+                          styles.languageOption,
+                          active && styles.languageOptionActive,
+                          pressed && styles.inlineActionPressed,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.languageOptionText,
+                            active && styles.languageOptionTextActive,
+                          ]}
+                        >
+                          {item.code.toUpperCase()}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            </AppCard>
+          </View>
+
+          <Pressable
+            onPress={() => setLogoutModalVisible(true)}
+            style={({ pressed }) => [
+              styles.logoutButton,
+              pressed && styles.inlineActionPressed,
+            ]}
+          >
+            <Ionicons name="log-out-outline" size={20} color={colors.danger} />
+            <Text style={styles.logoutButtonText}>Log Out</Text>
+          </Pressable>
+        </View>
+      </AppScreen>
+
+      <Modal
+        visible={isEditingName}
+        transparent
+        animationType="fade"
+        onRequestClose={cancelEditName}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Edit Profile Name</Text>
+            <TextInput
+              value={draftName}
+              onChangeText={setDraftName}
+              editable={!savingProfile}
+              autoFocus
+              placeholder="Enter your name"
+              placeholderTextColor={colors.textSoft}
+              style={styles.nameInput}
             />
-            <Text style={styles.roleText}>{roleLabel}</Text>
+            <View style={styles.modalBtnRow}>
+              <AppButton
+                title="Cancel"
+                variant="secondary"
+                size="md"
+                onPress={cancelEditName}
+                style={styles.modalBtnCancel}
+              />
+              <AppButton
+                title="Save"
+                variant="primary"
+                size="md"
+                loading={savingProfile}
+                disabled={draftName.trim().length < 2}
+                onPress={submitName}
+                style={styles.modalBtnLogout}
+              />
+            </View>
           </View>
         </View>
-      </AppCard>
-
-      {errorMessage ? (
-        <AppCard variant="muted" style={styles.errorCard}>
-          <Ionicons name="warning" size={18} color={colors.danger} />
-          <Text style={styles.errorText}>{errorMessage}</Text>
-        </AppCard>
-      ) : null}
-
-      <View style={styles.section}>
-        <SectionHeader
-          title="Kontribusi"
-          subtitle="Ringkasan pelaporan untuk akun ini."
-        />
-        <StatsStrip stats={stats} />
-      </View>
-
-      <View style={styles.section}>
-        <SectionHeader
-          title="Akun"
-          subtitle="Informasi dasar dan pengaturan akun."
-        />
-        <AppCard style={styles.accountCard}>
-          <EditableNameRow
-            value={displayName}
-            draftValue={draftName}
-            isEditing={isEditingName}
-            saving={savingProfile}
-            onChange={setDraftName}
-            onEdit={() => setIsEditingName(true)}
-            onCancel={cancelEditName}
-            onSubmit={submitName}
-          />
-
-          <View style={styles.divider} />
-          <AccountRow iconName="mail-outline" label="Email" value={userEmail} />
-        </AppCard>
-      </View>
-
-    {isModerator ? (
-      <View style={styles.section}>
-        <SectionHeader
-          title="Moderator"
-          subtitle="Tinjau laporan konten dari komunitas."
-        />
-
-        <AppCard style={styles.moderatorCard}>
-          <View style={styles.moderatorIcon}>
-            <Ionicons name="shield-checkmark" size={22} color="#FFFFFF" />
-          </View>
-
-          <View style={styles.moderatorText}>
-            <Text style={styles.moderatorTitle}>Antrean Moderasi</Text>
-            <Text style={styles.moderatorDescription}>
-              Tinjau laporan dan sembunyikan laporan bermasalah.
-            </Text>
-          </View>
-
-          <AppButton
-            title="Buka"
-            variant="secondary"
-            size="sm"
-            onPress={openModeration}
-          />
-        </AppCard>
-      </View>
-    ) : null}
-
-      <AppButton
-        title="Keluar Akun"
-        variant="ghost"
-        size="lg"
-        fullWidth
-        onPress={() => setLogoutModalVisible(true)}
-        leftIcon={
-          <Ionicons name="log-out-outline" size={20} color={colors.danger} />
-        }
-        style={styles.logoutButton}
-        textStyle={styles.logoutButtonText}
-      />
+      </Modal>
 
       <Modal
         visible={logoutModalVisible}
@@ -215,20 +374,20 @@ export default function ProfileScreen() {
             <View style={styles.modalIconWrap}>
               <Ionicons name="log-out-outline" size={32} color={colors.danger} />
             </View>
-            <Text style={styles.modalTitle}>Keluar Akun</Text>
+            <Text style={styles.modalTitle}>Sign Out</Text>
             <Text style={styles.modalMessage}>
-              Apakah Anda yakin ingin keluar dari akun ini?
+              Are you sure you want to sign out of this account?
             </Text>
             <View style={styles.modalBtnRow}>
               <AppButton
-                title="Batal"
+                title="Cancel"
                 variant="secondary"
                 size="md"
                 onPress={() => setLogoutModalVisible(false)}
                 style={styles.modalBtnCancel}
               />
               <AppButton
-                title="Keluar"
+                title="Sign Out"
                 variant="danger"
                 size="md"
                 onPress={() => {
@@ -241,6 +400,105 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Modal>
-    </AppScreen>
+    </>
+  );
+}
+
+function StatsPanel({ stats }: { stats: ProfileStats }) {
+  const items = [
+    {
+      label: "Reports",
+      value: stats.totalReports,
+      iconName: "document-text-outline" as const,
+    },
+    {
+      label: "Points",
+      value: stats.points,
+      iconName: "star-outline" as const,
+    },
+    {
+      label: "Areas",
+      value: stats.areas,
+      iconName: "location-outline" as const,
+    },
+    {
+      label: "Badges",
+      value: stats.badges,
+      iconName: "ribbon-outline" as const,
+    },
+  ];
+
+  return (
+    <View style={styles.statsBox}>
+      {items.map((item) => (
+        <View key={item.label} style={styles.statItem}>
+          <Ionicons name={item.iconName} size={19} color={colors.primary} />
+          <Text style={styles.statValue}>{item.value.toLocaleString()}</Text>
+          <Text style={styles.statLabel}>{item.label}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function AchievementBadge({
+  label,
+  iconName,
+  active,
+  color,
+}: {
+  label: string;
+  iconName: AppIconName;
+  active: boolean;
+  color: string;
+}) {
+  return (
+    <View style={[styles.badgeItem, !active && styles.badgeItemMuted]}>
+      <View style={[styles.badgeIcon, { backgroundColor: `${color}1A` }]}>
+        <Ionicons name={iconName} size={22} color={active ? color : colors.textSoft} />
+      </View>
+      <Text style={styles.badgeLabel} numberOfLines={1}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function SettingsRow({
+  iconName,
+  title,
+  subtitle,
+  busy = false,
+  onPress,
+}: {
+  iconName: AppIconName;
+  title: string;
+  subtitle: string;
+  busy?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={busy}
+      style={({ pressed }) => [
+        styles.settingsRow,
+        pressed && styles.inlineActionPressed,
+        busy && styles.settingsRowBusy,
+      ]}
+    >
+      <View style={styles.settingsIcon}>
+        {busy ? (
+          <ActivityIndicator size="small" color={colors.primary} />
+        ) : (
+          <Ionicons name={iconName} size={20} color={colors.primary} />
+        )}
+      </View>
+      <View style={styles.settingsText}>
+        <Text style={styles.settingsTitle}>{title}</Text>
+        <Text style={styles.settingsSubtitle}>{subtitle}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={20} color={colors.borderStrong} />
+    </Pressable>
   );
 }

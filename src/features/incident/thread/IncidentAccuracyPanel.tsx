@@ -156,11 +156,6 @@ function getToneColor(tone: AccuracyTone) {
 const styles = StyleSheet.create({
   container: {
     marginTop: spacing.xl,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    padding: spacing.md,
     gap: spacing.md,
   },
   header: {
