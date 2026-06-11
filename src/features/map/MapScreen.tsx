@@ -69,7 +69,7 @@ export default function MapScreen() {
   if (loadingLocation && loadingReports) {
     return (
       <View style={styles.container}>
-        <LoadingState message="Preparing crisis map..." />
+        <LoadingState message="Menyiapkan peta..." />
       </View>
     );
   }
@@ -98,13 +98,13 @@ export default function MapScreen() {
       <View style={styles.topOverlay}>
         <View style={styles.compactHeader}>
           <View style={styles.headerTitleGroup}>
-            <Text style={styles.headerEyebrow}>Live monitoring</Text>
-            <Text style={styles.headerTitle}>Crisis Map</Text>
+            <Text style={styles.headerEyebrow}>Pemantauan Langsung</Text>
+            <Text style={styles.headerTitle}>Peta Bencana</Text>
           </View>
 
           <View style={styles.liveBadge}>
             <View style={styles.liveDot} />
-            <Text style={styles.liveText}>{activeCount} active</Text>
+            <Text style={styles.liveText}>{activeCount} aktif</Text>
           </View>
         </View>
 
@@ -133,7 +133,7 @@ export default function MapScreen() {
           ]}
         >
           <Ionicons name="alert" size={22} color={colors.textInverse} />
-          <Text style={styles.sosButtonText}>SOS Info</Text>
+          <Text style={styles.sosButtonText}>Info SOS</Text>
         </Pressable>
         <Pressable
           onPress={focusUserLocation}
@@ -146,7 +146,7 @@ export default function MapScreen() {
         </Pressable>
 
         <AppButton
-          title="Report"
+          title="Lapor"
           variant="primary"
           size="md"
           onPress={handleOpenReport}

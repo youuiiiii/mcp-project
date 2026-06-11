@@ -1,3 +1,5 @@
-import MapScreen from "@/features/map/MapScreen";
+import HomeScreen from "@/features/home/HomeScreen";
 
-export default MapScreen;
+export default function HomeRoute() {
+  return <HomeScreen />;
+}

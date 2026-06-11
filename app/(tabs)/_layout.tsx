@@ -36,11 +36,26 @@ export default function TabsLayout() {
         tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
-      {/* MAP */}
+      {/* HOME */}
       <Tabs.Screen
         name="index"
         options={{
-          title: "MAP",
+          title: "HOME",
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons
+              name={focused ? "home" : "home-outline"}
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      {/* MAP */}
+      <Tabs.Screen
+        name="map"
+        options={{
+          title: "MAPS",
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
               name={focused ? "map" : "map-outline"}
@@ -51,29 +66,29 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* ACTIVITY */}
+      {/* REPORT - Central FAB */}
       <Tabs.Screen
-        name="activity"
+        name="report"
         options={{
-          title: "ACTIVITY",
-          tabBarIcon: ({ focused, color }) => (
-            <Ionicons
-              name={focused ? "list" : "list-outline"}
-              size={24}
-              color={color}
-            />
+          title: "",
+          tabBarIcon: ({ focused }) => (
+            <View style={styles.fabContainer}>
+              <View style={[styles.fab, focused && styles.fabFocused]}>
+                <Ionicons name="notifications" size={28} color={colors.surface} />
+              </View>
+            </View>
           ),
         }}
       />
 
-      {/* REPORT */}
+      {/* ACTIVITY / INCIDENTS */}
       <Tabs.Screen
-        name="report"
+        name="activity"
         options={{
-          title: "REPORT",
+          title: "INCIDENT",
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
-              name={focused ? "add-circle" : "add-circle-outline"}
+              name={focused ? "list" : "list-outline"}
               size={24}
               color={color}
             />
@@ -108,17 +123,45 @@ const styles = StyleSheet.create({
   },
 
   tabBar: {
-    height: 75,
+    height: 70,
     paddingBottom: 10,
     paddingTop: 10,
     backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: colors.border, 
+    borderTopColor: colors.border,
+    elevation: 8,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
   },
 
   tabBarLabel: {
     fontSize: 10,
-    fontWeight: "900", 
-    letterSpacing: 0.5,
+    fontWeight: "700",
+    marginTop: 4,
+  },
+
+  fabContainer: {
+    position: "absolute",
+    top: -20, // pull up from tab bar
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  fab: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.danger,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: colors.danger,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  fabFocused: {
+    backgroundColor: colors.dangerDark,
   },
 });

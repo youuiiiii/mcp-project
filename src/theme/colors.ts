@@ -1,60 +1,57 @@
 /**
- * Dispatch Terminal Design System
+ * SIGAP Design System
  * Based on reference: https://mower-filled-64016353.figma.site/
- * 
- * Crisp, high-contrast, zero-slop operational aesthetics.
- * Hard borders, vibrant operational colors, and flat structure.
  */
 export const colors = {
   // Core surfaces
-  background: "#F8FAFC",          // Slate 50
-  surface: "#FFFFFF",
-  surfaceMuted: "#F1F5F9",        // Slate 100
+  background: "#F1F5F9",          // Slate 100 for app background
+  surface: "#FFFFFF",             // White for cards
+  surfaceMuted: "#F8FAFC",        // Slate 50
   surfaceContainer: "#E2E8F0",    // Slate 200
   surfaceContainerHigh: "#CBD5E1",// Slate 300
 
-  // Text — high contrast
-  text: "#0F172A",                // Slate 900
-  textPrimary: "#0F172A",
+  // Text
+  text: "#1E293B",                // Slate 800
+  textPrimary: "#1E293B",
   textMuted: "#475569",           // Slate 600
   textSecondary: "#475569",
   textSoft: "#64748B",            // Slate 500
   textInverse: "#FFFFFF",
   textOnDarkMuted: "#CBD5E1",
 
-  // Lines & borders — crisp
-  border: "#CBD5E1",              // Slate 300
-  borderStrong: "#94A3B8",        // Slate 400
+  // Lines & borders
+  border: "#E2E8F0",              // Slate 200
+  borderStrong: "#CBD5E1",        // Slate 300
 
-  // Primary — vibrant operational Teal
-  primary: "#00A3C4",             // Exact Figma teal
-  primaryDark: "#00839E",
-  primarySoft: "#E0F7FA",
-  primaryContainer: "#00A3C4",
+  // Primary — SIGAP Teal/Cyan
+  primary: "#0EA5E9",             // Cyan 500
+  primaryDark: "#08627A",         // Deep Teal
+  primarySoft: "#E0F2FE",         // Cyan 100
+  primaryContainer: "#0284C7",    // Cyan 600
 
-  // Success
-  success: "#10B981",             // Emerald 500
-  successDark: "#059669",         // Emerald 600
-  successSoft: "#D1FAE5",
+  // Success / Low Severity
+  success: "#22C55E",             // Green 500
+  successDark: "#15803D",         // Green 700
+  successSoft: "#DCFCE7",         // Green 100
 
-  // Warning
-  warning: "#F59E0B",             // Amber 500
-  warningDark: "#D97706",         // Amber 600
-  warningSoft: "#FEF3C7",
+  // Warning / Moderate Severity
+  warning: "#F97316",             // Orange 500
+  warningDark: "#C2410C",         // Orange 700
+  warningSoft: "#FFEDD5",         // Orange 100
 
   // Info
   info: "#3B82F6",                // Blue 500
-  infoDark: "#2563EB",
+  infoDark: "#1D4ED8",
   infoSoft: "#DBEAFE",
 
-  // Dark — solid slate command background
+  // Dark
   dark: "#0F172A",                // Slate 900
   darkSoft: "#1E293B",            // Slate 800
 
-  // Danger/Emergency — sharp operational red
+  // Danger/Emergency / High Severity - Red FAB
   danger: "#EF4444",              // Red 500
-  dangerSoft: "#FEE2E2",
-  dangerDark: "#B91C1C",
+  dangerSoft: "#FEE2E2",          // Red 100
+  dangerDark: "#B91C1C",          // Red 700
 
   // Shadow base
   shadow: "#0F172A",

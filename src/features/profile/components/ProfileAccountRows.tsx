@@ -14,19 +14,19 @@ export function StatsStrip({ stats }: { stats: ProfileStats }) {
       color: colors.info,
     },
     {
-      label: "Active",
+      label: "Aktif",
       value: stats.activeReports,
       iconName: "radio" as const,
       color: colors.danger,
     },
     {
-      label: "Resolved",
+      label: "Selesai",
       value: stats.resolvedReports,
       iconName: "checkmark-circle-outline" as const,
       color: colors.success,
     },
     {
-      label: "High",
+      label: "Darurat",
       value: stats.highSeverityReports,
       iconName: "warning-outline" as const,
       color: colors.warningDark,
@@ -37,9 +37,9 @@ export function StatsStrip({ stats }: { stats: ProfileStats }) {
     <View style={styles.statsBox}>
       {items.map((item, index) => (
         <View key={item.label} style={styles.statItem}>
-          <Ionicons name={item.iconName} size={18} color={item.color} />
+          <Ionicons name={item.iconName} size={20} color={item.color} />
           <Text style={styles.statValue}>{item.value}</Text>
-          <Text style={styles.statLabel}>{item.label.toUpperCase()}</Text>
+          <Text style={styles.statLabel}>{item.label}</Text>
           {index < items.length - 1 ? <View style={styles.statDivider} /> : null}
         </View>
       ))}
@@ -69,11 +69,11 @@ export function EditableNameRow({
   return (
     <View style={styles.accountRow}>
       <View style={styles.accountIcon}>
-        <Ionicons name="person" size={16} color={colors.textInverse} />
+        <Ionicons name="person" size={18} color={colors.primary} />
       </View>
 
       <View style={styles.accountText}>
-        <Text style={styles.accountLabel}>OPERATOR NAME</Text>
+        <Text style={styles.accountLabel}>Nama Lengkap</Text>
 
         {isEditing ? (
           <TextInput
@@ -81,7 +81,7 @@ export function EditableNameRow({
             onChangeText={onChange}
             editable={!saving}
             autoFocus
-            placeholder="Enter name"
+            placeholder="Masukkan nama Anda"
             placeholderTextColor={colors.textSoft}
             style={styles.accountNameInput}
           />
@@ -126,7 +126,7 @@ export function EditableNameRow({
             pressed && styles.inlineActionPressed,
           ]}
         >
-          <Ionicons name="pencil" size={14} color={colors.textInverse} />
+          <Ionicons name="pencil" size={16} color={colors.textSoft} />
         </Pressable>
       )}
     </View>
@@ -145,10 +145,10 @@ export function AccountRow({
   return (
     <View style={styles.accountRow}>
       <View style={styles.accountIcon}>
-        <Ionicons name={iconName} size={16} color={colors.textInverse} />
+        <Ionicons name={iconName} size={18} color={colors.primary} />
       </View>
       <View style={styles.accountText}>
-        <Text style={styles.accountLabel}>{label.toUpperCase()}</Text>
+        <Text style={styles.accountLabel}>{label}</Text>
         <Text style={styles.accountValue} numberOfLines={1}>
           {value}
         </Text>

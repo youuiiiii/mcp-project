@@ -1,11 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text, View, TextInput } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
-import AppCard from "../../../components/ui/AppCard";
-import StatusBadge from "../../../components/ui/StatusBadge";
 import { useI18n } from "../../../i18n";
 import { colors } from "../../../theme/colors";
-import { radius, spacing } from "../../../theme/layout";
+import { radius, spacing, shadow } from "../../../theme/layout";
 
 type HomeHeroProps = {
   displayName: string;
@@ -33,29 +32,25 @@ export default function HomeHero({
 }: HomeHeroProps) {
   const { t } = useI18n();
 
+  // SIGAP Categories
   const categories = [
-    { label: "Banjir / Cuaca", icon: "rainy-outline" as const, color: "#E2ECE9", iconColor: "#2F5C50", kind: "flood_or_weather" },
-    { label: "Kebakaran", icon: "flame-outline" as const, color: "#FADCDA", iconColor: "#8D1B1B", kind: "fire_or_smoke" },
-    { label: "Kecelakaan", icon: "car-outline" as const, color: "#F5ECD7", iconColor: "#6A5320", kind: "road_blocked_or_crash" },
-    { label: "Medis / Rescue", icon: "pulse-outline" as const, color: "#E2ECE3", iconColor: "#2D5A38", kind: "medical_or_rescue" },
-    { label: "Keamanan", icon: "shield-checkmark-outline" as const, color: "#E5ECE9", iconColor: "#3F6653", kind: "public_safety" },
-    { label: "Lainnya", icon: "options-outline" as const, color: "#ECE9E5", iconColor: "#4A4E4A", kind: "other_incident" },
+    { label: "Kebakaran", icon: "flame" as const, color: colors.dangerSoft, iconColor: colors.danger, kind: "fire_or_smoke" },
+    { label: "Banjir", icon: "water" as const, color: colors.infoSoft, iconColor: colors.info, kind: "flood_or_weather" },
+    { label: "Gempa Bumi", icon: "pulse" as const, color: colors.warningSoft, iconColor: colors.warning, kind: "earthquake" },
+    { label: "Tanah Longsor", icon: "trail-sign" as const, color: "#FDE68A", iconColor: "#B45309", kind: "landslide" },
+    { label: "Angin Kencang", icon: "cloudy" as const, color: colors.surfaceContainer, iconColor: colors.textMuted, kind: "strong_wind" },
+    { label: "Lainnya", icon: "grid" as const, color: colors.surfaceContainer, iconColor: colors.textMuted, kind: "other_incident" },
   ];
-
-  const hasAlerts = activeCount > 0;
 
   return (
     <View style={styles.wrapper}>
-      {/* 1. Header Sapaan & Avatar (Wecare style) */}
+      {/* 1. Header Sapaan & Notification */}
       <View style={styles.greetingRow}>
         <View style={styles.identity}>
-          <Text style={styles.greeting}>{t("home.hero.greeting")},</Text>
-          <View style={styles.locationWrapper}>
-            <Ionicons name="location-sharp" size={14} color={colors.primary} />
-            <Text style={styles.name} numberOfLines={1}>
-              {displayName}
-            </Text>
-          </View>
+          <Text style={styles.greeting}>Halo,</Text>
+          <Text style={styles.name} numberOfLines={1}>
+            {displayName}
+          </Text>
         </View>
 
         <View style={styles.rightGroup}>
@@ -63,18 +58,19 @@ export default function HomeHero({
             onPress={onOpenSos}
             style={({ pressed }) => [
               styles.sosButton,
-              pressed && styles.sosButtonPressed,
+              pressed && styles.buttonPressed,
             ]}
           >
-            <Ionicons name="alert-circle" size={16} color="#FFFFFF" />
-            <Text style={styles.sosText}>SOS</Text>
+            <Ionicons name="notifications-outline" size={24} color={colors.text} />
+            {activeCount > 0 && (
+              <View style={styles.notificationBadge} />
+            )}
           </Pressable>
-
           <Pressable
             onPress={onOpenProfile}
             style={({ pressed }) => [
               styles.avatar,
-              pressed && styles.avatarPressed,
+              pressed && styles.buttonPressed,
             ]}
           >
             <Text style={styles.avatarText}>{initials}</Text>
@@ -82,20 +78,38 @@ export default function HomeHero({
         </View>
       </View>
 
-      {/* 2. Mock Search Bar (Wecare style) */}
-      <View style={styles.searchBarWrapper}>
-        <Ionicons name="search" size={20} color={colors.textSoft} style={styles.searchIcon} />
-        <TextInput
-          placeholder="Search disaster alerts..."
-          placeholderTextColor={colors.textSoft}
-          style={styles.searchInput}
-          editable={false}
-        />
-      </View>
+      {/* 2. Map Preview */}
+      <Pressable onPress={onOpenMap} style={styles.mapPreviewContainer}>
+        <MapView
+          provider={PROVIDER_GOOGLE}
+          style={styles.mapPreview}
+          initialRegion={{
+            latitude: -6.200000,
+            longitude: 106.816666,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421,
+          }}
+          scrollEnabled={false}
+          zoomEnabled={false}
+          pitchEnabled={false}
+          rotateEnabled={false}
+        >
+           {/* Mock marker for preview */}
+           <Marker coordinate={{ latitude: -6.200000, longitude: 106.816666 }}>
+             <View style={styles.markerBadge}>
+               <Ionicons name="alert" size={12} color="#FFF" />
+             </View>
+           </Marker>
+        </MapView>
+        <View style={styles.mapOverlay}>
+          <Text style={styles.mapOverlayText}>Lihat Peta Sekitar</Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.primaryDark} />
+        </View>
+      </Pressable>
 
-      {/* 3. Grid Kategori Laporan (Wecare style) */}
+      {/* 3. Grid Kategori Laporan */}
       <View style={styles.categoriesSection}>
-        <Text style={styles.sectionTitle}>Lapor Kejadian</Text>
+        <Text style={styles.sectionTitle}>Kategori Bencana</Text>
         <View style={styles.categoriesGrid}>
           {categories.map((cat, idx) => (
             <Pressable
@@ -103,11 +117,11 @@ export default function HomeHero({
               onPress={() => onOpenReport(cat.kind)}
               style={({ pressed }) => [
                 styles.categoryItem,
-                pressed && styles.categoryItemPressed,
+                pressed && styles.buttonPressed,
               ]}
             >
               <View style={[styles.categoryIconCircle, { backgroundColor: cat.color }]}>
-                <Ionicons name={cat.icon} size={24} color={cat.iconColor} />
+                <Ionicons name={cat.icon} size={28} color={cat.iconColor} />
               </View>
               <Text style={styles.categoryLabel} numberOfLines={2}>
                 {cat.label}
@@ -116,51 +130,6 @@ export default function HomeHero({
           ))}
         </View>
       </View>
-
-      {/* 4. Active Alert Summary Card */}
-      <AppCard style={[styles.card, hasAlerts ? styles.cardAlert : styles.cardSafe]}>
-        <View style={styles.messageBlock}>
-          <StatusBadge
-            label={hasAlerts ? "Peringatan Aktif" : t("home.hero.statusBadge")}
-            variant={hasAlerts ? "warning" : "verified"}
-            size="sm"
-          />
-
-          <Text style={styles.title}>
-            {hasAlerts ? "Waspada Bencana Sekitar" : t("home.hero.title")}
-          </Text>
-
-          <Text style={[styles.summaryText, hasAlerts ? styles.summaryTextAlert : styles.summaryTextSafe]}>
-            {hasAlerts
-              ? t("home.hero.summary", { activeCount, attentionCount: highSeverityCount })
-              : "Kondisi di sekitar area Anda saat ini terpantau aman dan kondusif."}
-          </Text>
-        </View>
-
-        <View style={styles.actionRow}>
-          <Pressable
-            onPress={() => onOpenReport()}
-            style={({ pressed }) => [
-              styles.cardActionBtn,
-              pressed && styles.cardActionBtnPressed,
-            ]}
-          >
-            <Text style={styles.cardActionBtnText}>{t("home.actions.reportIncident")}</Text>
-          </Pressable>
-
-          <View style={styles.actionDivider} />
-
-          <Pressable
-            onPress={onOpenMap}
-            style={({ pressed }) => [
-              styles.cardActionBtn,
-              pressed && styles.cardActionBtnPressed,
-            ]}
-          >
-            <Text style={styles.cardActionBtnText}>{t("home.actions.viewMap")}</Text>
-          </Pressable>
-        </View>
-      </AppCard>
     </View>
   );
 }
@@ -174,187 +143,123 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: spacing.md,
-    marginTop: spacing.xs,
+    marginTop: spacing.sm,
   },
   identity: {
     flex: 1,
   },
   greeting: {
-    fontSize: 13,
-    fontWeight: "500",
+    fontSize: 14,
     color: colors.textMuted,
   },
-  locationWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: 2,
-  },
   name: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "700",
     color: colors.text,
+    marginTop: 2,
   },
   rightGroup: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   sosButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
+    position: "relative",
+    padding: 4,
+  },
+  notificationBadge: {
+    position: "absolute",
+    top: 4,
+    right: 6,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: colors.danger,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 7,
-    borderRadius: radius.full,
-  },
-  sosButtonPressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.97 }],
-  },
-  sosText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#FFFFFF",
   },
   avatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.primary, // Forest green avatar background
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 2,
-    borderColor: colors.primarySoft,
-  },
-  avatarPressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.98 }],
   },
   avatarText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "700",
     color: colors.textInverse,
   },
-  searchBarWrapper: {
+  buttonPressed: {
+    opacity: 0.7,
+  },
+  mapPreviewContainer: {
+    height: 140,
+    borderRadius: radius.lg,
+    overflow: "hidden",
+    backgroundColor: colors.surfaceContainer,
+    ...shadow.sm,
+  },
+  mapPreview: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  markerBadge: {
+    backgroundColor: colors.danger,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#FFF",
+  },
+  mapOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.surfaceMuted,          // Warm cream input background
-    borderWidth: 0,
-    borderRadius: radius.md,
-    paddingHorizontal: 12,
+    justifyContent: "space-between",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: colors.text,
+  mapOverlayText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.primaryDark,
   },
   categoriesSection: {
     gap: spacing.md,
   },
   sectionTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "700",
     color: colors.text,
   },
   categoriesGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: 12,
+    justifyContent: "flex-start",
+    gap: 16,
   },
   categoryItem: {
-    width: "30%", // 3 items per row
+    width: "30%", // approx 3 items per row
     alignItems: "center",
-    gap: 6,
-    paddingVertical: 8,
-  },
-  categoryItemPressed: {
-    opacity: 0.75,
-    transform: [{ scale: 0.96 }],
+    gap: 8,
+    marginBottom: spacing.sm,
   },
   categoryIconCircle: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    width: 56,
+    height: 56,
+    borderRadius: 20, // Squircle shape for SIGAP
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
   },
   categoryLabel: {
     fontSize: 12,
-    fontWeight: "700", // Terra label/body weights
+    fontWeight: "600",
     color: colors.text,
     textAlign: "center",
-  },
-  card: {
-    gap: spacing.md,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-  },
-  cardSafe: {
-    backgroundColor: "rgba(74, 124, 89, 0.08)",    // Translucent Terra primary
-    borderColor: colors.primarySoft,
-    borderWidth: 1,
-  },
-  cardAlert: {
-    backgroundColor: "rgba(112, 92, 48, 0.08)",     // Translucent Terra warning/tertiary
-    borderColor: colors.warningSoft,
-    borderWidth: 1,
-  },
-  messageBlock: {
-    gap: spacing.xs,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.text,
-    marginTop: 2,
-  },
-  summaryText: {
-    fontSize: 12,
-    lineHeight: 18,
-    fontWeight: "500",
-  },
-  summaryTextSafe: {
-    color: colors.primaryDark,
-  },
-  summaryTextAlert: {
-    color: colors.warningDark,
-  },
-  actionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: "rgba(196, 200, 188, 0.3)", // outline-variant at 30%
-    paddingTop: spacing.md,
-    marginTop: spacing.xs,
-  },
-  cardActionBtn: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 4,
-  },
-  cardActionBtnPressed: {
-    opacity: 0.7,
-  },
-  cardActionBtnText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: colors.primary, // Forest green text link
-  },
-  actionDivider: {
-    width: 1,
-    height: 16,
-    backgroundColor: "rgba(196, 200, 188, 0.3)", // outline-variant at 30%
   },
 });

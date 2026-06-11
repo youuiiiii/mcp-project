@@ -4,7 +4,7 @@ import { StyleSheet } from "react-native";
 
 import EvidencePicker from "../features/incident/components/EvidencePicker";
 import IncidentModalShell from "../features/incident/components/IncidentModalShell";
-import IncidentPreviewCard from "../features/incident/components/IncidentPreviewCard";
+import IncidentCard from "./IncidentCard";
 import { colors } from "../theme/colors";
 import { radius, spacing } from "../theme/layout";
 import { useResolveIncidentModal } from "./resolveIncident/useResolveIncidentModal";
@@ -67,7 +67,7 @@ export default function ResolveIncidentModal(props: ResolveIncidentModalProps) {
         </>
       }
     >
-      {incident ? <IncidentPreviewCard incident={incident} /> : null}
+      {incident ? <IncidentCard incident={incident} compact /> : null}
 
       {/* Notice / validation warning */}
       <View style={localStyles.noticeCard}>

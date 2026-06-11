@@ -48,7 +48,7 @@ export default function IncidentsScreen() {
   if (loading) {
     return (
       <AppScreen scroll={false} contentContainerStyle={styles.loadingContainer}>
-        <LoadingState message="Loading incidents..." />
+        <LoadingState message="Memuat laporan..." />
       </AppScreen>
     );
   }
@@ -71,7 +71,7 @@ export default function IncidentsScreen() {
             </IconBadge>
 
             <View style={styles.errorContent}>
-              <Text style={styles.errorTitle}>Could not load incidents</Text>
+              <Text style={styles.errorTitle}>Gagal memuat data</Text>
               <Text style={styles.errorMessage}>{errorMessage}</Text>
             </View>
           </AppCard>
@@ -79,8 +79,8 @@ export default function IncidentsScreen() {
 
         <View style={styles.section}>
           <SectionHeader
-            title="All Incidents"
-            subtitle={`${filteredIncidents.length} incidents shown`}
+            title="Semua Laporan"
+            subtitle={`${filteredIncidents.length} laporan ditampilkan`}
             style={styles.sectionHeader}
           />
 
@@ -120,6 +120,8 @@ const styles = StyleSheet.create({
   },
   screenContent: {
     gap: spacing["2xl"],
+    paddingTop: spacing.lg,
+    paddingBottom: spacing["3xl"],
   },
   errorCard: {
     flexDirection: "row",
@@ -131,7 +133,7 @@ const styles = StyleSheet.create({
   },
   errorTitle: {
     fontSize: 14,
-    fontWeight: "900",
+    fontWeight: "800",
     color: colors.danger,
     marginBottom: 4,
   },

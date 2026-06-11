@@ -45,7 +45,7 @@ export default function ProfileScreen() {
 
   const router = useRouter();
   const { isModerator, roleLoading } = useAuth();
-  const roleLabel = isModerator ? "Moderator" : "Community Reporter";
+  const roleLabel = isModerator ? "Moderator" : "Anggota Komunitas";
   const [isEditingName, setIsEditingName] = useState(false);
   const profileImageUri = draftPhotoUri ?? photoURL;
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
@@ -76,7 +76,7 @@ export default function ProfileScreen() {
   if (loading || roleLoading) {
     return (
       <AppScreen scroll={false} contentContainerStyle={styles.loadingContainer}>
-        <LoadingState message="Loading profile..." />
+        <LoadingState message="Memuat profil..." />
       </AppScreen>
     );
   }
@@ -134,16 +134,16 @@ export default function ProfileScreen() {
 
       <View style={styles.section}>
         <SectionHeader
-          title="Contributions"
-          subtitle="Report summary for this account."
+          title="Kontribusi"
+          subtitle="Ringkasan pelaporan untuk akun ini."
         />
         <StatsStrip stats={stats} />
       </View>
 
       <View style={styles.section}>
         <SectionHeader
-          title="Account"
-          subtitle="Basic information and account settings."
+          title="Akun"
+          subtitle="Informasi dasar dan pengaturan akun."
         />
         <AppCard style={styles.accountCard}>
           <EditableNameRow
@@ -166,7 +166,7 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <SectionHeader
           title="Moderator"
-          subtitle="Review content reports from the community."
+          subtitle="Tinjau laporan konten dari komunitas."
         />
 
         <AppCard style={styles.moderatorCard}>
@@ -175,14 +175,14 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.moderatorText}>
-            <Text style={styles.moderatorTitle}>Moderation Queue</Text>
+            <Text style={styles.moderatorTitle}>Antrean Moderasi</Text>
             <Text style={styles.moderatorDescription}>
-              Review reported content and hide problematic reports.
+              Tinjau laporan dan sembunyikan laporan bermasalah.
             </Text>
           </View>
 
           <AppButton
-            title="Open"
+            title="Buka"
             variant="secondary"
             size="sm"
             onPress={openModeration}
@@ -192,7 +192,7 @@ export default function ProfileScreen() {
     ) : null}
 
       <AppButton
-        title="Sign Out"
+        title="Keluar Akun"
         variant="ghost"
         size="lg"
         fullWidth
@@ -215,20 +215,20 @@ export default function ProfileScreen() {
             <View style={styles.modalIconWrap}>
               <Ionicons name="log-out-outline" size={32} color={colors.danger} />
             </View>
-            <Text style={styles.modalTitle}>Sign Out</Text>
+            <Text style={styles.modalTitle}>Keluar Akun</Text>
             <Text style={styles.modalMessage}>
-              Are you sure you want to sign out?
+              Apakah Anda yakin ingin keluar dari akun ini?
             </Text>
             <View style={styles.modalBtnRow}>
               <AppButton
-                title="Cancel"
+                title="Batal"
                 variant="secondary"
                 size="md"
                 onPress={() => setLogoutModalVisible(false)}
                 style={styles.modalBtnCancel}
               />
               <AppButton
-                title="Sign Out"
+                title="Keluar"
                 variant="danger"
                 size="md"
                 onPress={() => {

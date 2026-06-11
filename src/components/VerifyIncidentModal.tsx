@@ -3,7 +3,7 @@ import { TextInput, View } from "react-native";
 
 import EvidencePicker from "../features/incident/components/EvidencePicker";
 import IncidentModalShell from "../features/incident/components/IncidentModalShell";
-import IncidentPreviewCard from "../features/incident/components/IncidentPreviewCard";
+import IncidentCard from "./IncidentCard";
 import { colors } from "../theme/colors";
 import AppButton from "./ui/AppButton";
 import SectionHeader from "./ui/SectionHeader";
@@ -67,7 +67,7 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
         </>
       }
     >
-      {incident ? <IncidentPreviewCard incident={incident} /> : null}
+      {incident ? <IncidentCard incident={incident} compact /> : null}
 
       <View style={styles.section}>
         <SectionHeader

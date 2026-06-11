@@ -34,26 +34,23 @@ export default function IncidentsHeader({
 }: IncidentsHeaderProps) {
   return (
     <View style={styles.container}>
-      {/* Dispatch Title */}
+      {/* Title */}
       <View style={styles.hero}>
-        <View style={styles.titleRow}>
-          <Ionicons name="list" size={24} color={colors.text} />
-          <Text style={styles.title}>ACTIVITY LOG</Text>
-        </View>
+        <Text style={styles.title}>Daftar Laporan</Text>
         <Text style={styles.subtitle}>
           {summary.total > 0
-            ? `${summary.active} ACTIVE • ${summary.resolved} RESOLVED • ${summary.total} TOTAL`
-            : "NO REPORTS IN THIS AREA"}
+            ? `${summary.active} Aktif • ${summary.resolved} Selesai • ${summary.total} Total`
+            : "BELUM ADA LAPORAN DI AREA INI"}
         </Text>
       </View>
 
       {/* Search bar */}
       <View style={styles.searchBar}>
-        <Ionicons name="search" size={18} color={colors.textSoft} />
+        <Ionicons name="search" size={20} color={colors.textSoft} />
         <TextInput
           value={searchQuery}
           onChangeText={onSearchChange}
-          placeholder="Search reports, categories, or status..."
+          placeholder="Cari laporan, kategori, atau status..."
           placeholderTextColor={colors.textSoft}
           style={styles.searchInput}
         />
@@ -105,36 +102,25 @@ const styles = StyleSheet.create({
   },
   hero: {
     gap: 4,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.primary,
-    paddingLeft: spacing.sm,
     marginBottom: spacing.xs,
   },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
   title: {
-    fontSize: 22,
-    fontWeight: "900",
+    fontSize: 24,
+    fontWeight: "800",
     color: colors.text,
-    letterSpacing: 1,
   },
   subtitle: {
-    fontSize: 12,
-    fontWeight: "800",
+    fontSize: 13,
+    fontWeight: "600",
     color: colors.textMuted,
   },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceContainer,
     borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
     paddingHorizontal: spacing.md,
-    paddingVertical: 10,
+    paddingVertical: 12,
     gap: spacing.sm,
   },
   searchInput: {
@@ -142,7 +128,7 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.text,
     padding: 0,
-    fontWeight: "600",
+    fontWeight: "500",
   },
   filterRow: {
     gap: spacing.sm,
@@ -150,22 +136,22 @@ const styles = StyleSheet.create({
   },
   filterChip: {
     backgroundColor: colors.surface,
-    borderRadius: radius.sm,
+    borderRadius: radius.full,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border,
   },
   filterChipActive: {
-    backgroundColor: colors.dark,
-    borderColor: colors.dark,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   filterChipPressed: {
     opacity: 0.82,
   },
   filterChipText: {
-    fontSize: 12,
-    fontWeight: "800",
+    fontSize: 13,
+    fontWeight: "600",
     color: colors.textMuted,
   },
   filterChipTextActive: {
