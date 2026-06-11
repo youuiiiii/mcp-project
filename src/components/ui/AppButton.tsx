@@ -31,12 +31,9 @@ type AppButtonProps = {
 };
 
 /**
- * Terra Design System — Primary Button
+ * Dispatch Terminal Design System — Button
  *
- * Primary: solid forest green (#4A7C59) with white text, 12px radius.
- * Secondary: cream bg + green text + thin green border.
- * Danger: deep warm red (#B83230).
- * Ghost: transparent with green text.
+ * Sharp, high-contrast, operational.
  */
 export default function AppButton({
   title,
@@ -84,7 +81,7 @@ export default function AppButton({
             ]}
             numberOfLines={1}
           >
-            {title}
+            {title.toUpperCase()}
           </Text>
           {rightIcon}
         </View>
@@ -102,7 +99,7 @@ const variantStyles: Record<
 > = {
   primary: {
     container: {
-      backgroundColor: colors.primary,      // Forest green solid
+      backgroundColor: colors.primary,      
       borderColor: colors.primary,
     },
     text: {
@@ -111,16 +108,16 @@ const variantStyles: Record<
   },
   secondary: {
     container: {
-      backgroundColor: colors.surfaceMuted,  // Warm cream bg
-      borderColor: colors.primary,            // Green border
+      backgroundColor: colors.surface,
+      borderColor: colors.borderStrong,
     },
     text: {
-      color: colors.primary,                  // Green text
+      color: colors.text,                  
     },
   },
   danger: {
     container: {
-      backgroundColor: colors.danger,         // Deep warm red
+      backgroundColor: colors.danger,         
       borderColor: colors.danger,
     },
     text: {
@@ -147,7 +144,7 @@ const sizeStyles: Record<
 > = {
   sm: {
     container: {
-      minHeight: 38,
+      minHeight: 36,
       paddingHorizontal: spacing.md,
     },
     text: {
@@ -156,20 +153,20 @@ const sizeStyles: Record<
   },
   md: {
     container: {
-      minHeight: 48,                          // Large touch target per Terra spec
+      minHeight: 48,                          
       paddingHorizontal: spacing.lg,
     },
     text: {
-      fontSize: 14,
+      fontSize: 13,
     },
   },
   lg: {
     container: {
-      minHeight: 52,
+      minHeight: 56,
       paddingHorizontal: spacing.xl,
     },
     text: {
-      fontSize: 15,
+      fontSize: 14,
     },
   },
 };
@@ -177,7 +174,7 @@ const sizeStyles: Record<
 const styles = StyleSheet.create({
   base: {
     borderWidth: 1,
-    borderRadius: radius.md,                  // 12px Terra rounded
+    borderRadius: radius.sm,                  // Sharp, rigid corners
     alignItems: "center",
     justifyContent: "center",
   },
@@ -191,13 +188,13 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   text: {
-    fontWeight: "700",                        // Terra bold labels
+    fontWeight: "900",                        // Extremely bold
+    letterSpacing: 1,
   },
   pressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.98 }],
+    opacity: 0.8,
   },
   disabled: {
-    opacity: 0.55,
+    opacity: 0.5,
   },
 });

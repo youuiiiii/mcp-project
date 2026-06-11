@@ -1,15 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
-import AppCard from "../../../components/ui/AppCard";
-import IconBadge from "../../../components/ui/IconBadge";
 import {
   getIncidentCategoryMeta,
   getIncidentDisplayMeta,
 } from "../../../constants/incident";
 import { colors } from "../../../theme/colors";
-import { spacing } from "../../../theme/layout";
-import { typography } from "../../../theme/typography";
+import { radius, shadow, spacing } from "../../../theme/layout";
 import type { IncidentReport } from "../../../types/incident";
 
 type AppIconName = keyof typeof Ionicons.glyphMap;
@@ -28,21 +25,21 @@ export default function IncidentPreviewCard({
   const categoryMeta = getIncidentCategoryMeta(incident.category);
 
   return (
-    <AppCard style={styles.card}>
-      <IconBadge
-        variant="neutral"
-        size="lg"
-        rounded={false}
-        style={{
-          backgroundColor: meta.lightColor,
-        }}
+    <View style={styles.card}>
+      <View
+        style={[
+          styles.iconBox,
+          {
+            backgroundColor: meta.color,
+          },
+        ]}
       >
         <Ionicons
           name={getIncidentIcon(incident)}
           size={24}
-          color={meta.color}
+          color={colors.textInverse}
         />
-      </IconBadge>
+      </View>
 
       <View style={styles.content}>
         <Text style={styles.title} numberOfLines={2}>
@@ -50,7 +47,7 @@ export default function IncidentPreviewCard({
         </Text>
 
         <Text style={styles.type} numberOfLines={1}>
-          {categoryMeta.label} - {meta.label}
+          {categoryMeta.label.toUpperCase()} — {meta.label.toUpperCase()}
         </Text>
 
         {incident.description && !incident.description.includes("reported near the selected map pin") && !incident.description.includes("No additional impact") ? (
@@ -59,7 +56,7 @@ export default function IncidentPreviewCard({
           </Text>
         ) : null}
       </View>
-    </AppCard>
+    </View>
   );
 }
 
@@ -119,23 +116,40 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: spacing.md,
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadow.card,
+  },
+  iconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.sm,
+    alignItems: "center",
+    justifyContent: "center",
   },
   content: {
     flex: 1,
   },
   title: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "900",
     color: colors.text,
+    letterSpacing: 0.5,
   },
   type: {
     marginTop: 3,
-    ...typography.caption,
+    fontSize: 10,
+    fontWeight: "800",
     color: colors.textMuted,
+    letterSpacing: 0.5,
   },
   description: {
     marginTop: spacing.sm,
-    ...typography.caption,
-    color: "#475569",
+    fontSize: 12,
+    lineHeight: 18,
+    color: colors.textSoft,
   },
 });

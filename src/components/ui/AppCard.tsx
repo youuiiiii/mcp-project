@@ -13,12 +13,9 @@ type AppCardProps = {
 };
 
 /**
- * Terra Design System — Card Component
+ * Dispatch Terminal Design System — Card Component
  *
- * Default: white fill, very soft shadow, no harsh borders.
- * Muted: warm cream fill (surfaceMuted) for tonal separation.
- * Outlined: white fill with subtle outline-variant border.
- * All variants use 12px radius and generous padding.
+ * Hard borders, flat styling.
  */
 export default function AppCard({
   children,
@@ -52,15 +49,15 @@ export default function AppCard({
 const variantStyles: Record<NonNullable<AppCardProps["variant"]>, ViewStyle> = {
   default: {
     backgroundColor: colors.surface,
-    borderColor: "transparent",         // No harsh borders — use shadow for depth
+    borderColor: colors.border,         // Hard border
   },
   muted: {
     backgroundColor: colors.surfaceMuted,
-    borderColor: "transparent",
+    borderColor: colors.border,         // Hard border
   },
   outlined: {
     backgroundColor: colors.surface,
-    borderColor: colors.border,          // outline-variant (#C4C8BC)
+    borderColor: colors.borderStrong,   // Strong outline
   },
 };
 
@@ -72,20 +69,19 @@ const paddingStyles: Record<NonNullable<AppCardProps["padding"]>, ViewStyle> = {
     padding: spacing.sm,
   },
   md: {
-    padding: spacing.lg,
+    padding: spacing.md,
   },
   lg: {
-    padding: spacing["2xl"],             // 24px generous Terra padding
+    padding: spacing.lg,
   },
 };
 
 const styles = StyleSheet.create({
   base: {
     borderWidth: 1,
-    borderRadius: radius.md,             // 12px Terra cards
+    borderRadius: radius.md,             
   },
   pressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.99 }],
+    opacity: 0.8,
   },
 });

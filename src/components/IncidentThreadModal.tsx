@@ -99,19 +99,19 @@ export default function IncidentThreadModal({
   const submitContentReport = async () => {
     try {
       if (!user) {
-        Alert.alert("Login Diperlukan", "Silakan masuk untuk melaporkan konten.");
+        Alert.alert("Login Required", "Please log in to report content.");
         return;
       }
 
       if (!selectedReason) {
-        Alert.alert("Alasan Diperlukan", "Pilih alasan untuk melaporkan konten ini.");
+        Alert.alert("Reason Required", "Select a reason to report this content.");
         return;
       }
 
       const actorKey = user.uid || user.email;
 
       if (!actorKey) {
-        Alert.alert("Identitas Tidak Valid", "Akun kamu tidak valid.");
+        Alert.alert("Invalid Identity", "Your account is not valid.");
         return;
       }
 
@@ -132,13 +132,13 @@ export default function IncidentThreadModal({
       setSelectedReason(null);
       setReportNote("");
 
-      Alert.alert("Laporan Terkirim", "Terima kasih. Laporan ini akan ditinjau oleh tim kami.");
+      Alert.alert("Report Submitted", "Thank you. This report will be reviewed by our team.");
     } catch (error) {
       Alert.alert(
-        "Gagal Melaporkan Konten",
+        "Failed to Report Content",
         error instanceof Error
           ? error.message
-          : "Terjadi kesalahan saat mengirim laporan konten."
+          : "An error occurred while submitting the content report."
       );
     } finally {
       setReportSubmitting(false);
@@ -149,8 +149,8 @@ export default function IncidentThreadModal({
     <>
       <IncidentModalShell
         visible={visible}
-        title="Detail Laporan"
-        subtitle="Informasi insiden dan pembaruan dari komunitas."
+        title="Incident Detail"
+        subtitle="Incident information and community updates."
         onClose={thread.closeThread}
         submitting={thread.replySubmitting}
         headerRight={
@@ -181,7 +181,7 @@ export default function IncidentThreadModal({
           currentUserVote={thread.accuracySummary.currentUserVote}
           disabledReason={
             thread.isOwnIncident
-              ? "Laporan Anda sudah dihitung. Pengguna di sekitar lokasi dapat mengonfirmasi apakah kejadian masih ada."
+              ? "Your report has been counted. Nearby users can confirm if the incident is still active."
               : null
           }
           label={thread.accuracySummary.label}

@@ -192,7 +192,7 @@ export default function ProfileScreen() {
     ) : null}
 
       <AppButton
-        title="Keluar"
+        title="Sign Out"
         variant="ghost"
         size="lg"
         fullWidth
@@ -215,20 +215,20 @@ export default function ProfileScreen() {
             <View style={styles.modalIconWrap}>
               <Ionicons name="log-out-outline" size={32} color={colors.danger} />
             </View>
-            <Text style={styles.modalTitle}>Keluar</Text>
+            <Text style={styles.modalTitle}>Sign Out</Text>
             <Text style={styles.modalMessage}>
-              Apakah kamu yakin ingin keluar dari akunmu?
+              Are you sure you want to sign out?
             </Text>
             <View style={styles.modalBtnRow}>
               <AppButton
-                title="Batal"
+                title="Cancel"
                 variant="secondary"
                 size="md"
                 onPress={() => setLogoutModalVisible(false)}
                 style={styles.modalBtnCancel}
               />
               <AppButton
-                title="Keluar"
+                title="Sign Out"
                 variant="danger"
                 size="md"
                 onPress={() => {

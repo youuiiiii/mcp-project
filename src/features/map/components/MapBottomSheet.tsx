@@ -1,9 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
-  PanResponder,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,18 +10,16 @@ import {
   View,
 } from "react-native";
 
-import AppCard from "../../../components/ui/AppCard";
-import StatusBadge from "../../../components/ui/StatusBadge";
+import IncidentCard from "../../../components/IncidentCard";
 import { colors } from "../../../theme/colors";
 import { radius, shadow, spacing } from "../../../theme/layout";
 import type { IncidentReport } from "../../../types/incident";
 import { formatDistance } from "../../../utils/geo";
 import { getReportDisplayMeta } from "../utils/reportDisplayMeta";
-import { getIncidentDisplayMeta } from "../../../constants/incident";
 
 const SCREEN_HEIGHT = Dimensions.get("window").height;
-const MINIMIZED_HEIGHT = 140; // Approx height for anchor bar + nearest info
-const EXPANDED_HEIGHT = SCREEN_HEIGHT * 0.65;
+const MINIMIZED_HEIGHT = 130;
+const EXPANDED_HEIGHT = SCREEN_HEIGHT * 0.7;
 
 type MapBottomSheetProps = {
   reports: IncidentReport[];
@@ -35,7 +32,6 @@ export default function MapBottomSheet({
   reports,
   nearestIncident,
   onOpenThread,
-  onOpenVerify,
 }: MapBottomSheetProps) {
   const [expanded, setExpanded] = useState(false);
   const heightAnim = useRef(new Animated.Value(MINIMIZED_HEIGHT)).current;
@@ -44,8 +40,8 @@ export default function MapBottomSheet({
     const toValue = expanded ? MINIMIZED_HEIGHT : EXPANDED_HEIGHT;
     Animated.spring(heightAnim, {
       toValue,
-      useNativeDriver: false, // height animation requires false
-      bounciness: 4,
+      useNativeDriver: false,
+      bounciness: 0, // Solid operational feel, no bouncy spring
     }).start();
     setExpanded(!expanded);
   };
@@ -58,102 +54,56 @@ export default function MapBottomSheet({
 
   return (
     <Animated.View style={[styles.bottomSheet, { height: heightAnim }]}>
-      <View style={styles.sheetHandleContainer}>
+      <Pressable onPress={toggleSheet} style={styles.headerPanel}>
         <View style={styles.sheetHandle} />
-      </View>
-
-      <Pressable onPress={toggleSheet} style={styles.anchorBar}>
         <View style={styles.anchorTextRow}>
           <Text style={styles.anchorTitle}>
-            {activeCount} Peringatan Aktif Sekitar
+            {activeCount} Active Incidents Nearby
           </Text>
           <Text style={styles.anchorSubtitle}>
-            {expanded ? "Tarik turun untuk menutup" : "Tarik naik untuk daftar"}
+            {expanded ? "Pull down to collapse" : "Pull up for details"}
           </Text>
         </View>
         <Ionicons
           name={expanded ? "chevron-down" : "chevron-up"}
           size={24}
-          color={colors.textSoft}
+          color={colors.textInverse}
         />
       </Pressable>
 
-      {!expanded && nearestIncident.incident && nearestMeta && nearestIncident.distance !== null && (
-        <View style={styles.nearestBanner}>
-          <Ionicons name={nearestMeta.iconName} size={18} color={nearestMeta.color} />
-          <Text style={styles.nearestText} numberOfLines={1}>
-            Terdekat: {nearestMeta.label} ({formatDistance(nearestIncident.distance)})
-          </Text>
-        </View>
-      )}
+      <View style={styles.content}>
+        {!expanded && nearestIncident.incident && nearestMeta && nearestIncident.distance !== null && (
+          <View style={styles.nearestBanner}>
+            <Ionicons name={nearestMeta.iconName} size={18} color={colors.textInverse} />
+            <Text style={styles.nearestText} numberOfLines={1}>
+              Nearest: {nearestMeta.label} ({formatDistance(nearestIncident.distance)})
+            </Text>
+            <Pressable style={styles.nearestBtn} onPress={() => onOpenThread(nearestIncident.incident!)}>
+              <Text style={styles.nearestBtnText}>View</Text>
+            </Pressable>
+          </View>
+        )}
 
-      {expanded && (
-        <ScrollView
-          style={styles.listContainer}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {reports.map((report) => (
-            <BottomSheetReportItem
-              key={report.id}
-              report={report}
-              onPress={() => onOpenThread(report)}
-              onVerify={() => onOpenVerify(report)}
-            />
-          ))}
-          {reports.length === 0 && (
-            <Text style={styles.emptyText}>Tidak ada laporan yang sesuai filter.</Text>
-          )}
-        </ScrollView>
-      )}
-    </Animated.View>
-  );
-}
-
-function BottomSheetReportItem({
-  report,
-  onPress,
-  onVerify,
-}: {
-  report: IncidentReport;
-  onPress: () => void;
-  onVerify: () => void;
-}) {
-  const meta = getIncidentDisplayMeta({
-    category: report.category,
-    subcategory: report.subcategory ?? report.type,
-  });
-
-  return (
-    <AppCard onPress={onPress} style={styles.reportCard}>
-      <View style={styles.cardHeader}>
-        <View style={[styles.iconCircle, { backgroundColor: meta.lightColor }]}>
-          <Ionicons name={meta.iconName} size={20} color={meta.color} />
-        </View>
-        <View style={styles.cardHeaderTexts}>
-          <Text style={styles.cardTitle} numberOfLines={1}>{report.title}</Text>
-          <Text style={styles.cardMeta} numberOfLines={1}>{meta.label}</Text>
-        </View>
-        {(report.urgencyLevel === "high" || report.severity === "high") && (
-          <StatusBadge label="DARURAT" variant="danger" size="sm" />
+        {expanded && (
+          <ScrollView
+            style={styles.listContainer}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {reports.map((report) => (
+              <IncidentCard
+                key={report.id}
+                incident={report}
+                onPress={onOpenThread}
+              />
+            ))}
+            {reports.length === 0 && (
+              <Text style={styles.emptyText}>No incidents match the current filter.</Text>
+            )}
+          </ScrollView>
         )}
       </View>
-      
-      <Text style={styles.cardDescription} numberOfLines={2}>
-        {report.description || "Tidak ada detail tambahan."}
-      </Text>
-
-      <View style={styles.cardActions}>
-        <Pressable onPress={onVerify} style={styles.actionBtn}>
-          <Ionicons name="checkmark-circle-outline" size={18} color={colors.primary} />
-          <Text style={styles.actionBtnText}>Verifikasi</Text>
-        </Pressable>
-        <Pressable onPress={onPress} style={styles.actionBtn}>
-          <Ionicons name="chatbubbles-outline" size={18} color={colors.textMuted} />
-          <Text style={styles.actionBtnTextMuted}>Lihat Diskusi</Text>
-        </Pressable>
-      </View>
-    </AppCard>
+    </Animated.View>
   );
 }
 
@@ -163,129 +113,90 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceMuted, 
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.xs,
-    paddingBottom: spacing.lg,
     ...shadow.floating,
-    elevation: 8,
+    elevation: 16,
+    overflow: "hidden", 
   },
-  sheetHandleContainer: {
-    alignItems: "center",
-    paddingVertical: spacing.xs,
-  },
-  sheetHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: colors.border,
-    borderRadius: 2,
-  },
-  anchorBar: {
+  headerPanel: {
+    backgroundColor: "#164e63", // Dark Slate/Teal
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xs,
+  },
+  sheetHandle: {
+    position: "absolute",
+    top: 8,
+    alignSelf: "center",
+    width: 36,
+    height: 4,
+    backgroundColor: "rgba(255,255,255,0.3)",
+    borderRadius: 2,
+    left: "50%",
+    marginLeft: -18,
   },
   anchorTextRow: {
     flex: 1,
+    marginTop: 12,
   },
   anchorTitle: {
     fontSize: 16,
-    fontWeight: "700",
-    color: colors.text,
+    fontWeight: "800",
+    color: colors.textInverse,
   },
   anchorSubtitle: {
     fontSize: 12,
-    color: colors.textSoft,
+    color: "rgba(255,255,255,0.7)",
     marginTop: 2,
+    textTransform: "uppercase",
+    fontWeight: "600",
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
   },
   nearestBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.surfaceContainer,
-    padding: spacing.sm,
+    backgroundColor: colors.danger, 
+    padding: spacing.md,
     borderRadius: radius.md,
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
     gap: spacing.sm,
   },
   nearestText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.text,
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.textInverse,
     flex: 1,
   },
+  nearestBtn: {
+    backgroundColor: "rgba(0,0,0,0.2)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.sm,
+  },
+  nearestBtnText: {
+    color: colors.textInverse,
+    fontWeight: "700",
+    fontSize: 12,
+  },
   listContainer: {
-    marginTop: spacing.sm,
+    flex: 1,
   },
   listContent: {
-    gap: spacing.md,
-    paddingBottom: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xl * 3,
   },
   emptyText: {
     fontSize: 14,
     color: colors.textMuted,
     textAlign: "center",
     marginTop: spacing.xl,
-  },
-  reportCard: {
-    gap: spacing.sm,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  cardHeaderTexts: {
-    flex: 1,
-  },
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  cardMeta: {
-    fontSize: 12,
     fontWeight: "600",
-    color: colors.textSoft,
-    marginTop: 2,
-  },
-  cardDescription: {
-    fontSize: 13,
-    color: colors.textMuted,
-    lineHeight: 18,
-  },
-  cardActions: {
-    flexDirection: "row",
-    gap: spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: colors.surfaceContainer,
-    paddingTop: spacing.sm,
-    marginTop: spacing.xs,
-  },
-  actionBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingVertical: 4,
-  },
-  actionBtnText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.primary,
-  },
-  actionBtnTextMuted: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.textMuted,
   },
 });

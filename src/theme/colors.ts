@@ -1,63 +1,63 @@
 /**
- * Terra Design System — "Rooted Warmth" Color Palette
- *
- * Earthy, desaturated tones. No neon or pure-hue colors.
- * Every gray has a warm yellow/green undertone.
- * Derived from the Stitch terra/DESIGN.md specification.
+ * Dispatch Terminal Design System
+ * Based on reference: https://mower-filled-64016353.figma.site/
+ * 
+ * Crisp, high-contrast, zero-slop operational aesthetics.
+ * Hard borders, vibrant operational colors, and flat structure.
  */
 export const colors = {
-  // Core surfaces — warm cream foundation, never sterile white
-  background: "#FAF6F0",
+  // Core surfaces
+  background: "#F8FAFC",          // Slate 50
   surface: "#FFFFFF",
-  surfaceMuted: "#F5F1EA",        // surface-container-low
-  surfaceContainer: "#F0ECE4",    // surface-container
-  surfaceContainerHigh: "#EAE6DE", // surface-container-high
+  surfaceMuted: "#F1F5F9",        // Slate 100
+  surfaceContainer: "#E2E8F0",    // Slate 200
+  surfaceContainerHigh: "#CBD5E1",// Slate 300
 
-  // Text — warm dark grays
-  text: "#2E3230",                // on-surface
-  textPrimary: "#2E3230",
-  textMuted: "#4A4E4A",           // on-surface-variant
-  textSecondary: "#4A4E4A",
-  textSoft: "#74796E",            // outline (lighter descriptive text)
+  // Text — high contrast
+  text: "#0F172A",                // Slate 900
+  textPrimary: "#0F172A",
+  textMuted: "#475569",           // Slate 600
+  textSecondary: "#475569",
+  textSoft: "#64748B",            // Slate 500
   textInverse: "#FFFFFF",
-  textOnDarkMuted: "#C4C8BC",
+  textOnDarkMuted: "#CBD5E1",
 
-  // Lines & borders — warm neutral with green undertone
-  border: "#C4C8BC",              // outline-variant
-  borderStrong: "#74796E",        // outline
+  // Lines & borders — crisp
+  border: "#CBD5E1",              // Slate 300
+  borderStrong: "#94A3B8",        // Slate 400
 
-  // Primary — Forest Green actions, navigation, interactive states
-  primary: "#4A7C59",
-  primaryDark: "#2A6038",
-  primarySoft: "#C8E8D0",         // primary-fixed (light green accent)
-  primaryContainer: "#78A886",    // primary-container
+  // Primary — vibrant operational Teal
+  primary: "#00A3C4",             // Exact Figma teal
+  primaryDark: "#00839E",
+  primarySoft: "#E0F7FA",
+  primaryContainer: "#00A3C4",
 
-  // Success — warm green
-  success: "#4A7C59",
-  successDark: "#2A6038",
-  successSoft: "#C8E8D0",
+  // Success
+  success: "#10B981",             // Emerald 500
+  successDark: "#059669",         // Emerald 600
+  successSoft: "#D1FAE5",
 
-  // Warning/Tertiary — warm amber highlights, accents, badges
-  warning: "#705C30",
-  warningDark: "#554020",
-  warningSoft: "#F8E0A8",         // tertiary-fixed
+  // Warning
+  warning: "#F59E0B",             // Amber 500
+  warningDark: "#D97706",         // Amber 600
+  warningSoft: "#FEF3C7",
 
-  // Info — muted teal (warm-shifted from pure blue)
-  info: "#3F6653",
-  infoDark: "#274E3D",
-  infoSoft: "#C1ECD4",
+  // Info
+  info: "#3B82F6",                // Blue 500
+  infoDark: "#2563EB",
+  infoSoft: "#DBEAFE",
 
-  // Dark — warm charcoal
-  dark: "#2E3230",
-  darkSoft: "#4A4E4A",
+  // Dark — solid slate command background
+  dark: "#0F172A",                // Slate 900
+  darkSoft: "#1E293B",            // Slate 800
 
-  // Danger/Emergency — deep warm red, never neon
-  danger: "#B83230",
-  dangerSoft: "#FFDAD8",
-  dangerDark: "#690005",
+  // Danger/Emergency — sharp operational red
+  danger: "#EF4444",              // Red 500
+  dangerSoft: "#FEE2E2",
+  dangerDark: "#B91C1C",
 
   // Shadow base
-  shadow: "#2E3230",
+  shadow: "#0F172A",
 } as const;
 
 export type AppColor = keyof typeof colors;

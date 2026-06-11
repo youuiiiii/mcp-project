@@ -1,27 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, Text, View } from "react-native";
-
+import { Pressable, Text, View, StyleSheet } from "react-native";
 import AppButton from "../../../components/ui/AppButton";
-import StatusBadge from "../../../components/ui/StatusBadge";
 import { getIncidentDisplayMeta } from "../../../constants/incident";
 import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
 import type { IncidentReport } from "../../../types/incident";
-import { getIncidentConfidenceMeta } from "../../../utils/incidentConfidence";
-import IncidentImpactSummary from "../components/IncidentImpactSummary";
 import IncidentImageGallery from "../components/IncidentImageGallery";
-import {
-  getUrgencyLevelLabel,
-  getUrgencyVariant,
-} from "./incidentOverviewMeta";
-import { incidentOverviewStyles as styles } from "./incidentOverviewStyles";
-import {
-  formatIncidentDate,
-  getCommunityUpdateMeta,
-  getStatusLabel,
-  getStatusVariant,
-} from "./threadLabels";
-import { StyleSheet } from "react-native";
+import { formatIncidentDate } from "./threadLabels";
 
 type IncidentOverviewCardProps = {
   incident: IncidentReport;
@@ -43,283 +28,254 @@ export default function IncidentOverviewCard({
     subcategory: incident.subcategory ?? incident.type,
   });
 
-  const author = incident.reportedBy || incident.reporterEmail || "Pengguna";
-  const confidence = getIncidentConfidenceMeta(incident);
-  const urgencyLevel = incident.urgencyLevel ?? incident.severity;
-  const latestUpdate = incident.latestCommunityUpdateType
-    ? getCommunityUpdateMeta(incident.latestCommunityUpdateType)
-    : null;
+  const author = incident.reportedBy || incident.reporterEmail || "User";
+  const urgencyScore = incident.urgencyScore ?? 20;
+  
+  let urgencyColor: string = colors.info;
+  let severityLabel = "Low Severity";
+  if (urgencyScore >= 70) {
+    urgencyColor = colors.danger;
+    severityLabel = "High Severity";
+  } else if (urgencyScore >= 38) {
+    urgencyColor = colors.warning;
+    severityLabel = "Medium Severity";
+  }
 
-  // Determine community trust indicator — human language only, no raw numbers
-  const getCommunitySignalText = () => {
-    const verif = incident.verificationCount ?? 0;
-    const dispute = incident.disputeCount ?? 0;
-    const accurate = incident.accurateCount ?? 0;
-    const total = verif + dispute + accurate;
+  const verifications = incident.verificationCount ?? 0;
+  const disputes = incident.disputeCount ?? 0;
+  const accurate = incident.accurateCount ?? 0; // if used
+  const totalConfirmations = verifications + accurate;
 
-    if (total === 0) return "Belum ada konfirmasi komunitas.";
-    if (verif + accurate > dispute) return `${verif + accurate} orang mengonfirmasi laporan ini.`;
-    if (dispute > verif + accurate) return "Ada beberapa pengguna yang mempertanyakan laporan ini.";
-    return "Respons komunitas masih berimbang.";
-  };
+  const address = incident.address || `${incident.latitude.toFixed(4)}, ${incident.longitude.toFixed(4)}`;
 
   return (
-    <View style={styles.post}>
-      <View style={styles.avatar}>
-        <Ionicons name="person" size={18} color={colors.textInverse} />
+    <View style={styles.container}>
+      {/* MASSIVE URGENCY HEADER */}
+      <View style={[styles.urgencyHeader, { backgroundColor: urgencyColor }]}>
+        <Ionicons name="warning" size={24} color={colors.textInverse} />
+        <Text style={styles.urgencyHeaderText}>{severityLabel}</Text>
       </View>
 
-      <View style={styles.body}>
-        {/* Author + time */}
-        <View style={styles.authorRow}>
-          <Text style={styles.authorName} numberOfLines={1}>
-            {author}
-          </Text>
-          <Text style={styles.dot}>-</Text>
-          <Text style={styles.timeText} numberOfLines={1}>
-            {formatIncidentDate(incident.createdAt)}
-          </Text>
-        </View>
-
-        {/* Category + Status pills */}
-        <View style={styles.metaRow}>
-          <View
-            style={[
-              styles.categoryPill,
-              { backgroundColor: meta.lightColor },
-            ]}
-          >
+      <View style={styles.contentPadding}>
+        <View style={styles.topMeta}>
+          <View style={[styles.categoryBadge, { backgroundColor: meta.lightColor }]}>
             <Ionicons name={meta.iconName} size={14} color={meta.color} />
-            <Text
-              style={[styles.categoryText, { color: meta.color }]}
-              numberOfLines={1}
-            >
-              {meta.label}
-            </Text>
+            <Text style={[styles.categoryText, { color: meta.color }]}>{meta.label}</Text>
           </View>
-
-          <StatusBadge
-            label={getStatusLabel(incident.status)}
-            variant={getStatusVariant(incident.status)}
-            size="sm"
-          />
-
-          {/* Only show urgency as a text label, never a number */}
-          {urgencyLevel === "high" && (
-            <StatusBadge
-              label="Urgensi Tinggi"
-              variant="danger"
-              size="sm"
-            />
-          )}
-          {urgencyLevel === "medium" && (
-            <StatusBadge
-              label="Urgensi Sedang"
-              variant="warning"
-              size="sm"
-            />
-          )}
+          <Text style={styles.timeText}>{formatIncidentDate(incident.createdAt)}</Text>
         </View>
 
-        {/* Title */}
-        <Text style={styles.title}>{incident.title}</Text>
+        <Text style={styles.title}>{incident.title || "Incident Report"}</Text>
 
-        {/* Description — only show if it exists and isn't auto-generated nonsense */}
+        <View style={styles.locationBox}>
+          <Ionicons name="location" size={18} color={colors.textMuted} />
+          <Text style={styles.locationBoxText}>{address}</Text>
+        </View>
+
         {incident.description && !incident.description.includes("reported near the selected map pin") && (
           <Text style={styles.description}>{incident.description}</Text>
         )}
 
-        {/* Impact flags */}
-        <IncidentImpactSummary impactAnswers={incident.impactAnswers} />
-
-        {/* Evidence photo */}
         <IncidentImageGallery
           imageUri={incident.imageUri}
           imageUris={incident.imageUris}
           variant="detail"
+          style={styles.gallery}
         />
 
-        {/* Confidence card — NO raw scores, only human descriptions */}
-        <View
-          style={[
-            localStyles.confidenceCard,
-            {
-              backgroundColor: confidence.backgroundColor,
-              borderColor: confidence.borderColor,
-            },
-          ]}
-        >
-          {/* Status icon + label */}
-          <View style={localStyles.confidenceHeader}>
-            <View style={[localStyles.confidenceIconCircle, { backgroundColor: confidence.color + "20" }]}>
-              <Ionicons
-                name={
-                  confidence.level === "confirmed" ? "shield-checkmark" :
-                  confidence.level === "resolved" ? "checkmark-circle" :
-                  confidence.level === "questioned" ? "warning" :
-                  confidence.level === "stale" ? "time" :
-                  "radio-button-on"
-                }
-                size={20}
-                color={confidence.color}
-              />
+        {/* TRUST STATE MODULE */}
+        <View style={styles.trustModule}>
+          <Text style={styles.trustModuleTitle}>Community Trust State</Text>
+          <View style={styles.trustRow}>
+            <View style={styles.trustStat}>
+              <Ionicons name="shield-checkmark" size={20} color={colors.success} />
+              <Text style={styles.trustStatNumber}>{totalConfirmations}</Text>
+              <Text style={styles.trustStatLabel}>Confirmations</Text>
             </View>
-            <View style={localStyles.confidenceTitleGroup}>
-              <Text style={[localStyles.confidenceLabel, { color: confidence.color }]}>
-                {confidence.label}
-              </Text>
-              <Text style={localStyles.confidenceDesc}>
-                {confidence.description}
-              </Text>
+            <View style={styles.trustDivider} />
+            <View style={styles.trustStat}>
+              <Ionicons name="warning-outline" size={20} color={colors.danger} />
+              <Text style={styles.trustStatNumber}>{disputes}</Text>
+              <Text style={styles.trustStatLabel}>Disputes</Text>
             </View>
           </View>
-
-          {/* Community signal in plain language */}
-          <View style={localStyles.communitySignalRow}>
-            <Ionicons name="people-outline" size={14} color={colors.textSoft} />
-            <Text style={localStyles.communitySignalText}>
-              {getCommunitySignalText()}
-            </Text>
-          </View>
-
-          {/* Latest condition update (if any) */}
-          {latestUpdate && (
-            <View style={localStyles.latestUpdateRow}>
-              <Ionicons
-                name={latestUpdate.iconName}
-                size={14}
-                color={latestUpdate.color}
-              />
-              <Text style={localStyles.latestUpdateText} numberOfLines={2}>
-                Update terbaru: {latestUpdate.label}
-              </Text>
-            </View>
-          )}
         </View>
 
-        {/* Disclaimer */}
-        <Text style={styles.disclaimer}>
-          Laporan ini berasal dari komunitas dan bukan informasi resmi. Gunakan sebagai sinyal awal dan tetap waspada.
-        </Text>
-
-        {/* Action buttons */}
-        {showActions && incident.status === "active" ? (
-          <View style={styles.actionRow}>
-            {onOpenVerify ? (
+        {/* ACTIONS */}
+        {showActions && incident.status === "active" && (
+          <View style={styles.actionBlock}>
+            {onOpenVerify && (
               <AppButton
-                title="Konfirmasi / Update"
+                title="Verify / Dispute"
                 variant="primary"
-                size="md"
+                size="lg"
+                fullWidth
                 onPress={() => onOpenVerify(incident)}
-                leftIcon={
-                  <Ionicons
-                    name="shield-checkmark"
-                    size={17}
-                    color={colors.textInverse}
-                  />
-                }
-                style={styles.actionButton}
+                leftIcon={<Ionicons name="shield-checkmark" size={20} color={colors.textInverse} />}
+                style={styles.primaryAction}
               />
-            ) : null}
-
-            {onOpenResolve ? (
+            )}
+            {onOpenResolve && (
               <AppButton
-                title="Selesai"
+                title="Resolve Incident"
                 variant="secondary"
-                size="md"
+                size="lg"
+                fullWidth
                 onPress={() => onOpenResolve(incident)}
-                leftIcon={
-                  <Ionicons
-                    name="checkmark-done"
-                    size={17}
-                    color={colors.text}
-                  />
-                }
-                style={styles.actionButton}
+                leftIcon={<Ionicons name="checkmark-done" size={20} color={colors.text} />}
+                style={styles.secondaryAction}
               />
-            ) : null}
+            )}
           </View>
-        ) : null}
+        )}
 
-        {/* Report content button */}
-        <Pressable
-          onPress={onReportContent}
-          style={({ pressed }) => [
-            styles.reportContentButton,
-            pressed && styles.reportContentPressed,
-          ]}
-        >
-          <Ionicons
-            name="flag-outline"
-            size={16}
-            color={colors.primaryDark}
-          />
-          <Text style={styles.reportContentText}>Laporkan Konten</Text>
+        <Pressable onPress={onReportContent} style={styles.reportContentRow}>
+          <Ionicons name="flag-outline" size={16} color={colors.textSoft} />
+          <Text style={styles.reportContentText}>Report inappropriate content</Text>
         </Pressable>
       </View>
     </View>
   );
 }
 
-const localStyles = StyleSheet.create({
-  confidenceCard: {
-    marginTop: spacing.md,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    padding: spacing.md,
-    gap: spacing.sm,
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: colors.surface,
   },
-  confidenceHeader: {
+  urgencyHeader: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.sm,
-  },
-  confidenceIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
-    flexShrink: 0,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
   },
-  confidenceTitleGroup: {
-    flex: 1,
-  },
-  confidenceLabel: {
-    fontSize: 13,
+  urgencyHeaderText: {
+    color: colors.textInverse,
+    fontSize: 16,
     fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
-  confidenceDesc: {
-    marginTop: 2,
-    fontSize: 11,
-    lineHeight: 16,
-    fontWeight: "500",
-    color: colors.textMuted,
+  contentPadding: {
+    padding: spacing.lg,
   },
-  communitySignalRow: {
+  topMeta: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingTop: spacing.xs,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.06)",
+    justifyContent: "space-between",
+    marginBottom: spacing.sm,
   },
-  communitySignalText: {
-    flex: 1,
-    fontSize: 12,
-    fontWeight: "600",
-    color: colors.textMuted,
-  },
-  latestUpdateRow: {
+  categoryBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
   },
-  latestUpdateText: {
-    flex: 1,
+  categoryText: {
     fontSize: 12,
-    lineHeight: 16,
     fontWeight: "700",
+  },
+  timeText: {
+    fontSize: 12,
+    color: colors.textMuted,
+    fontWeight: "600",
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "800",
     color: colors.text,
+    lineHeight: 28,
+    marginBottom: spacing.md,
+  },
+  locationBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: colors.surfaceMuted,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.surfaceContainerHigh,
+  },
+  locationBoxText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: "600",
+    lineHeight: 20,
+  },
+  description: {
+    fontSize: 15,
+    color: colors.textMuted,
+    lineHeight: 24,
+    marginBottom: spacing.md,
+  },
+  gallery: {
+    marginBottom: spacing.md,
+  },
+  trustModule: {
+    backgroundColor: colors.surfaceContainer,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  trustModuleTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    marginBottom: spacing.md,
+    textAlign: "center",
+  },
+  trustRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  trustStat: {
+    alignItems: "center",
+    flex: 1,
+    gap: 4,
+  },
+  trustDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: colors.border,
+  },
+  trustStatNumber: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: colors.text,
+  },
+  trustStatLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.textSoft,
+  },
+  actionBlock: {
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  primaryAction: {
+    backgroundColor: "#00A3C4", // Teal reference color
+    height: 52, // massive operational button
+  },
+  secondaryAction: {
+    height: 52,
+  },
+  reportContentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: spacing.md,
+  },
+  reportContentText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.textSoft,
   },
 });

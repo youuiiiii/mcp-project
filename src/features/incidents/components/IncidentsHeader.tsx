@@ -34,13 +34,16 @@ export default function IncidentsHeader({
 }: IncidentsHeaderProps) {
   return (
     <View style={styles.container}>
-      {/* Page title */}
+      {/* Dispatch Title */}
       <View style={styles.hero}>
-        <Text style={styles.title}>Laporan Insiden</Text>
+        <View style={styles.titleRow}>
+          <Ionicons name="list" size={24} color={colors.text} />
+          <Text style={styles.title}>ACTIVITY LOG</Text>
+        </View>
         <Text style={styles.subtitle}>
           {summary.total > 0
-            ? `${summary.active} aktif · ${summary.resolved} selesai · ${summary.total} total`
-            : "Belum ada laporan di area ini."}
+            ? `${summary.active} ACTIVE • ${summary.resolved} RESOLVED • ${summary.total} TOTAL`
+            : "NO REPORTS IN THIS AREA"}
         </Text>
       </View>
 
@@ -50,7 +53,7 @@ export default function IncidentsHeader({
         <TextInput
           value={searchQuery}
           onChangeText={onSearchChange}
-          placeholder="Cari laporan, kategori, atau status..."
+          placeholder="Search reports, categories, or status..."
           placeholderTextColor={colors.textSoft}
           style={styles.searchInput}
         />
@@ -102,15 +105,25 @@ const styles = StyleSheet.create({
   },
   hero: {
     gap: 4,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
+    paddingLeft: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   title: {
-    fontSize: 24,
-    fontWeight: "800",
+    fontSize: 22,
+    fontWeight: "900",
     color: colors.text,
+    letterSpacing: 1,
   },
   subtitle: {
-    fontSize: 13,
-    fontWeight: "500",
+    fontSize: 12,
+    fontWeight: "800",
     color: colors.textMuted,
   },
   searchBar: {
@@ -129,27 +142,30 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.text,
     padding: 0,
+    fontWeight: "600",
   },
   filterRow: {
     gap: spacing.sm,
+    paddingBottom: spacing.xs,
   },
   filterChip: {
     backgroundColor: colors.surface,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.lg,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border,
   },
   filterChipActive: {
-    backgroundColor: colors.text,
-    borderColor: colors.text,
+    backgroundColor: colors.dark,
+    borderColor: colors.dark,
   },
   filterChipPressed: {
     opacity: 0.82,
   },
   filterChipText: {
-    ...typography.label,
+    fontSize: 12,
+    fontWeight: "800",
     color: colors.textMuted,
   },
   filterChipTextActive: {

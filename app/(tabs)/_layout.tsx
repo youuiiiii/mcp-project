@@ -3,19 +3,16 @@ import { type Href, Redirect, Tabs } from "expo-router";
 import {
   ActivityIndicator,
   StyleSheet,
-  TouchableOpacity,
   View,
 } from "react-native";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { useI18n } from "@/i18n";
 import { colors } from "@/theme/colors";
 
 const LOGIN_ROUTE = "/login" as Href;
 
 export default function TabsLayout() {
   const { user, loading } = useAuth();
-  const { t } = useI18n();
 
   if (loading) {
     return (
@@ -33,20 +30,20 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primary, // Wecare Primary Forest Green
+        tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSoft,
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
-      {/* HOME */}
+      {/* MAP */}
       <Tabs.Screen
         name="index"
         options={{
-          title: t("tabs.home"),
+          title: "MAP",
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
-              name={focused ? "home" : "home-outline"}
+              name={focused ? "map" : "map-outline"}
               size={24}
               color={color}
             />
@@ -54,11 +51,11 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* INCIDENTS */}
+      {/* ACTIVITY */}
       <Tabs.Screen
-        name="incidents"
+        name="activity"
         options={{
-          title: t("tabs.incidents"), // Localized
+          title: "ACTIVITY",
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
               name={focused ? "list" : "list-outline"}
@@ -69,39 +66,14 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* MAP CENTER BUTTON */}
-      <Tabs.Screen
-        name="map"
-        options={{
-          title: "",
-
-          tabBarIcon: ({ focused }) => (
-            <View style={styles.mapButton}>
-              <Ionicons
-                name={focused ? "map" : "map-outline"}
-                size={30}
-                color="white"
-              />
-            </View>
-          ),
-
-          tabBarButton: (props: any) => (
-            <TouchableOpacity
-              {...props}
-              style={styles.mapButtonContainer}
-            />
-          ),
-        }}
-      />
-
       {/* REPORT */}
       <Tabs.Screen
         name="report"
         options={{
-          title: t("tabs.report"),
+          title: "REPORT",
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
-              name={focused ? "document-text" : "document-text-outline"}
+              name={focused ? "add-circle" : "add-circle-outline"}
               size={24}
               color={color}
             />
@@ -113,7 +85,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: t("tabs.profile"),
+          title: "PROFILE",
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
               name={focused ? "person" : "person-outline"}
@@ -123,10 +95,6 @@ export default function TabsLayout() {
           ),
         }}
       />
-
-      <Tabs.Screen name="analytics" options={{ href: null }} />
-      <Tabs.Screen name="education" options={{ href: null }} />
-      <Tabs.Screen name="detail" options={{ href: null }} />
     </Tabs>
   );
 }
@@ -145,37 +113,12 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: "rgba(196, 200, 188, 0.3)", // outline-variant at 30%
+    borderTopColor: colors.border, 
   },
 
   tabBarLabel: {
-    fontSize: 11,
-    fontWeight: "700", // Terra label style
-  },
-
-  mapButtonContainer: {
-    top: -18,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  mapButton: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    backgroundColor: colors.primary, // Forest Green background for center button
-
-    justifyContent: "center",
-    alignItems: "center",
-
-    shadowColor: colors.shadow,
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-
-    elevation: 4,
+    fontSize: 10,
+    fontWeight: "900", 
+    letterSpacing: 0.5,
   },
 });

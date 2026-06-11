@@ -36,7 +36,7 @@ import type {
   ReportLocationDraft,
 } from "../../../types/incident";
 
-const MAP_ROUTE = "/(tabs)/map" as Href;
+const MAP_ROUTE = "/(tabs)" as any;
 
 import { isIncidentKind } from "../../../constants/reportTaxonomy";
 

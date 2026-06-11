@@ -1,9 +1,8 @@
 /**
- * Terra Design System — Layout Tokens
- *
- * 8px base rhythm with 4px sub-step.
- * Soft shadows only. Prefer tonal separation over aggressive shadows.
- * Shapes: buttons/inputs 12px, cards 12px, sheets 24px.
+ * Dispatch Terminal Layout Tokens
+ * 
+ * Hard flat design. No soft drop shadows. 
+ * Minimal border radii. 
  */
 export const spacing = {
   xs: 4,
@@ -16,36 +15,31 @@ export const spacing = {
 } as const;
 
 export const radius = {
-  sm: 8,       // Small elements (chips, mini badges)
-  md: 12,      // Buttons, inputs, cards — Terra default
-  lg: 12,      // Cards match buttons for visual harmony
-  xl: 16,      // Larger containers
-  "2xl": 20,   // Prominent sections
-  "3xl": 24,   // Bottom sheets, modals (top corners)
-  full: 999,   // Pill shapes
+  sm: 4,       // Very sharp, rigid elements
+  md: 6,       // Standard operational elements
+  lg: 8,       // Slightly larger cards
+  xl: 12,      // Containers
+  "2xl": 16,   // Prominent sections
+  "3xl": 20,   // Bottom sheets, modals
+  full: 999,   // Pill shapes only where absolutely necessary
 } as const;
 
 export const shadow = {
-  /** Very soft card shadow — Terra "tonal separation" philosophy */
+  /** Flat operational "shadow" which is just a solid 1px border visually, or hard offset */
   card: {
-    shadowColor: "#2E3230",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.06,
-    shadowRadius: 20,
-    elevation: 2,
+    // In a flat dispatch design, shadows are avoided in favor of crisp borders
+    shadowColor: "transparent",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   },
-  /** Floating elements — slightly more visible but still restrained */
+  /** Used for critical floating elements (e.g. command buttons) */
   floating: {
-    shadowColor: "#2E3230",
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 15,
-    elevation: 4,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
   },
 } as const;
