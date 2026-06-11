@@ -137,7 +137,7 @@ export default function SosSlideModal({ visible, onClose }: SosSlideModalProps) 
           </View>
 
           <Text style={styles.description}>
-            Sliding this will instantly open your phone's dialer to call National Emergency (112) and silently broadcast your location to nearby users.
+            Sliding this will instantly open your {"phone's"} dialer to call National Emergency (112) and silently broadcast your location to nearby users.
           </Text>
 
           <View style={styles.sliderTrack}>

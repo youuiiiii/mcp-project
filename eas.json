@@ -4,18 +4,7 @@
     "appVersionSource": "remote"
   },
   "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk"
-      }
-    },
-    "preview": {
-    "distribution": "internal",
-    "android": {
-      "buildType": "apk"
-      },
+    "base": {
       "env": {
         "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyCprOdxoq23MgBNHCLEMpyjD7feXxaKpz8",
         "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "mcp-project-4864d.firebaseapp.com",
@@ -28,7 +17,23 @@
         "EXPO_PUBLIC_MODERATOR_EMAILS": "admin@gmail.com"
       }
     },
+    "development": {
+      "extends": "base",
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
     "production": {
+      "extends": "base",
       "autoIncrement": true
     }
   },
