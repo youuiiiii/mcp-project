@@ -16,6 +16,7 @@ import { mapStyles as styles } from "../../styles/mapStyles";
 import { colors } from "../../theme/colors";
 import { formatDistance } from "../../utils/geo";
 import IncidentMapMarker from "./components/IncidentMapMarker";
+import MapBottomSheet from "./components/MapBottomSheet";
 import { useMapIncidents } from "./hooks/useMapIncidents";
 import { useMapModalState } from "./hooks/useMapModalState";
 import { useStableUserLocation } from "./hooks/useStableUserLocation";
@@ -156,41 +157,12 @@ export default function MapScreen() {
         />
       </View>
 
-      <View style={styles.bottomOverlay}>
-        <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <View style={styles.infoTextGroup}>
-              <Text style={styles.infoTitle}>
-                {filteredReports.length} reports shown
-              </Text>
-
-              <Text style={styles.infoDescription}>
-                Filter: {getFilterLabel(selectedFilter)}
-              </Text>
-            </View>
-
-            <Ionicons name="map" size={20} color={colors.textMuted} />
-          </View>
-
-          {nearestIncident.incident &&
-          nearestIncidentMeta &&
-          nearestIncident.distance !== null ? (
-            <View style={styles.nearestRow}>
-              <Ionicons
-                name={nearestIncidentMeta.iconName}
-                size={17}
-                color={nearestIncidentMeta.color}
-              />
-
-              <Text style={styles.nearestText} numberOfLines={1}>
-                Nearest: {nearestIncidentMeta.label} -{" "}
-                {formatDistance(nearestIncident.distance)}
-              </Text>
-            </View>
-          ) : null}
-        </View>
-      </View>
-      
+      <MapBottomSheet
+        reports={filteredReports}
+        nearestIncident={nearestIncident}
+        onOpenThread={modalState.openThreadModal}
+        onOpenVerify={modalState.openVerifyModal}
+      />
 
       <IncidentThreadModal
         visible={modalState.isThreadModalVisible}

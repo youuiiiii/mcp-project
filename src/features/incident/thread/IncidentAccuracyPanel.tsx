@@ -35,10 +35,10 @@ export default function IncidentAccuracyPanel({
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.titleGroup}>
-          <Text style={styles.title}>On-site Check</Text>
+          <Text style={styles.title}>Pengecekan Lokasi</Text>
           <Text style={styles.subtitle}>
             {disabledReason ??
-              "For nearby users only: confirm whether this report is still there."}
+              "Khusus pengguna di sekitar lokasi: konfirmasi apakah insiden masih ada."}
           </Text>
         </View>
 
@@ -65,9 +65,9 @@ export default function IncidentAccuracyPanel({
 
       <View style={styles.actions}>
         <AccuracyButton
-          label="Still there"
+          label="Masih Ada"
           count={accurateCount}
-          iconName="arrow-up-circle"
+          iconName="checkmark-circle-outline"
           active={currentUserVote === "accurate"}
           disabled={disabled}
           color={colors.success}
@@ -75,9 +75,9 @@ export default function IncidentAccuracyPanel({
         />
 
         <AccuracyButton
-          label="Not there"
+          label="Sudah Bersih"
           count={inaccurateCount}
-          iconName="arrow-down-circle"
+          iconName="close-circle-outline"
           active={currentUserVote === "inaccurate"}
           disabled={disabled}
           color={colors.danger}

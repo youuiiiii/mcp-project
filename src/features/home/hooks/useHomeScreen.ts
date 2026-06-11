@@ -80,8 +80,16 @@ export function useHomeScreen() {
     router.push(MAP_ROUTE);
   };
 
-  const openReport = () => {
-    router.push(REPORT_ROUTE);
+  const openReport = (kind?: string) => {
+    if (kind) {
+      const href = {
+        pathname: "/(tabs)/report",
+        params: { kind },
+      } as Href;
+      router.push(href);
+    } else {
+      router.push(REPORT_ROUTE);
+    }
   };
 
   const openAnalytics = () => {

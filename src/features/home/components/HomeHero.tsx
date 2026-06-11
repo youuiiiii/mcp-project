@@ -14,7 +14,7 @@ type HomeHeroProps = {
   highSeverityCount: number;
   onOpenProfile: () => void;
   onOpenMap: () => void;
-  onOpenReport: () => void;
+  onOpenReport: (kind?: string) => void;
   onOpenSos: () => void;
   onOpenAnalytics?: () => void;
   onOpenEarthquake?: () => void;
@@ -34,12 +34,12 @@ export default function HomeHero({
   const { t } = useI18n();
 
   const categories = [
-    { label: "Banjir / Cuaca", icon: "rainy-outline" as const, color: "#E2ECE9", iconColor: "#2F5C50" },
-    { label: "Kebakaran", icon: "flame-outline" as const, color: "#FADCDA", iconColor: "#8D1B1B" },
-    { label: "Kecelakaan", icon: "car-outline" as const, color: "#F5ECD7", iconColor: "#6A5320" },
-    { label: "Medis / Rescue", icon: "pulse-outline" as const, color: "#E2ECE3", iconColor: "#2D5A38" },
-    { label: "Keamanan", icon: "shield-checkmark-outline" as const, color: "#E5ECE9", iconColor: "#3F6653" },
-    { label: "Lainnya", icon: "options-outline" as const, color: "#ECE9E5", iconColor: "#4A4E4A" },
+    { label: "Banjir / Cuaca", icon: "rainy-outline" as const, color: "#E2ECE9", iconColor: "#2F5C50", kind: "flood_or_weather" },
+    { label: "Kebakaran", icon: "flame-outline" as const, color: "#FADCDA", iconColor: "#8D1B1B", kind: "fire_or_smoke" },
+    { label: "Kecelakaan", icon: "car-outline" as const, color: "#F5ECD7", iconColor: "#6A5320", kind: "road_blocked_or_crash" },
+    { label: "Medis / Rescue", icon: "pulse-outline" as const, color: "#E2ECE3", iconColor: "#2D5A38", kind: "medical_or_rescue" },
+    { label: "Keamanan", icon: "shield-checkmark-outline" as const, color: "#E5ECE9", iconColor: "#3F6653", kind: "public_safety" },
+    { label: "Lainnya", icon: "options-outline" as const, color: "#ECE9E5", iconColor: "#4A4E4A", kind: "other_incident" },
   ];
 
   const hasAlerts = activeCount > 0;
@@ -100,7 +100,7 @@ export default function HomeHero({
           {categories.map((cat, idx) => (
             <Pressable
               key={idx}
-              onPress={onOpenReport}
+              onPress={() => onOpenReport(cat.kind)}
               style={({ pressed }) => [
                 styles.categoryItem,
                 pressed && styles.categoryItemPressed,
@@ -139,7 +139,7 @@ export default function HomeHero({
 
         <View style={styles.actionRow}>
           <Pressable
-            onPress={onOpenReport}
+            onPress={() => onOpenReport()}
             style={({ pressed }) => [
               styles.cardActionBtn,
               pressed && styles.cardActionBtnPressed,

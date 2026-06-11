@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 import AppCard from "../../components/ui/AppCard";
 import AppScreen from "../../components/ui/AppScreen";
@@ -79,12 +80,15 @@ export default function EarthquakeDetailScreen() {
               </Text>
             </View>
 
-            <View style={styles.magnitudeBox}>
+            <LinearGradient
+              colors={["#ef4444", "#991b1b"]}
+              style={styles.magnitudeBox}
+            >
               <Text style={styles.magnitudeLabel}>M</Text>
               <Text style={styles.magnitudeValue}>
                 {latest.Magnitude ?? "-"}
               </Text>
-            </View>
+            </LinearGradient>
           </View>
 
           <View style={styles.infoGrid}>
@@ -94,18 +98,18 @@ export default function EarthquakeDetailScreen() {
             <InfoItem label="Coordinates" value={latest.Coordinates ?? "-"} />
           </View>
 
-          <AppCard variant="muted" style={styles.potentialCard}>
-            <Ionicons name="alert-circle" size={20} color={colors.danger} />
+          <AppCard style={[styles.potentialCard, styles.tsunamiCard]}>
+            <Ionicons name="alert-circle" size={20} color={colors.textInverse} />
             <View style={styles.potentialText}>
-              <Text style={styles.potentialTitle}>Potential Impact</Text>
-              <Text style={styles.potentialDescription}>
+              <Text style={[styles.potentialTitle, { color: colors.textInverse }]}>Potential Impact</Text>
+              <Text style={[styles.potentialDescription, { color: "rgba(255,255,255,0.8)" }]}>
                 {latest.Potensi ?? "Potential impact information is unavailable."}
               </Text>
             </View>
           </AppCard>
 
           {latest.Dirasakan ? (
-            <AppCard variant="muted" style={styles.potentialCard}>
+            <AppCard style={styles.potentialCard}>
               <Ionicons name="people" size={20} color={colors.info} />
               <View style={styles.potentialText}>
                 <Text style={styles.potentialTitle}>Felt Reports</Text>
@@ -245,6 +249,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: spacing.md,
+    backgroundColor: colors.surfaceMuted,
+  },
+  tsunamiCard: {
+    backgroundColor: colors.danger,
+    shadowColor: colors.danger,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   potentialText: {
     flex: 1,

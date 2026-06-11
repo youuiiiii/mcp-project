@@ -38,12 +38,18 @@ import type {
 
 const MAP_ROUTE = "/(tabs)/map" as Href;
 
-export const useReportForm = (options?: { onSuccess?: () => void }) => {
+import { isIncidentKind } from "../../../constants/reportTaxonomy";
+
+export const useReportForm = (options?: { onSuccess?: () => void; initialKind?: string }) => {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useI18n();
 
-  const [kind, setKind] = useState<IncidentKind | null>(null);
+  const [kind, setKind] = useState<IncidentKind | null>(
+    options?.initialKind && isIncidentKind(options.initialKind)
+      ? (options.initialKind as IncidentKind)
+      : null
+  );
   const [impactAnswers, setImpactAnswers] = useState<IncidentImpactAnswers>({
     ...DEFAULT_IMPACT_ANSWERS,
   });

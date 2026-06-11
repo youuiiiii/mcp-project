@@ -162,6 +162,36 @@ export const moderationStyles = StyleSheet.create({
     fontWeight: "600",
     color: colors.textMuted,
   },
+  progressBarRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginTop: 2,
+  },
+  progressLabel: {
+    width: 70,
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.textSoft,
+  },
+  progressTrack: {
+    flex: 1,
+    height: 6,
+    backgroundColor: colors.surfaceContainerHigh,
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 3,
+  },
+  progressValue: {
+    width: 30,
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.textMuted,
+    textAlign: "right",
+  },
   reasonInput: {
     minHeight: 76,
     borderRadius: radius.xl,

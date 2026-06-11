@@ -1,4 +1,4 @@
-import { StyleSheet, TextInput, View, Text, TouchableOpacity } from "react-native";
+import { StyleSheet, TextInput, View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import SectionHeader from "../../../components/ui/SectionHeader";
@@ -7,79 +7,31 @@ import { colors } from "../../../theme/colors";
 import { radius, shadow, spacing } from "../../../theme/layout";
 
 type ReportDetailsFieldsProps = {
-  title: string;
   description: string;
   disabled?: boolean;
-  onChangeTitle: (value: string) => void;
   onChangeDescription: (value: string) => void;
 };
 
 export default function ReportDetailsFields({
-  title,
   description,
   disabled = false,
-  onChangeTitle,
   onChangeDescription,
 }: ReportDetailsFieldsProps) {
   const { t } = useI18n();
 
-  const QUICK_TITLES = [
-    "Banjir Bandang",
-    "Pohon Tumbang",
-    "Kebakaran Ruko",
-    "Tanah Longsor",
-    "Kecelakaan Lalu Lintas",
-  ];
-
   return (
     <View style={styles.section}>
       <SectionHeader
-        title={t("report.details.title")}
-        subtitle={t("report.details.subtitle")}
+        title="Detail Tambahan"
+        subtitle="Berikan informasi lebih spesifik jika diperlukan."
       />
-
-      {/* Title Field */}
-      <View style={styles.inputContainer}>
-        <View style={styles.labelRow}>
-          <View style={styles.iconLabel}>
-            <Ionicons name="document-text-outline" size={16} color={colors.primary} />
-            <Text style={styles.labelText}>Judul Laporan</Text>
-          </View>
-          <Text style={[styles.charCounter, title.length > 50 && styles.charWarning]}>
-            {title.length}/50
-          </Text>
-        </View>
-        <TextInput
-          value={title}
-          onChangeText={onChangeTitle}
-          editable={!disabled}
-          placeholder={t("report.details.titlePlaceholder")}
-          placeholderTextColor={colors.textSoft}
-          maxLength={50}
-          style={styles.input}
-        />
-        
-        {/* Quick Suggestion Chips */}
-        <View style={styles.chipsContainer}>
-          {QUICK_TITLES.map((suggestion) => (
-            <TouchableOpacity
-              key={suggestion}
-              disabled={disabled}
-              onPress={() => onChangeTitle(suggestion)}
-              style={styles.chip}
-            >
-              <Text style={styles.chipText}>{suggestion}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
 
       {/* Description Field */}
       <View style={styles.inputContainer}>
         <View style={styles.labelRow}>
           <View style={styles.iconLabel}>
             <Ionicons name="chatbox-ellipses-outline" size={16} color={colors.primary} />
-            <Text style={styles.labelText}>Deskripsi Kejadian</Text>
+            <Text style={styles.labelText}>Catatan (Opsional)</Text>
           </View>
           <Text style={[styles.charCounter, description.length > 500 && styles.charWarning]}>
             {description.length}/500
@@ -89,7 +41,7 @@ export default function ReportDetailsFields({
           value={description}
           onChangeText={onChangeDescription}
           editable={!disabled}
-          placeholder={t("report.details.descriptionPlaceholder")}
+          placeholder="Misal: Ada pohon tumbang yang menutupi jalan utama..."
           placeholderTextColor={colors.textSoft}
           multiline
           maxLength={500}
@@ -105,9 +57,9 @@ export default function ReportDetailsFields({
           <Text style={styles.infoTitle}>Panduan Pelaporan Darurat</Text>
         </View>
         <View style={styles.infoBody}>
-          <Text style={styles.infoItem}>• Berikan informasi keadaan sejelas mungkin.</Text>
-          <Text style={styles.infoItem}>• Tuliskan korban atau dampak jalanan bila ada.</Text>
-          <Text style={styles.infoItem}>• Lampirkan foto asli dari lokasi kejadian.</Text>
+          <Text style={styles.infoItem}>• Detail yang lengkap membantu tim respons.</Text>
+          <Text style={styles.infoItem}>• Tuliskan korban atau jalanan yang terpengaruh bila ada.</Text>
+          <Text style={styles.infoItem}>• Abaikan bagian ini jika situasi mendesak.</Text>
         </View>
       </View>
     </View>

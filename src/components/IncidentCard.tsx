@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useState } from "react";
+import { StyleSheet, Text, TouchableOpacity, View, Pressable } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 
 import { getIncidentDisplayMeta } from "../constants/incident";
@@ -28,49 +29,6 @@ type IncidentCardProps = {
   variant?: "default" | "home";
 };
 
-type IoniconName = ComponentProps<typeof Ionicons>["name"];
-
-type PublicTrustStatus =
-  | "unverified"
-  | "gainingTrust"
-  | "communityVerified"
-  | "moderatorConfirmed"
-  | "resolved";
-
-type PublicTrustMeta = {
-  labelKey: TranslationKey;
-  variant: StatusBadgeVariant;
-  iconName: IoniconName;
-};
-
-const TRUST_META: Record<PublicTrustStatus, PublicTrustMeta> = {
-  unverified: {
-    labelKey: "incident.trust.unverified",
-    variant: "neutral",
-    iconName: "time-outline",
-  },
-  gainingTrust: {
-    labelKey: "incident.trust.gainingTrust",
-    variant: "info",
-    iconName: "sparkles-outline",
-  },
-  communityVerified: {
-    labelKey: "incident.trust.communityVerified",
-    variant: "verified",
-    iconName: "shield-checkmark-outline",
-  },
-  moderatorConfirmed: {
-    labelKey: "incident.trust.moderatorConfirmed",
-    variant: "verified",
-    iconName: "checkmark-circle-outline",
-  },
-  resolved: {
-    labelKey: "incident.trust.resolved",
-    variant: "resolved",
-    iconName: "checkmark-done-circle-outline",
-  },
-};
-
 export default function IncidentCard({
   incident,
   onPress,
@@ -79,17 +37,13 @@ export default function IncidentCard({
   variant = "default",
 }: IncidentCardProps) {
   const { language, t } = useI18n();
-  const isHomeVariant = compact || variant === "home";
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const meta = getIncidentDisplayMeta({
     category: incident.category,
     subcategory: incident.subcategory ?? incident.type,
   });
-  const subcategory = incident.subcategory ?? incident.type ?? null;
-  const categoryLabel = subcategory
-    ? getIncidentSubcategoryLabel(t, subcategory)
-    : getIncidentCategoryLabel(t, incident.category);
-  const trust = getPublicTrustMeta(incident);
-  const confirmationCount = getCommunityConfirmationCount(incident);
+  
   const title = incident.title?.trim() || t("incident.card.untitled");
   const description = incident.description?.trim();
   const dateLabel = formatDate(
@@ -97,9 +51,21 @@ export default function IncidentCard({
     language,
     t("incident.card.timeUnavailable")
   );
-  const metaItems = [categoryLabel, incident.address, dateLabel].filter(
-    (item): item is string => Boolean(item)
-  );
+
+  const urgencyScore = incident.urgencyScore ?? 20;
+  let urgencySegments = 1;
+  let urgencyColor: string = colors.success;
+  let urgencyLabel = "Rendah";
+
+  if (urgencyScore >= 70) {
+    urgencySegments = 3;
+    urgencyColor = colors.danger;
+    urgencyLabel = "Tinggi";
+  } else if (urgencyScore >= 38) {
+    urgencySegments = 2;
+    urgencyColor = colors.warning;
+    urgencyLabel = "Sedang";
+  }
 
   const handleShare = () => {
     shareIncident({
@@ -113,352 +79,219 @@ export default function IncidentCard({
     });
   };
 
-  const isHighSeverity = (incident.urgencyLevel ?? incident.severity) === "high";
+  const verifications = incident.verificationCount ?? 0;
+  const disputes = incident.disputeCount ?? 0;
+  const totalVotes = verifications + disputes;
+  const consensusRatio = totalVotes > 0 ? verifications / totalVotes : 0;
+  
+  const renderUrgencyBar = () => (
+    <View style={styles.urgencyContainer}>
+      <View style={styles.urgencySegmentRow}>
+        <View style={[styles.urgencySegment, { backgroundColor: urgencySegments >= 1 ? urgencyColor : colors.surfaceContainerHigh }]} />
+        <View style={[styles.urgencySegment, { backgroundColor: urgencySegments >= 2 ? urgencyColor : colors.surfaceContainerHigh }]} />
+        <View style={[styles.urgencySegment, { backgroundColor: urgencySegments >= 3 ? urgencyColor : colors.surfaceContainerHigh }]} />
+      </View>
+      <Text style={[styles.urgencyLabel, { color: urgencyColor }]}>Urgensi {urgencyLabel}</Text>
+    </View>
+  );
+
+  const renderConsensusBar = () => (
+    <View style={styles.consensusContainer}>
+      <Text style={styles.consensusTitle}>Konsensus Komunitas</Text>
+      <View style={styles.consensusTrack}>
+        {totalVotes > 0 ? (
+          <>
+            <View style={[styles.consensusFill, { width: `${consensusRatio * 100}%`, backgroundColor: colors.success }]} />
+            <View style={[styles.consensusFill, { width: `${(1 - consensusRatio) * 100}%`, backgroundColor: colors.danger }]} />
+          </>
+        ) : (
+          <View style={[styles.consensusFill, { width: "100%", backgroundColor: colors.surfaceContainerHigh }]} />
+        )}
+      </View>
+      <Text style={styles.consensusText}>
+        {totalVotes > 0 
+          ? `✓ ${Math.round(consensusRatio * 100)}% Mengonfirmasi (${verifications}/${totalVotes})`
+          : "Belum ada verifikasi komunitas."}
+      </Text>
+    </View>
+  );
 
   return (
     <AppCard
-      onPress={onPress ? () => onPress(incident) : undefined}
+      onPress={() => setIsExpanded(!isExpanded)}
       style={[
         styles.card,
-        isHomeVariant && styles.homeCard,
-        isHighSeverity && styles.highSeverityCard,
+        urgencySegments === 3 && styles.highSeverityCard,
       ]}
     >
-      <View style={[styles.header, isHomeVariant && styles.homeHeader]}>
+      <View style={styles.header}>
         <IconBadge
           variant="neutral"
-          size={isHomeVariant ? "md" : "lg"}
+          size="md"
           rounded={true}
           style={{
             backgroundColor: meta.lightColor,
             borderColor: meta.lightColor,
           }}
         >
-          <Ionicons
-            name={meta.iconName}
-            size={isHomeVariant ? 19 : 24}
-            color={meta.color}
-          />
+          <Ionicons name={meta.iconName} size={20} color={meta.color} />
         </IconBadge>
 
         <View style={styles.headerContent}>
-          <Text
-            style={[styles.title, isHomeVariant && styles.homeTitle]}
-            numberOfLines={1}
-          >
-            {title}
-          </Text>
-
-          <Text
-            style={[styles.metaText, isHomeVariant && styles.homeMetaText]}
-            numberOfLines={1}
-          >
-            {metaItems.join(" - ")}
-          </Text>
-        </View>
-      </View>
-
-      <View style={[styles.trustRow, isHomeVariant && styles.homeTrustRow]}>
-        <View style={styles.trustLabelGroup}>
-          <Ionicons
-            name={trust.iconName}
-            size={isHomeVariant ? 14 : 16}
-            color={getTrustIconColor(trust.variant)}
-          />
-          <StatusBadge label={t(trust.labelKey)} variant={trust.variant} size="sm" />
-        </View>
-
-        {confirmationCount > 0 ? (
-          <Text style={styles.confirmationText} numberOfLines={1}>
-            {t(getConfirmationKey(confirmationCount), {
-              count: confirmationCount,
-            })}
-          </Text>
-        ) : null}
-      </View>
-
-      {description ? (
-        <Text
-          style={[styles.description, isHomeVariant && styles.homeDescription]}
-          numberOfLines={2}
-        >
-          {description}
-        </Text>
-      ) : null}
-
-      {showImage ? (
-        <View style={isHomeVariant ? styles.homeMediaRow : styles.mediaRow}>
-          <View style={styles.imageCol}>
-            <IncidentImageGallery
-              imageUri={incident.imageUri}
-              imageUris={incident.imageUris}
-              variant="compact"
-              style={isHomeVariant ? styles.homeImageOverride : styles.galleryImageOverride}
-            />
-          </View>
-
-          <View style={isHomeVariant ? styles.homeMapCol : styles.mapCol}>
-            <MapView
-              liteMode
-              style={styles.miniMap}
-              initialRegion={{
-                latitude: incident.latitude,
-                longitude: incident.longitude,
-                latitudeDelta: 0.01,
-                longitudeDelta: 0.01,
-              }}
-              scrollEnabled={false}
-              zoomEnabled={false}
-              rotateEnabled={false}
-              pitchEnabled={false}
-            >
-              <Marker
-                coordinate={{
-                  latitude: incident.latitude,
-                  longitude: incident.longitude,
-                }}
-                pinColor={colors.danger}
-              />
-            </MapView>
+          <Text style={styles.title} numberOfLines={1}>{title}</Text>
+          <View style={styles.metaRow}>
+            <Text style={styles.metaText}>{meta.label}</Text>
+            <Text style={styles.dotSeparator}>•</Text>
+            <Text style={styles.metaText}>{dateLabel}</Text>
           </View>
         </View>
-      ) : null}
 
-      <View style={[styles.footer, isHomeVariant && styles.homeFooter]}>
-        <View style={styles.dateWrap}>
-          <Ionicons name="time-outline" size={14} color={colors.textSoft} />
-          <Text style={styles.date} numberOfLines={1}>
-            {dateLabel}
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          accessibilityLabel={t("incident.card.share")}
-          accessibilityRole="button"
-          hitSlop={8}
-          onPress={handleShare}
-          style={styles.shareBtn}
-        >
-          <Ionicons name="share-social-outline" size={18} color={colors.textMuted} />
-        </TouchableOpacity>
+        {renderUrgencyBar()}
       </View>
+
+      {isExpanded && (
+        <View style={styles.expandedContent}>
+          {description ? (
+            <Text style={styles.description}>{description}</Text>
+          ) : null}
+
+          {showImage && (
+            <View style={styles.mediaRow}>
+              <View style={styles.imageCol}>
+                <IncidentImageGallery
+                  imageUri={incident.imageUri}
+                  imageUris={incident.imageUris}
+                  variant="compact"
+                  style={styles.galleryImageOverride}
+                />
+              </View>
+
+              <View style={styles.mapCol}>
+                <MapView
+                  liteMode
+                  style={styles.miniMap}
+                  initialRegion={{
+                    latitude: incident.latitude,
+                    longitude: incident.longitude,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
+                  }}
+                  scrollEnabled={false}
+                  zoomEnabled={false}
+                >
+                  <Marker coordinate={{ latitude: incident.latitude, longitude: incident.longitude }} pinColor={colors.danger} />
+                </MapView>
+              </View>
+            </View>
+          )}
+
+          {renderConsensusBar()}
+
+          <View style={styles.actionRow}>
+            <Pressable style={[styles.actionChip, { backgroundColor: `${colors.success}15`, borderColor: colors.success }]} onPress={() => {}}>
+              <Text style={[styles.actionChipText, { color: colors.successDark }]}>👍 Sesuai</Text>
+            </Pressable>
+            <Pressable style={[styles.actionChip, { backgroundColor: `${colors.danger}15`, borderColor: colors.danger }]} onPress={() => {}}>
+              <Text style={[styles.actionChipText, { color: colors.dangerDark }]}>👎 Salah</Text>
+            </Pressable>
+            
+            <View style={{ flex: 1 }} />
+            
+            {onPress && (
+              <Pressable style={styles.primaryBtn} onPress={() => onPress(incident)}>
+                <Text style={styles.primaryBtnText}>Lihat Detail</Text>
+              </Pressable>
+            )}
+          </View>
+        </View>
+      )}
     </AppCard>
   );
 }
 
-function formatDate(
-  date: Date | undefined,
-  language: string,
-  fallback: string
-): string {
-  if (!date) {
-    return fallback;
-  }
-
+function formatDate(date: Date | undefined, language: string, fallback: string): string {
+  if (!date) return fallback;
   return date.toLocaleString(language === "id" ? "id-ID" : "en-US", {
     day: "2-digit",
     month: "short",
-    year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
   });
 }
 
-function getPublicTrustMeta(incident: IncidentReport): PublicTrustMeta {
-  if (incident.status === "resolved" || incident.resolvedAt) {
-    return TRUST_META.resolved;
-  }
-
-  if (incident.moderationStatus === "visible" && incident.moderatedBy) {
-    return TRUST_META.moderatorConfirmed;
-  }
-
-  const verificationCount = getSafeCount(incident.verificationCount);
-  const disputeCount = getSafeCount(incident.disputeCount);
-
-  if (
-    incident.verificationStatus === "verified" ||
-    incident.trustStatus === "community_confirmed" ||
-    (verificationCount >= 2 && verificationCount > disputeCount)
-  ) {
-    return TRUST_META.communityVerified;
-  }
-
-  const hasPositiveCommunitySignals =
-    verificationCount +
-      getSafeCount(incident.accurateCount) +
-      getSafeCount(incident.evidenceCount) >
-    disputeCount + getSafeCount(incident.inaccurateCount);
-
-  if (hasPositiveCommunitySignals) {
-    return TRUST_META.gainingTrust;
-  }
-
-  return TRUST_META.unverified;
-}
-
-function getSafeCount(value?: number | null): number {
-  if (typeof value !== "number" || Number.isNaN(value)) {
-    return 0;
-  }
-
-  return Math.max(0, value);
-}
-
-function getCommunityConfirmationCount(incident: IncidentReport) {
-  return getSafeCount(incident.verificationCount) + getSafeCount(incident.accurateCount);
-}
-
-function getConfirmationKey(count: number): TranslationKey {
-  return count === 1
-    ? "incident.card.confirmationCount.one"
-    : "incident.card.confirmationCount.other";
-}
-
-function getTrustIconColor(variant: StatusBadgeVariant) {
-  if (variant === "verified" || variant === "resolved" || variant === "success") {
-    return colors.success;
-  }
-
-  if (variant === "info") {
-    return colors.info;
-  }
-
-  if (variant === "warning" || variant === "pending") {
-    return colors.warning;
-  }
-
-  if (variant === "danger" || variant === "disputed") {
-    return colors.danger;
-  }
-
-  return colors.textSoft;
-}
-
 const styles = StyleSheet.create({
   card: {
-    borderRadius: radius.lg,                         // 12px Terra card radius
-    gap: spacing.md,
-  },
-  homeCard: {
-    gap: spacing.sm,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  homeHeader: {
-    gap: spacing.sm,
-  },
-  headerContent: {
-    flex: 1,
-  },
-  title: {
-    ...typography.cardTitle,
-    fontWeight: "700",                              // Terra headline weight
-    color: colors.text,
-  },
-  homeTitle: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: "700",                              // Terra headline weight
-  },
-  metaText: {
-    marginTop: 3,
-    ...typography.caption,
-    fontWeight: "700",                              // Terra label weight for metadata
-    color: colors.textMuted,
-  },
-  homeMetaText: {
-    fontSize: 11,
-    lineHeight: 15,
-  },
-  trustRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.md,
-  },
-  homeTrustRow: {
-    gap: spacing.sm,
-  },
-  trustLabelGroup: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  confirmationText: {
-    flex: 1,
-    textAlign: "right",
-    ...typography.caption,
-    fontWeight: "700",                              // Terra label weight
-    color: colors.textMuted,
-  },
-  description: {
-    ...typography.caption,
-    fontWeight: "500",                              // Terra body weight
-    color: colors.textMuted,
-  },
-  homeDescription: {
-    fontSize: 11,
-    lineHeight: 16,
-  },
-  homeImage: {
-    marginTop: spacing.xs,
-    height: 132,
-    borderRadius: radius.md,
-  },
-  footer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(196, 200, 188, 0.3)",     // outline-variant at 30%
-  },
-  homeFooter: {
-    paddingTop: spacing.xs,
-  },
-  dateWrap: {
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    alignItems: "center",
-    gap: 5,
-  },
-  date: {
-    flexShrink: 1,
-    fontSize: 11,
-    fontWeight: "700",                              // Terra label weight
-    color: colors.textSoft,
-  },
-  shareBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: radius.full,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.lg,
+    padding: spacing.md,
   },
   highSeverityCard: {
     borderLeftWidth: 4,
     borderLeftColor: colors.danger,
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  headerContent: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 2,
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.textMuted,
+  },
+  dotSeparator: {
+    fontSize: 10,
+    color: colors.textSoft,
+  },
+  urgencyContainer: {
+    alignItems: "flex-end",
+    gap: 4,
+  },
+  urgencySegmentRow: {
+    flexDirection: "row",
+    gap: 3,
+  },
+  urgencySegment: {
+    width: 12,
+    height: 4,
+    borderRadius: 2,
+  },
+  urgencyLabel: {
+    fontSize: 10,
+    fontWeight: "800",
+  },
+  expandedContent: {
+    marginTop: spacing.md,
+    gap: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceContainer,
+    paddingTop: spacing.md,
+  },
+  description: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: colors.textMuted,
+    lineHeight: 18,
+  },
   mediaRow: {
     flexDirection: "row",
     gap: spacing.sm,
-    height: 120,
+    height: 100,
     width: "100%",
-    marginTop: spacing.xs,
-  },
-  homeMediaRow: {
-    flexDirection: "row",
-    gap: spacing.xs,
-    height: 90,
-    width: "100%",
-    marginTop: spacing.xs,
   },
   imageCol: {
     flex: 1,
@@ -469,21 +302,8 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: radius.md,
   },
-  homeImageOverride: {
-    marginTop: 0,
-    height: "100%",
-    borderRadius: radius.md,
-  },
   mapCol: {
-    width: 120,
-    height: "100%",
-    borderRadius: radius.md,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(196, 200, 188, 0.3)",
-  },
-  homeMapCol: {
-    width: 90,
+    width: 100,
     height: "100%",
     borderRadius: radius.md,
     overflow: "hidden",
@@ -492,5 +312,57 @@ const styles = StyleSheet.create({
   },
   miniMap: {
     flex: 1,
+  },
+  consensusContainer: {
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    gap: 6,
+  },
+  consensusTitle: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  consensusTrack: {
+    flexDirection: "row",
+    height: 6,
+    borderRadius: 3,
+    overflow: "hidden",
+    backgroundColor: colors.surfaceContainerHigh,
+  },
+  consensusFill: {
+    height: "100%",
+  },
+  consensusText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.textMuted,
+  },
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  actionChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+    borderWidth: 1,
+  },
+  actionChipText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  primaryBtn: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: radius.md,
+  },
+  primaryBtnText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.textInverse,
   },
 });

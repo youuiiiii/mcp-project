@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Alert, StyleSheet, Text, View, Modal } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 import AppButton from "../../components/ui/AppButton";
 import AppScreen from "../../components/ui/AppScreen";
@@ -27,11 +27,14 @@ export default function ReportScreen() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [locationPickerVisible, setLocationPickerVisible] = useState(false);
 
+  const { kind: initialKind } = useLocalSearchParams<{ kind?: string }>();
+
   // Initialize form hook with a custom success callback
   const form = useReportForm({
     onSuccess: () => {
       setShowSuccess(true);
     },
+    initialKind,
   });
 
   const handleOpenLocationPicker = async () => {
@@ -61,14 +64,6 @@ export default function ReportScreen() {
       }
       setStep(2);
     } else if (step === 2) {
-      if (!form.title.trim()) {
-        Alert.alert("Judul Diperlukan", "Silakan isi judul laporan Anda.");
-        return;
-      }
-      if (!form.description.trim()) {
-        Alert.alert("Deskripsi Diperlukan", "Silakan isi deskripsi laporan Anda.");
-        return;
-      }
       setStep(3);
     }
   };
@@ -171,10 +166,8 @@ export default function ReportScreen() {
           {step === 2 && (
             <View style={styles.stepWrapper}>
               <ReportDetailsFields
-                title={form.title}
                 description={form.description}
                 disabled={form.loading}
-                onChangeTitle={form.setTitle}
                 onChangeDescription={form.setDescription}
               />
               <View style={styles.divider} />
@@ -224,7 +217,7 @@ export default function ReportScreen() {
                         ]}
                       />
                     </View>
-                    <Text style={styles.scoreText}>{computedUrgency.score}/100 Poin</Text>
+                    {/* <Text style={styles.scoreText}>{computedUrgency.score}/100 Poin</Text> */}
                   </View>
                 </View>
               )}
@@ -261,8 +254,8 @@ export default function ReportScreen() {
                 <View style={styles.summaryDivider} />
 
                 <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Judul Laporan:</Text>
-                  <Text style={styles.summaryValue}>{form.title || "-"}</Text>
+                  <Text style={styles.summaryLabel}>Catatan Tambahan:</Text>
+                  <Text style={styles.summaryValue}>{form.description || "Tidak ada catatan"}</Text>
                 </View>
 
                 <View style={styles.summaryDivider} />
@@ -270,8 +263,7 @@ export default function ReportScreen() {
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Lokasi:</Text>
                   <Text style={styles.summaryValue}>
-                    {form.incidentLocation?.source === "manual_pin" ? "Pin Manual" : "Sinyal GPS Akurat"} 
-                    ({form.incidentLocation?.latitude.toFixed(5)}, {form.incidentLocation?.longitude.toFixed(5)})
+                    {form.incidentLocation?.source === "manual_pin" ? "Pin Manual" : "Lokasi Perangkat"} 
                   </Text>
                 </View>
 

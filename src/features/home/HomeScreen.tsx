@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import HomeEarthquakeSection from "./components/HomeEarthquakeSection";
 import { useBmkgEarthquakes } from "./hooks/useBmkgEarthquakes";
 import EarthquakeAlertModal from "../../components/EarthquakeAlertModal";
@@ -92,6 +92,10 @@ export default function HomeScreen() {
     setSelectedResolveIncident(null);
   };
 
+  const normalReports = home.reports
+    .filter((r) => r.status === "active" && (r.urgencyLevel ?? r.severity) !== "high")
+    .sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0));
+
   return (
     <AppScreen contentContainerStyle={styles.content}>
       <HomeHero
@@ -128,28 +132,52 @@ export default function HomeScreen() {
       ) : null}
 
       <View style={styles.section}>
+        {home.highSeverityReports.length > 0 && (
+          <View style={styles.criticalSection}>
+            <SectionHeader
+              title="Kondisi Darurat Sekitar"
+              subtitle="Laporan dengan prioritas tinggi."
+            />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.criticalCarousel}
+            >
+              {home.highSeverityReports.map((report) => (
+                <View key={report.id} style={styles.criticalCardWrapper}>
+                  <LatestReportCard
+                    report={report}
+                    onPress={() => openIncidentThread(report)}
+                    isCritical
+                  />
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
         <SectionHeader
-          title="Latest Incidents"
-          subtitle="Latest community reports."
+          title="Linimasa Laporan"
+          subtitle="Aktivitas laporan komunitas terbaru."
         />
 
         {home.loadingReports ? (
           <AppCard style={styles.loadingCard}>
-            <LoadingState message="Loading latest reports..." />
+            <LoadingState message="Memuat laporan..." />
           </AppCard>
         ) : null}
 
-        {!home.loadingReports && home.latestReports.length === 0 ? (
+        {!home.loadingReports && home.reports.length === 0 ? (
           <EmptyState
             iconName="map-outline"
-            title="No reports yet"
-            message="Community reports will appear after an incident is submitted."
+            title="Belum ada laporan"
+            message="Laporan dari komunitas akan muncul di sini."
           />
         ) : null}
 
-        {!home.loadingReports && home.latestReports.length > 0 ? (
+        {!home.loadingReports && normalReports.length > 0 ? (
           <View style={styles.reportList}>
-            {home.latestReports.map((report) => (
+            {normalReports.map((report) => (
               <LatestReportCard
                 key={report.id}
                 report={report}
@@ -198,9 +226,11 @@ export default function HomeScreen() {
 function LatestReportCard({
   report,
   onPress,
+  isCritical = false,
 }: {
   report: IncidentReport;
   onPress: () => void;
+  isCritical?: boolean;
 }) {
   const { t } = useI18n();
   const meta = getIncidentDisplayMeta({
@@ -210,7 +240,7 @@ function LatestReportCard({
   const trust = getReportTrustStatus(report);
 
   return (
-    <AppCard onPress={onPress} style={styles.reportCard}>
+    <AppCard onPress={onPress} style={[styles.reportCard, isCritical && styles.criticalReportCard]}>
       <View style={[styles.reportIconCircle, { backgroundColor: meta.lightColor }]}>
         <Ionicons name={meta.iconName} size={20} color={meta.color} />
       </View>
@@ -289,6 +319,22 @@ const styles = StyleSheet.create({
   loadingCard: {
     minHeight: 100,
     justifyContent: "center",
+  },
+  criticalSection: {
+    gap: spacing.md,
+    marginBottom: spacing.md,
+  },
+  criticalCarousel: {
+    paddingRight: spacing.lg,
+    gap: spacing.md,
+  },
+  criticalCardWrapper: {
+    width: 300,
+  },
+  criticalReportCard: {
+    borderColor: colors.danger,
+    borderWidth: 1,
+    backgroundColor: colors.dangerSoft,
   },
   reportList: {
     gap: spacing.md,
