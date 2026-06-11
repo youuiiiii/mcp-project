@@ -38,7 +38,7 @@ import type {
 
 const MAP_ROUTE = "/(tabs)/map" as Href;
 
-export const useReportForm = () => {
+export const useReportForm = (options?: { onSuccess?: () => void }) => {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useI18n();
@@ -296,16 +296,20 @@ export const useReportForm = () => {
         reporterEmail: user.email ?? null,
       });
 
-      Alert.alert(t("report.success.title"), t("report.success.message"), [
-        {
-          text: t("report.success.viewMap"),
-          onPress: () => {
-            resetForm();
-            router.push(MAP_ROUTE);
+      if (options?.onSuccess) {
+        options.onSuccess();
+      } else {
+        Alert.alert(t("report.success.title"), t("report.success.message"), [
+          {
+            text: t("report.success.viewMap"),
+            onPress: () => {
+              resetForm();
+              router.push(MAP_ROUTE);
+            },
           },
-        },
-        { text: t("report.success.createAnother"), onPress: resetForm },
-      ]);
+          { text: t("report.success.createAnother"), onPress: resetForm },
+        ]);
+      }
     } catch (error) {
       console.error("Create report error:", error);
       Alert.alert(
@@ -341,5 +345,6 @@ export const useReportForm = () => {
     pickFromGallery,
     removePhoto,
     handleSubmit,
+    resetForm,
   };
 };
