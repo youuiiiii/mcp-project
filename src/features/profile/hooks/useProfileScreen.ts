@@ -125,13 +125,13 @@ export const useProfileScreen = () => {
   }, [userReports]);
 
   const handleLogout = () => {
-    Alert.alert("Logout", "Log out of this account?", [
+    Alert.alert("Keluar", "Keluar dari akun ini?", [
       {
-        text: "Cancel",
+        text: "Batal",
         style: "cancel",
       },
       {
-        text: "Logout",
+        text: "Keluar",
         style: "destructive",
         onPress: async () => {
           try {
@@ -139,7 +139,7 @@ export const useProfileScreen = () => {
             router.replace(LOGIN_ROUTE);
           } catch (error) {
             console.error("Logout error:", error);
-            Alert.alert("Logout Failed", "Something went wrong while logging out.");
+            Alert.alert("Gagal Keluar", "Terjadi kesalahan saat keluar.");
           }
         },
       },

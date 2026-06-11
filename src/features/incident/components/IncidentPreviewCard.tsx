@@ -53,9 +53,11 @@ export default function IncidentPreviewCard({
           {categoryMeta.label} - {meta.label}
         </Text>
 
-        <Text style={styles.description} numberOfLines={3}>
-          {incident.description || "No description provided."}
-        </Text>
+        {incident.description && !incident.description.includes("reported near the selected map pin") && !incident.description.includes("No additional impact") ? (
+          <Text style={styles.description} numberOfLines={3}>
+            {incident.description}
+          </Text>
+        ) : null}
       </View>
     </AppCard>
   );

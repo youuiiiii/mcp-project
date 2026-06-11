@@ -37,14 +37,14 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
   return (
     <IncidentModalShell
       visible={visible}
-      title="Verification / Condition Update"
-      subtitle="Send a fresh evidence photo and condition notes from the location."
+      title="Konfirmasi Laporan"
+      subtitle="Bantu komunitas dengan mengonfirmasi atau memperbarui kondisi laporan ini."
       submitting={submitting}
       onClose={handleClose}
       footer={
         <>
           <AppButton
-            title="Cancel"
+            title="Batal"
             variant="secondary"
             size="lg"
             disabled={submitting}
@@ -53,7 +53,7 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
           />
 
           <AppButton
-            title="Send to Timeline"
+            title="Kirim Konfirmasi"
             variant="primary"
             size="lg"
             loading={submitting}
@@ -71,8 +71,8 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
 
       <View style={styles.section}>
         <SectionHeader
-          title="Contribution Type"
-          subtitle="Choose whether you are confirming, disputing, or updating the condition."
+          title="Jenis Konfirmasi"
+          subtitle="Pilih apakah kamu mengonfirmasi, membantah, atau memperbarui kondisi laporan."
         />
 
         <View style={styles.optionList}>
@@ -93,8 +93,8 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
 
       <View style={styles.section}>
         <SectionHeader
-          title="Latest Condition"
-          subtitle="Choose the condition that best matches the location."
+          title="Kondisi Saat Ini"
+          subtitle="Pilih kondisi yang paling sesuai dengan situasi di lokasi."
         />
 
         <View style={styles.optionList}>
@@ -114,10 +114,10 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
       </View>
 
       <EvidencePicker
-        title="Latest Evidence Photo"
-        subtitle="A photo is required to prove the latest incident condition."
-        emptyTitle="No photo yet"
-        emptyMessage="A photo is required to prove the latest incident condition."
+        title="Foto Bukti Terbaru"
+        subtitle="Foto diperlukan sebagai bukti kondisi terkini di lokasi."
+        emptyTitle="Belum ada foto"
+        emptyMessage="Tambahkan foto untuk memperkuat konfirmasimu."
         imageUri={imageUri}
         disabled={submitting}
         onTakePhoto={handleTakePhoto}
@@ -127,14 +127,14 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
 
       <View style={styles.section}>
         <SectionHeader
-          title="Condition Notes"
-          subtitle="Write short and clear notes based on the on-site condition."
+          title="Catatan Kondisi"
+          subtitle="Tulis catatan singkat tentang kondisi yang kamu lihat di lokasi."
         />
 
         <TextInput
           value={note}
           onChangeText={setNote}
-          placeholder="Example: The incident is still active, but one lane can be used."
+          placeholder="Contoh: Jalan masih terblokir, satu lajur bisa digunakan."
           placeholderTextColor={colors.textSoft}
           style={styles.input}
           multiline
@@ -143,7 +143,7 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
         />
 
         <StatusBadge
-          label={`${Math.max(note.trim().length, 0)}/8 minimum characters`}
+          label={note.trim().length >= 8 ? "Catatan sudah cukup" : "Minimal 8 karakter"}
           variant={note.trim().length >= 8 ? "success" : "neutral"}
           size="sm"
         />

@@ -1,17 +1,19 @@
 import { Ionicons } from "@expo/vector-icons";
-import { TextInput, View } from "react-native";
+import { Text, View } from "react-native";
+import { StyleSheet } from "react-native";
 
 import EvidencePicker from "../features/incident/components/EvidencePicker";
 import IncidentModalShell from "../features/incident/components/IncidentModalShell";
 import IncidentPreviewCard from "../features/incident/components/IncidentPreviewCard";
 import { colors } from "../theme/colors";
+import { radius, spacing } from "../theme/layout";
 import { useResolveIncidentModal } from "./resolveIncident/useResolveIncidentModal";
 import { resolveIncidentModalStyles as styles } from "./resolveIncident/resolveIncidentModalStyles";
 import type { ResolveIncidentModalProps } from "./resolveIncident/types";
 import AppButton from "./ui/AppButton";
-import AppCard from "./ui/AppCard";
 import SectionHeader from "./ui/SectionHeader";
 import StatusBadge from "./ui/StatusBadge";
+import { TextInput } from "react-native";
 
 export default function ResolveIncidentModal(props: ResolveIncidentModalProps) {
   const { visible, incident } = props;
@@ -31,14 +33,14 @@ export default function ResolveIncidentModal(props: ResolveIncidentModalProps) {
   return (
     <IncidentModalShell
       visible={visible}
-      title="Moderator Resolution"
-      subtitle="Upload evidence and notes before closing this report."
+      title="Tandai Selesai"
+      subtitle="Unggah bukti dan catatan sebelum menutup laporan ini."
       submitting={submitting}
       onClose={handleClose}
       footer={
         <>
           <AppButton
-            title="Cancel"
+            title="Batal"
             variant="secondary"
             size="lg"
             disabled={submitting}
@@ -47,8 +49,8 @@ export default function ResolveIncidentModal(props: ResolveIncidentModalProps) {
           />
 
           <AppButton
-            title="Mark Resolved"
-            variant="danger"
+            title="Tandai Selesai"
+            variant="primary"
             size="lg"
             loading={submitting}
             disabled={!canSubmit}
@@ -67,25 +69,19 @@ export default function ResolveIncidentModal(props: ResolveIncidentModalProps) {
     >
       {incident ? <IncidentPreviewCard incident={incident} /> : null}
 
-      <AppCard variant="muted" style={styles.noticeCard}>
-        <StatusBadge label="Validation Required" variant="warning" size="sm" />
-
-        <View style={styles.noticeTextGroup}>
-          <Ionicons name="warning" size={20} color={colors.warningDark} />
-          <TextInput
-            editable={false}
-            multiline
-            value="The photo should match the report and show that the location is safe, cleared, or no longer disrupting nearby activity."
-            style={styles.noticeText}
-          />
-        </View>
-      </AppCard>
+      {/* Notice / validation warning */}
+      <View style={localStyles.noticeCard}>
+        <Ionicons name="information-circle" size={18} color={colors.warningDark} />
+        <Text style={localStyles.noticeText}>
+          Foto harus menunjukkan bahwa lokasi sudah aman, bersih, atau tidak lagi mengganggu aktivitas sekitar.
+        </Text>
+      </View>
 
       <EvidencePicker
-        title="Resolution Evidence Photo"
-        subtitle="Upload a fresh photo as evidence that the incident is resolved."
-        emptyTitle="No resolution evidence yet"
-        emptyMessage="Upload a fresh photo as evidence that the incident is resolved."
+        title="Foto Bukti Penyelesaian"
+        subtitle="Unggah foto terbaru sebagai bukti bahwa insiden sudah selesai."
+        emptyTitle="Belum ada foto"
+        emptyMessage="Tambahkan foto sebagai bukti kondisi terkini di lokasi."
         imageUri={imageUri}
         disabled={submitting}
         onTakePhoto={handleTakePhoto}
@@ -95,14 +91,14 @@ export default function ResolveIncidentModal(props: ResolveIncidentModalProps) {
 
       <View style={styles.section}>
         <SectionHeader
-          title="Resolution Notes"
-          subtitle="Explain why this report can be marked resolved."
+          title="Catatan Penyelesaian"
+          subtitle="Jelaskan mengapa laporan ini bisa ditandai selesai."
         />
 
         <TextInput
           value={resolutionNote}
           onChangeText={setResolutionNote}
-          placeholder="Example: The road has been cleared and vehicles can pass."
+          placeholder="Contoh: Jalan sudah dibersihkan dan kendaraan bisa melintas."
           placeholderTextColor={colors.textSoft}
           style={styles.input}
           multiline
@@ -111,10 +107,7 @@ export default function ResolveIncidentModal(props: ResolveIncidentModalProps) {
         />
 
         <StatusBadge
-          label={`${Math.max(
-            resolutionNote.trim().length,
-            0
-          )}/10 minimum characters`}
+          label={resolutionNote.trim().length >= 10 ? "Catatan sudah cukup" : "Minimal 10 karakter"}
           variant={resolutionNote.trim().length >= 10 ? "success" : "neutral"}
           size="sm"
         />
@@ -122,3 +115,23 @@ export default function ResolveIncidentModal(props: ResolveIncidentModalProps) {
     </IncidentModalShell>
   );
 }
+
+const localStyles = StyleSheet.create({
+  noticeCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    backgroundColor: colors.warningSoft,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.warning,
+  },
+  noticeText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "500",
+    color: colors.warningDark,
+  },
+});

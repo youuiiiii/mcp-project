@@ -45,14 +45,14 @@ export default function IncidentTimeline({
     <View style={styles.section}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>Recent Activity</Text>
+          <Text style={styles.title}>Aktivitas Terbaru</Text>
           <Text style={styles.subtitle}>
-            Recent status and evidence changes for this report.
+            Pembaruan status dan bukti terbaru untuk laporan ini.
           </Text>
         </View>
 
         <StatusBadge
-          label={`${items.length} update${items.length === 1 ? "" : "s"}`}
+          label={`${items.length} pembaruan`}
           variant="info"
           size="sm"
         />
@@ -80,11 +80,11 @@ function buildTimelineItems({
     id: `report-${incident.id}`,
     kind: "report",
     date: incident.createdAt,
-    title: "Report created",
-    message: incident.title || "A new report was added to SIGAP.",
+    title: "Laporan dibuat",
+    message: incident.title || "Laporan baru ditambahkan ke SIGAP.",
     author: incident.reportedBy ?? incident.reporterEmail,
     color: colors.info,
-    badgeLabel: "Report",
+    badgeLabel: "Laporan",
   };
 
   const verificationItems: TimelineItem[] = verifications.map((item) => ({
@@ -114,7 +114,7 @@ function buildTimelineItems({
         imageUri: item.imageUri,
         color: updateMeta.color,
         badgeLabel: item.imageUri
-          ? `${updateMeta.shortLabel} + photo`
+          ? `${updateMeta.shortLabel} + foto`
           : updateMeta.shortLabel,
       };
     });
@@ -126,14 +126,14 @@ function buildTimelineItems({
             id: `resolved-${incident.id}`,
             kind: "resolved",
             date: incident.resolvedAt,
-            title: "Marked resolved",
+            title: "Ditandai selesai",
             message:
               incident.resolutionNote ||
-              "This report has been marked resolved by the community.",
+              "Laporan ini telah ditandai selesai oleh komunitas.",
             author: incident.resolvedBy,
             imageUri: incident.resolvedImageUri,
             color: colors.success,
-            badgeLabel: "Resolved",
+            badgeLabel: "Selesai",
           },
         ]
       : [];
@@ -178,8 +178,8 @@ function TimelineRow({
         </Text>
 
         <Text style={styles.meta} numberOfLines={1}>
-          {item.author || "Anonymous"} - {formatIncidentDate(item.date)}
-          {item.imageUri ? " - has photo" : ""}
+          {item.author || "Pengguna"} · {formatIncidentDate(item.date)}
+          {item.imageUri ? " · ada foto" : ""}
         </Text>
       </View>
     </View>

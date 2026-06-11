@@ -8,9 +8,6 @@ import {
   View,
 } from "react-native";
 
-import AppCard from "../../../components/ui/AppCard";
-import IconBadge from "../../../components/ui/IconBadge";
-import StatusBadge from "../../../components/ui/StatusBadge";
 import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
 import { typography } from "../../../theme/typography";
@@ -28,13 +25,6 @@ type IncidentsHeaderProps = {
   onFilterChange: (value: IncidentFilter) => void;
 };
 
-type SummaryItem = {
-  label: string;
-  value: number;
-  iconName: keyof typeof Ionicons.glyphMap;
-  color: string;
-};
-
 export default function IncidentsHeader({
   summary,
   searchQuery,
@@ -42,73 +32,36 @@ export default function IncidentsHeader({
   onSearchChange,
   onFilterChange,
 }: IncidentsHeaderProps) {
-  const summaryItems: SummaryItem[] = [
-    {
-      label: "Total",
-      value: summary.total,
-      iconName: "layers",
-      color: colors.info,
-    },
-    {
-      label: "Active",
-      value: summary.active,
-      iconName: "radio",
-      color: colors.danger,
-    },
-    {
-      label: "Resolved",
-      value: summary.resolved,
-      iconName: "checkmark-circle",
-      color: colors.success,
-    },
-    {
-      label: "High urgency",
-      value: summary.highSeverity,
-      iconName: "alert-circle",
-      color: colors.warningDark,
-    },
-  ];
-
   return (
     <View style={styles.container}>
+      {/* Page title */}
       <View style={styles.hero}>
-        <StatusBadge label="Realtime Incidents" variant="info" size="sm" />
-
-        <Text style={styles.title}>Incidents</Text>
-
+        <Text style={styles.title}>Laporan Insiden</Text>
         <Text style={styles.subtitle}>
-          Monitor community incidents, open detail threads, verify reports, and
-          resolve confirmed incidents.
+          {summary.total > 0
+            ? `${summary.active} aktif · ${summary.resolved} selesai · ${summary.total} total`
+            : "Belum ada laporan di area ini."}
         </Text>
       </View>
 
-      <View style={styles.summaryGrid}>
-        {summaryItems.map((item) => (
-          <AppCard key={item.label} style={styles.summaryCard}>
-            <IconBadge variant="neutral" size="md" rounded={false}>
-              <Ionicons name={item.iconName} size={22} color={item.color} />
-            </IconBadge>
-
-            <Text style={styles.summaryValue}>{item.value}</Text>
-            <Text style={styles.summaryLabel}>{item.label}</Text>
-          </AppCard>
-        ))}
+      {/* Search bar */}
+      <View style={styles.searchBar}>
+        <Ionicons name="search" size={18} color={colors.textSoft} />
+        <TextInput
+          value={searchQuery}
+          onChangeText={onSearchChange}
+          placeholder="Cari laporan, kategori, atau status..."
+          placeholderTextColor={colors.textSoft}
+          style={styles.searchInput}
+        />
+        {searchQuery.length > 0 && (
+          <Pressable onPress={() => onSearchChange("")}>
+            <Ionicons name="close-circle" size={18} color={colors.textSoft} />
+          </Pressable>
+        )}
       </View>
 
-      <AppCard style={styles.searchCard}>
-        <View style={styles.searchRow}>
-          <Ionicons name="search" size={18} color={colors.textSoft} />
-
-          <TextInput
-            value={searchQuery}
-            onChangeText={onSearchChange}
-            placeholder="Search incidents, categories, status, or reporter..."
-            placeholderTextColor={colors.textSoft}
-            style={styles.searchInput}
-          />
-        </View>
-      </AppCard>
-
+      {/* Filter chips */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -145,52 +98,37 @@ export default function IncidentsHeader({
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing.lg,
+    gap: spacing.md,
   },
   hero: {
-    gap: spacing.sm,
+    gap: 4,
   },
   title: {
-    ...typography.hero,
+    fontSize: 24,
+    fontWeight: "800",
     color: colors.text,
   },
   subtitle: {
-    ...typography.body,
+    fontSize: 13,
+    fontWeight: "500",
     color: colors.textMuted,
   },
-  summaryGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.md,
-  },
-  summaryCard: {
-    width: "48%",
-    minHeight: 118,
-  },
-  summaryValue: {
-    marginTop: spacing.md,
-    fontSize: 26,
-    fontWeight: "900",
-    color: colors.text,
-  },
-  summaryLabel: {
-    marginTop: 4,
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  searchCard: {
-    paddingVertical: spacing.sm,
-  },
-  searchRow: {
+  searchBar: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
     gap: spacing.sm,
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 4,
     ...typography.body,
     color: colors.text,
+    padding: 0,
   },
   filterRow: {
     gap: spacing.sm,

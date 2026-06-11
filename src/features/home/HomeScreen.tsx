@@ -261,9 +261,12 @@ function LatestReportCard({
           {meta.label} - {getUrgencyLabel(report)}
         </Text>
 
-        <Text style={styles.reportDescription} numberOfLines={2}>
-          {report.description || "No description provided."}
-        </Text>
+        {/* Only show description if it's user-written, not an auto-generated technical string */}
+        {report.description && !report.description.includes("reported near the selected map pin") && !report.description.includes("No additional impact") ? (
+          <Text style={styles.reportDescription} numberOfLines={2}>
+            {report.description}
+          </Text>
+        ) : null}
       </View>
     </AppCard>
   );
@@ -272,19 +275,15 @@ function LatestReportCard({
 function getUrgencyLabel(incident: IncidentReport) {
   const urgency = incident.urgencyLevel ?? incident.severity;
 
-  if (typeof incident.urgencyScore === "number") {
-    return `Urgency ${incident.urgencyScore}`;
-  }
-
   if (urgency === "high") {
-    return "High urgency";
+    return "Urgensi Tinggi";
   }
 
   if (urgency === "medium") {
-    return "Medium urgency";
+    return "Urgensi Sedang";
   }
 
-  return "Low urgency";
+  return "Urgensi Rendah";
 }
 
 

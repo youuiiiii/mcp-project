@@ -55,16 +55,16 @@ export default function IncidentCard({
   const urgencyScore = incident.urgencyScore ?? 20;
   let urgencySegments = 1;
   let urgencyColor: string = colors.success;
-  let urgencyLabel = "Rendah";
+  let urgencyLabel = "Urgensi Rendah";
 
   if (urgencyScore >= 70) {
     urgencySegments = 3;
     urgencyColor = colors.danger;
-    urgencyLabel = "Tinggi";
+    urgencyLabel = "Urgensi Tinggi";
   } else if (urgencyScore >= 38) {
     urgencySegments = 2;
     urgencyColor = colors.warning;
-    urgencyLabel = "Sedang";
+    urgencyLabel = "Urgensi Sedang";
   }
 
   const handleShare = () => {
@@ -95,26 +95,38 @@ export default function IncidentCard({
     </View>
   );
 
-  const renderConsensusBar = () => (
-    <View style={styles.consensusContainer}>
-      <Text style={styles.consensusTitle}>Konsensus Komunitas</Text>
-      <View style={styles.consensusTrack}>
-        {totalVotes > 0 ? (
-          <>
-            <View style={[styles.consensusFill, { width: `${consensusRatio * 100}%`, backgroundColor: colors.success }]} />
-            <View style={[styles.consensusFill, { width: `${(1 - consensusRatio) * 100}%`, backgroundColor: colors.danger }]} />
-          </>
-        ) : (
-          <View style={[styles.consensusFill, { width: "100%", backgroundColor: colors.surfaceContainerHigh }]} />
-        )}
+  const renderConsensusBar = () => {
+    if (totalVotes === 0) {
+      return (
+        <View style={styles.consensusContainer}>
+          <Text style={styles.consensusText}>Belum ada konfirmasi dari komunitas.</Text>
+        </View>
+      );
+    }
+    if (verifications > disputes) {
+      return (
+        <View style={styles.consensusContainer}>
+          <Text style={styles.consensusText}>
+            {verifications} orang mengonfirmasi laporan ini.
+          </Text>
+        </View>
+      );
+    }
+    if (disputes > verifications) {
+      return (
+        <View style={styles.consensusContainer}>
+          <Text style={styles.consensusText}>
+            Beberapa pengguna mempertanyakan keakuratan laporan ini.
+          </Text>
+        </View>
+      );
+    }
+    return (
+      <View style={styles.consensusContainer}>
+        <Text style={styles.consensusText}>Respons komunitas masih berimbang.</Text>
       </View>
-      <Text style={styles.consensusText}>
-        {totalVotes > 0 
-          ? `✓ ${Math.round(consensusRatio * 100)}% Mengonfirmasi (${verifications}/${totalVotes})`
-          : "Belum ada verifikasi komunitas."}
-      </Text>
-    </View>
-  );
+    );
+  };
 
   return (
     <AppCard
@@ -151,7 +163,7 @@ export default function IncidentCard({
 
       {isExpanded && (
         <View style={styles.expandedContent}>
-          {description ? (
+          {description && !description.includes("reported near the selected map pin") && !description.includes("No additional impact") ? (
             <Text style={styles.description}>{description}</Text>
           ) : null}
 
@@ -317,25 +329,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceMuted,
     borderRadius: radius.md,
     padding: spacing.sm,
-    gap: 6,
-  },
-  consensusTitle: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  consensusTrack: {
-    flexDirection: "row",
-    height: 6,
-    borderRadius: 3,
-    overflow: "hidden",
-    backgroundColor: colors.surfaceContainerHigh,
-  },
-  consensusFill: {
-    height: "100%",
   },
   consensusText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "600",
     color: colors.textMuted,
   },

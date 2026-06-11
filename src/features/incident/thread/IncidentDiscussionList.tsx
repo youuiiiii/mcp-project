@@ -45,13 +45,13 @@ export default function IncidentDiscussionList({
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Community Comments</Text>
+        <Text style={styles.sectionTitle}>Komentar Komunitas</Text>
         <Text style={styles.sectionSubtitle}>
-          {replies.length} comments available
+          {replies.length} komentar
         </Text>
       </View>
 
-      {loading ? <LoadingState message="Loading comments..." /> : null}
+      {loading ? <LoadingState message="Memuat komentar..." /> : null}
 
       {!loading && replies.length === 0 ? (
         <View style={styles.emptyState}>
@@ -62,9 +62,9 @@ export default function IncidentDiscussionList({
           />
 
           <View style={styles.emptyTextGroup}>
-            <Text style={styles.emptyTitle}>No comments yet</Text>
+            <Text style={styles.emptyTitle}>Belum ada komentar</Text>
             <Text style={styles.emptyText}>
-              Be the first to add useful information.
+              Jadilah yang pertama menambahkan informasi berguna.
             </Text>
           </View>
         </View>

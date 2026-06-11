@@ -38,7 +38,7 @@ export default function IncidentAccuracyPanel({
           <Text style={styles.title}>Pengecekan Lokasi</Text>
           <Text style={styles.subtitle}>
             {disabledReason ??
-              "Khusus pengguna di sekitar lokasi: konfirmasi apakah insiden masih ada."}
+              "Apakah insiden ini masih berlangsung di lokasi? Konfirmasi jika kamu berada di sekitar area tersebut."}
           </Text>
         </View>
 

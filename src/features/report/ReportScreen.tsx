@@ -14,7 +14,6 @@ import { typography } from "../../theme/typography";
 import ImpactQuestionSelector from "./components/ImpactQuestionSelector";
 import IncidentKindSelector from "./components/IncidentKindSelector";
 import IncidentLocationPickerModal from "./components/IncidentLocationPickerModal";
-import ReportDetailsFields from "./components/ReportDetailsFields";
 import ReportEvidenceSection from "./components/ReportEvidenceSection";
 import ReportLocationNotice from "./components/ReportLocationNotice";
 import { useReportForm } from "./hooks/useReportForm";
@@ -92,8 +91,8 @@ export default function ReportScreen() {
           <Text style={styles.title}>{t("report.header.title")}</Text>
           <Text style={styles.subtitle}>
             {step === 1 && "Tentukan lokasi kejadian dan pilih kategori insiden."}
-            {step === 2 && "Berikan detail deskripsi serta laporkan dampak di sekitar lokasi."}
-            {step === 3 && "Lampirkan bukti foto dan periksa kembali detail laporan Anda."}
+            {step === 2 && "Tandai kondisi dan dampak yang terjadi di sekitar lokasi."}
+            {step === 3 && "Lampirkan foto sebagai bukti dan periksa kembali laporan Anda."}
           </Text>
         </View>
 
@@ -165,12 +164,6 @@ export default function ReportScreen() {
 
           {step === 2 && (
             <View style={styles.stepWrapper}>
-              <ReportDetailsFields
-                description={form.description}
-                disabled={form.loading}
-                onChangeDescription={form.setDescription}
-              />
-              <View style={styles.divider} />
               <ImpactQuestionSelector
                 answers={form.impactAnswers}
                 disabled={form.loading}
@@ -251,14 +244,7 @@ export default function ReportScreen() {
                   )}
                 </View>
 
-                <View style={styles.summaryDivider} />
 
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Catatan Tambahan:</Text>
-                  <Text style={styles.summaryValue}>{form.description || "Tidak ada catatan"}</Text>
-                </View>
-
-                <View style={styles.summaryDivider} />
 
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Lokasi:</Text>

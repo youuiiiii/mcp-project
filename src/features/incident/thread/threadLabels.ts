@@ -22,44 +22,44 @@ export type CommunityUpdateMeta = {
 
 export const COMMUNITY_UPDATE_META = {
   still_happening: {
-    label: "Still Happening",
-    shortLabel: "Active",
-    description: "The condition is still happening at the location.",
+    label: "Masih Terjadi",
+    shortLabel: "Aktif",
+    description: "Kondisi masih berlangsung di lokasi.",
     iconName: "radio",
     color: colors.danger,
   },
   getting_worse: {
-    label: "Getting Worse",
-    shortLabel: "Worse",
-    description: "The condition appears to be getting worse or more risky.",
+    label: "Semakin Parah",
+    shortLabel: "Memburuk",
+    description: "Kondisi tampak semakin memburuk atau semakin berbahaya.",
     iconName: "trending-up",
     color: colors.primaryDark,
   },
   improving: {
-    label: "Improving",
-    shortLabel: "Better",
-    description: "The condition is improving but not fully resolved yet.",
+    label: "Membaik",
+    shortLabel: "Membaik",
+    description: "Kondisi membaik tapi belum sepenuhnya selesai.",
     iconName: "trending-down",
     color: colors.info,
   },
   safe_now: {
-    label: "Safe Now",
-    shortLabel: "Safe",
-    description: "The location appears safe or the incident has calmed down.",
+    label: "Sudah Aman",
+    shortLabel: "Aman",
+    description: "Lokasi tampak aman atau kejadian sudah mereda.",
     iconName: "checkmark-circle",
     color: colors.success,
   },
   not_found: {
-    label: "Not Found",
-    shortLabel: "Not Found",
-    description: "The incident is not visible at the reported location.",
+    label: "Tidak Ditemukan",
+    shortLabel: "Tidak Ada",
+    description: "Kejadian tidak terlihat di lokasi yang dilaporkan.",
     iconName: "help-circle",
     color: colors.warningDark,
   },
   additional_info: {
-    label: "Additional Info",
+    label: "Info Tambahan",
     shortLabel: "Info",
-    description: "Extra context, photos, or notes from the community.",
+    description: "Konteks, foto, atau catatan tambahan dari komunitas.",
     iconName: "chatbubble-ellipses",
     color: colors.textMuted,
   },
@@ -82,7 +82,7 @@ export function getCommunityUpdateMeta(
 
 export function formatIncidentDate(date?: Date) {
   if (!date) {
-    return "Time unavailable";
+    return "Waktu tidak tersedia";
   }
 
   return date.toLocaleString("id-ID", {
@@ -96,11 +96,11 @@ export function formatIncidentDate(date?: Date) {
 
 export function getStatusLabel(status: IncidentReport["status"]) {
   if (status === "active") {
-    return "Active";
+    return "Aktif";
   }
 
   if (status === "resolved") {
-    return "Resolved";
+    return "Selesai";
   }
 
   return String(status);
@@ -124,14 +124,14 @@ export function getVerificationLabel(
   type: IncidentVerification["verificationType"]
 ) {
   if (type === "valid") {
-    return "Confirmed";
+    return "Dikonfirmasi";
   }
 
   if (type === "invalid") {
-    return "Not Accurate";
+    return "Tidak Akurat";
   }
 
-  return "Condition Update";
+  return "Pembaruan Kondisi";
 }
 
 export function getVerificationColor(
@@ -150,26 +150,26 @@ export function getVerificationColor(
 
 export function getConditionLabel(conditionStatus?: IncidentConditionStatus) {
   if (conditionStatus === "still_happening") {
-    return "Still happening";
+    return "Masih terjadi";
   }
 
   if (conditionStatus === "getting_worse") {
-    return "Getting worse";
+    return "Semakin parah";
   }
 
   if (conditionStatus === "partially_resolved") {
-    return "Improving";
+    return "Membaik";
   }
 
   if (conditionStatus === "resolved_but_not_closed") {
-    return "Appears resolved";
+    return "Tampak selesai";
   }
 
   if (conditionStatus === "not_found") {
-    return "Not found";
+    return "Tidak ditemukan";
   }
 
-  return "Condition not specified";
+  return "Kondisi tidak ditentukan";
 }
 
 export function getTimelineIcon(kind: TimelineKind): AppIconName {

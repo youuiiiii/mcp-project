@@ -41,14 +41,14 @@ export default function IncidentReplyComposer({
   onSubmitReply,
 }: IncidentReplyComposerProps) {
   const targetName =
-    replyingTo?.userName || replyingTo?.userEmail || "this comment";
+    replyingTo?.userName || replyingTo?.userEmail || "komentar ini";
 
   return (
     <View style={styles.wrapper}>
       {replyingTo ? (
         <View style={styles.replyingToBox}>
           <View style={styles.replyingTextGroup}>
-            <Text style={styles.replyingLabel}>Replying to</Text>
+            <Text style={styles.replyingLabel}>Membalas</Text>
             <Text style={styles.replyingName} numberOfLines={1}>
               {targetName}
             </Text>
@@ -115,8 +115,8 @@ export default function IncidentReplyComposer({
           editable={!replySubmitting}
           placeholder={
             replyingTo
-              ? "Write a reply..."
-              : "Add helpful context or a short comment..."
+              ? "Tulis balasan..."
+              : "Tambahkan konteks atau komentar singkat..."
           }
           placeholderTextColor={colors.textSoft}
           multiline

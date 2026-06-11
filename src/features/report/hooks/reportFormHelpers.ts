@@ -23,17 +23,23 @@ export function buildReportDraft({
   t: TFunction;
 }) {
   const kindLabel = t(kindOption.labelKey);
-  const title = cleanTitle || kindOption.defaultTitle;
+
+  // Use kind label as the title — simple and user-readable
+  const title = cleanTitle || kindLabel;
+
   const selectedImpacts = IMPACT_QUESTION_OPTIONS.filter((item) => {
     return impactAnswers[item.value] === true;
   }).map((item) => t(item.labelKey));
-  const impactSentence =
-    selectedImpacts.length > 0
-      ? `Current impact: ${selectedImpacts.join(", ")}.`
-      : "No additional impact flags selected.";
-  const description =
-    cleanDescription ||
-    `${kindLabel} reported near the selected map pin. ${impactSentence}`;
+
+  // Build a clean, human-friendly description
+  let description = cleanDescription;
+  if (!description) {
+    if (selectedImpacts.length > 0) {
+      description = `${kindLabel} dilaporkan di area ini. Dampak: ${selectedImpacts.join(", ")}.`;
+    } else {
+      description = `${kindLabel} dilaporkan di area ini.`;
+    }
+  }
 
   return {
     title,
