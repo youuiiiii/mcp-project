@@ -13,8 +13,8 @@ import StatusBadge from "../../../components/ui/StatusBadge";
 import { colors } from "../../../theme/colors";
 import { radius } from "../../../theme/layout";
 import type { IncidentReply } from "../../../types/incident";
-import { incidentDiscussionStyles as styles } from "./incidentDiscussionStyles";
 import { formatIncidentDate, getCommunityUpdateMeta } from "./threadLabels";
+import { useI18n } from "../../../i18n";
 
 export function ReplyItem({
   reply,
@@ -78,7 +78,8 @@ function ReplyContent({
   onReplyTo: (reply: IncidentReply) => void;
   onPreviewImage: (imageUri: string) => void;
 }) {
-  const author = reply.userName || reply.userEmail || "Anonymous";
+  const { t, language } = useI18n();
+  const author = reply.userName || reply.userEmail || t("incident.discussion.anonymous");
   const updateMeta = getCommunityUpdateMeta(reply.updateType);
 
   return (
@@ -91,13 +92,13 @@ function ReplyContent({
         <Text style={styles.replyDot}>-</Text>
 
         <Text style={styles.replyTime} numberOfLines={1}>
-          {formatIncidentDate(reply.createdAt)}
+          {formatIncidentDate(reply.createdAt, t, language as any)}
         </Text>
       </View>
 
       {!compact ? (
         <StatusBadge
-          label={updateMeta.label}
+          label={t(updateMeta.label as any)}
           variant={getUpdateBadgeVariant(reply.updateType)}
           size="sm"
           style={styles.updateBadge}
@@ -106,7 +107,7 @@ function ReplyContent({
 
       {reply.replyToUserName ? (
         <Text style={styles.replyingToText}>
-          Replying to {reply.replyToUserName}
+          {t("incident.discussion.replyingTo", { name: reply.replyToUserName })}
         </Text>
       ) : null}
 
@@ -132,7 +133,7 @@ function ReplyContent({
           color={colors.textMuted}
         />
 
-        <Text style={styles.replyActionText}>Reply</Text>
+        <Text style={styles.replyActionText}>{t("incident.discussion.replyAction")}</Text>
       </Pressable>
     </View>
   );
@@ -173,6 +174,7 @@ function NaturalReplyImage({
   compact: boolean;
   onPress: () => void;
 }) {
+  const { t } = useI18n();
   const [containerWidth, setContainerWidth] = useState(0);
   const [aspectRatio, setAspectRatio] = useState<number | null>(null);
 
@@ -235,7 +237,7 @@ function NaturalReplyImage({
 
       <View style={styles.imageHint}>
         <Ionicons name="expand-outline" size={13} color={colors.textInverse} />
-        <Text style={styles.imageHintText}>View</Text>
+        <Text style={styles.imageHintText}>{t("common.view")}</Text>
       </View>
     </Pressable>
   );

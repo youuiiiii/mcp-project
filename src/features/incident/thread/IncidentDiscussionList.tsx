@@ -10,6 +10,7 @@ import {
   ReplyItem,
 } from "./IncidentDiscussionItems";
 import { incidentDiscussionStyles as styles } from "./incidentDiscussionStyles";
+import { useI18n } from "../../../i18n";
 
 type IncidentDiscussionListProps = {
   replies: IncidentReply[];
@@ -22,6 +23,7 @@ export default function IncidentDiscussionList({
   loading,
   onReplyTo,
 }: IncidentDiscussionListProps) {
+  const { t } = useI18n();
   const [previewImageUri, setPreviewImageUri] = useState<string | null>(null);
 
   const topLevelReplies = replies.filter((reply) => !reply.parentReplyId);
@@ -45,13 +47,13 @@ export default function IncidentDiscussionList({
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Komentar Komunitas</Text>
+        <Text style={styles.sectionTitle}>{t("incident.discussion.title")}</Text>
         <Text style={styles.sectionSubtitle}>
-          {replies.length} komentar
+          {t("incident.discussion.count", { count: replies.length })}
         </Text>
       </View>
 
-      {loading ? <LoadingState message="Memuat komentar..." /> : null}
+      {loading ? <LoadingState message={t("incident.discussion.loading")} /> : null}
 
       {!loading && replies.length === 0 ? (
         <View style={styles.emptyState}>
@@ -62,9 +64,9 @@ export default function IncidentDiscussionList({
           />
 
           <View style={styles.emptyTextGroup}>
-            <Text style={styles.emptyTitle}>Belum ada komentar</Text>
+            <Text style={styles.emptyTitle}>{t("incident.discussion.emptyTitle")}</Text>
             <Text style={styles.emptyText}>
-              Jadilah yang pertama menambahkan informasi berguna.
+              {t("incident.discussion.emptyDesc")}
             </Text>
           </View>
         </View>

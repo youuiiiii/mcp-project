@@ -12,6 +12,7 @@ import type { ResolveIncidentModalProps } from "./resolveIncident/types";
 import AppButton from "./ui/AppButton";
 import SectionHeader from "./ui/SectionHeader";
 import StatusBadge from "./ui/StatusBadge";
+import { useI18n } from "../i18n";
 
 export default function ResolveIncidentModal(props: ResolveIncidentModalProps) {
   const { visible, incident } = props;
@@ -27,18 +28,19 @@ export default function ResolveIncidentModal(props: ResolveIncidentModalProps) {
     handlePickFromGallery,
     handleSubmit,
   } = useResolveIncidentModal(props);
+  const { t } = useI18n();
 
   return (
     <IncidentModalShell
       visible={visible}
-      title="Tandai Selesai"
-      subtitle="Unggah bukti dan catatan sebelum menutup laporan ini."
+      title={t("incident.resolve.title")}
+      subtitle={t("incident.resolve.subtitle")}
       submitting={submitting}
       onClose={handleClose}
       footer={
         <>
           <AppButton
-            title="Batal"
+            title={t("common.cancel")}
             variant="secondary"
             size="lg"
             disabled={submitting}
@@ -47,7 +49,7 @@ export default function ResolveIncidentModal(props: ResolveIncidentModalProps) {
           />
 
           <AppButton
-            title="Tandai Selesai"
+            title={t("incident.resolve.submit")}
             variant="primary"
             size="lg"
             loading={submitting}
@@ -71,15 +73,15 @@ export default function ResolveIncidentModal(props: ResolveIncidentModalProps) {
       <View style={localStyles.noticeCard}>
         <Ionicons name="information-circle" size={18} color={colors.warningDark} />
         <Text style={localStyles.noticeText}>
-          Foto harus menunjukkan bahwa lokasi sudah aman, bersih, atau tidak lagi mengganggu aktivitas sekitar.
+          {t("incident.resolve.notice")}
         </Text>
       </View>
 
       <EvidencePicker
-        title="Foto Bukti Penyelesaian"
-        subtitle="Unggah foto terbaru sebagai bukti bahwa insiden sudah selesai."
-        emptyTitle="Belum ada foto"
-        emptyMessage="Tambahkan foto sebagai bukti kondisi terkini di lokasi."
+        title={t("incident.resolve.photoTitle")}
+        subtitle={t("incident.resolve.photoSubtitle")}
+        emptyTitle={t("incident.resolve.photoEmpty")}
+        emptyMessage={t("incident.resolve.photoEmptyDesc")}
         imageUri={imageUri}
         disabled={submitting}
         onTakePhoto={handleTakePhoto}
@@ -89,14 +91,14 @@ export default function ResolveIncidentModal(props: ResolveIncidentModalProps) {
 
       <View style={styles.section}>
         <SectionHeader
-          title="Catatan Penyelesaian"
-          subtitle="Jelaskan mengapa laporan ini bisa ditandai selesai."
+          title={t("incident.resolve.notesTitle")}
+          subtitle={t("incident.resolve.notesSubtitle")}
         />
 
         <TextInput
           value={resolutionNote}
           onChangeText={setResolutionNote}
-          placeholder="Contoh: Jalan sudah dibersihkan dan kendaraan bisa melintas."
+          placeholder={t("incident.resolve.notesPlaceholder")}
           placeholderTextColor={colors.textSoft}
           style={styles.input}
           multiline
@@ -105,7 +107,7 @@ export default function ResolveIncidentModal(props: ResolveIncidentModalProps) {
         />
 
         <StatusBadge
-          label={resolutionNote.trim().length >= 10 ? "Catatan sudah cukup" : "Minimal 10 karakter"}
+          label={resolutionNote.trim().length >= 10 ? t("incident.resolve.notesSufficient") : t("incident.resolve.notesMin")}
           variant={resolutionNote.trim().length >= 10 ? "success" : "neutral"}
           size="sm"
         />

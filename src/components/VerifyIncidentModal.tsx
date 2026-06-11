@@ -13,6 +13,7 @@ import type { VerifyIncidentModalProps } from "./verifyIncident/types";
 import { useVerifyIncidentModal } from "./verifyIncident/useVerifyIncidentModal";
 import { verifyIncidentModalStyles as styles } from "./verifyIncident/verifyIncidentModalStyles";
 import { VERIFICATION_OPTIONS } from "./verifyIncident/verificationOptions";
+import { useI18n } from "../../i18n";
 
 export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
   const { visible, incident } = props;
@@ -33,18 +34,19 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
     handlePickFromGallery,
     handleSubmit,
   } = useVerifyIncidentModal(props);
+  const { t } = useI18n();
 
   return (
     <IncidentModalShell
       visible={visible}
-      title="Incident Verification"
-      subtitle="Help the community by confirming or updating the condition of this incident."
+      title={t("incident.verify.title")}
+      subtitle={t("incident.verify.subtitle")}
       submitting={submitting}
       onClose={handleClose}
       footer={
         <>
           <AppButton
-            title="Cancel"
+            title={t("common.cancel")}
             variant="secondary"
             size="lg"
             disabled={submitting}
@@ -53,7 +55,7 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
           />
 
           <AppButton
-            title="Submit Verification"
+            title={t("incident.verify.submit")}
             variant="primary"
             size="lg"
             loading={submitting}
@@ -71,16 +73,16 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
 
       <View style={styles.section}>
         <SectionHeader
-          title="Verification Type"
-          subtitle="Choose whether you are confirming, disputing, or updating the incident."
+          title={t("incident.verify.typeTitle")}
+          subtitle={t("incident.verify.typeSubtitle")}
         />
 
         <View style={styles.optionList}>
           {VERIFICATION_OPTIONS.map((item) => (
             <SelectableOptionCard
               key={item.value}
-              label={item.label}
-              description={item.description}
+              label={t(item.label as any)}
+              description={t(item.description as any)}
               icon={item.icon}
               color={item.color}
               active={verificationType === item.value}
@@ -93,16 +95,16 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
 
       <View style={styles.section}>
         <SectionHeader
-          title="Current Condition"
-          subtitle="Select the condition that best matches the situation on the ground."
+          title={t("incident.verify.conditionTitle")}
+          subtitle={t("incident.verify.conditionSubtitle")}
         />
 
         <View style={styles.optionList}>
           {conditionOptions.map((item) => (
             <SelectableOptionCard
               key={item.value}
-              label={item.label}
-              description={item.description}
+              label={t(item.label as any)}
+              description={t(item.description as any)}
               icon={item.icon}
               color={item.color}
               active={conditionStatus === item.value}
@@ -114,10 +116,10 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
       </View>
 
       <EvidencePicker
-        title="Recent Evidence Photo"
-        subtitle="A photo is required as evidence of the current condition."
-        emptyTitle="No photo added"
-        emptyMessage="Add a photo to support your verification."
+        title={t("incident.verify.photoTitle")}
+        subtitle={t("incident.verify.photoSubtitle")}
+        emptyTitle={t("incident.verify.photoEmpty")}
+        emptyMessage={t("incident.verify.photoEmptyDesc")}
         imageUri={imageUri}
         disabled={submitting}
         onTakePhoto={handleTakePhoto}
@@ -127,14 +129,14 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
 
       <View style={styles.section}>
         <SectionHeader
-          title="Condition Notes"
-          subtitle="Write a brief note about the condition you observe at the location."
+          title={t("incident.verify.notesTitle")}
+          subtitle={t("incident.verify.notesSubtitle")}
         />
 
         <TextInput
           value={note}
           onChangeText={setNote}
-          placeholder="Example: Road is still blocked, one lane is passable."
+          placeholder={t("incident.verify.notesPlaceholder")}
           placeholderTextColor={colors.textSoft}
           style={styles.input}
           multiline
@@ -143,7 +145,7 @@ export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
         />
 
         <StatusBadge
-          label={note.trim().length >= 8 ? "Notes are sufficient" : "Minimum 8 characters"}
+          label={note.trim().length >= 8 ? t("incident.verify.notesSufficient") : t("incident.verify.notesMin")}
           variant={note.trim().length >= 8 ? "success" : "neutral"}
           size="sm"
         />

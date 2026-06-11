@@ -8,8 +8,9 @@ import ResolveIncidentModal from "../../../components/ResolveIncidentModal";
 import VerifyIncidentModal from "../../../components/VerifyIncidentModal";
 import AppScreen from "../../../components/ui/AppScreen";
 import LoadingState from "../../../components/ui/LoadingState";
-import { useAuth } from "../../../contexts/AuthContext";
 import { getIncidentDisplayMeta } from "../../../constants/incident";
+import { useAuth } from "../../../contexts/AuthContext";
+import { useI18n } from "../../../i18n";
 import { createIncidentContentReport, subscribeToIncident } from "../../../services/incidentService";
 import { colors } from "../../../theme/colors";
 import { radius, shadow, spacing } from "../../../theme/layout";
@@ -32,6 +33,7 @@ export default function IncidentDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const reportId = Array.isArray(id) ? id[0] : id;
   const { user, isModerator } = useAuth();
+  const { t, language } = useI18n();
 
   const [incident, setIncident] = useState<IncidentReport | null>(null);
   const [loading, setLoading] = useState(true);
@@ -136,19 +138,28 @@ export default function IncidentDetailScreen() {
       if (!incident) return;
 
       if (!user) {
-        Alert.alert("Login Required", "Please log in to report content.");
+        Alert.alert(
+          t("incident.alert.loginRequired.title"),
+          t("incident.alert.loginRequired.message")
+        );
         return;
       }
 
       if (!selectedReason) {
-        Alert.alert("Reason Required", "Select a reason to report this content.");
+        Alert.alert(
+          t("incident.alert.reasonRequired.title"),
+          t("incident.alert.reasonRequired.message")
+        );
         return;
       }
 
       const actorKey = user.uid || user.email;
 
       if (!actorKey) {
-        Alert.alert("Invalid Identity", "Your account is not valid.");
+        Alert.alert(
+          t("incident.alert.invalidIdentity.title"),
+          t("incident.alert.invalidIdentity.message")
+        );
         return;
       }
 
@@ -170,15 +181,15 @@ export default function IncidentDetailScreen() {
       setReportNote("");
 
       Alert.alert(
-        "Report Submitted",
-        "Thank you. This report will be reviewed by our team."
+        t("incident.alert.reportSubmitted.title"),
+        t("incident.alert.reportSubmitted.message")
       );
     } catch (error) {
       Alert.alert(
-        "Failed to Report Content",
+        t("incident.alert.reportFailed.title"),
         error instanceof Error
           ? error.message
-          : "An error occurred while submitting the content report."
+          : t("incident.alert.reportFailed.message")
       );
     } finally {
       setReportSubmitting(false);
@@ -188,7 +199,7 @@ export default function IncidentDetailScreen() {
   if (loading) {
     return (
       <AppScreen scroll={false} contentContainerStyle={styles.loadingContainer}>
-        <LoadingState message="Loading incident..." />
+        <LoadingState message={t("incident.loading")} />
       </AppScreen>
     );
   }
@@ -202,13 +213,13 @@ export default function IncidentDetailScreen() {
           end={{ x: 1, y: 1 }}
           style={styles.emptyHero}
         >
-          <BackButton />
-          <Text style={styles.emptyTitle}>Incident unavailable</Text>
+          <BackButton t={t} />
+          <Text style={styles.emptyTitle}>{t("incident.unavailable.title")}</Text>
         </LinearGradient>
 
         <View style={styles.emptyBody}>
           <Text style={styles.emptyMessage}>
-            {errorMessage ?? "This incident could not be loaded."}
+            {errorMessage ?? t("incident.unavailable.desc")}
           </Text>
         </View>
       </AppScreen>
@@ -233,7 +244,7 @@ export default function IncidentDetailScreen() {
           style={styles.hero}
         >
           <View style={styles.heroTopRow}>
-            <BackButton />
+            <BackButton t={t} />
             <Pressable onPress={handleShare} style={({ pressed }) => [styles.heroIconButton, pressed && styles.actionPressed]}>
               <Ionicons name="share-social-outline" size={22} color={colors.textInverse} />
             </Pressable>
@@ -246,7 +257,7 @@ export default function IncidentDetailScreen() {
 
             <View style={styles.heroCopy}>
               <Text style={styles.heroTitle} numberOfLines={2}>
-                {incident.title || meta.shortLabel || "Incident"}
+                {incident.title || t(meta.shortLabel as any) || t("incident.defaultTitle")}
               </Text>
               
               <View style={styles.heroLocationRow}>
@@ -272,20 +283,20 @@ export default function IncidentDetailScreen() {
 
         <View style={styles.body}>
           <View style={styles.metricsRow}>
-            <MetricItem icon="warning-outline" value={`${severity} Severity`} />
-            <MetricItem icon="flag-outline" value={`${totalReports} Reports`} />
-            <MetricItem icon="people-outline" value={`${responders} Responders`} />
+            <MetricItem icon="warning-outline" value={t("incident.meta.severity", { severity })} />
+            <MetricItem icon="flag-outline" value={t("incident.meta.reports", { count: totalReports })} />
+            <MetricItem icon="people-outline" value={t("incident.meta.responders", { count: responders })} />
           </View>
 
           <View style={styles.timeRow}>
             <Ionicons name="time-outline" size={14} color={colors.textSoft} />
             <Text style={styles.timeText}>
-              Reported {formatRelativeTime(incident.createdAt)} - {formatIncidentDate(incident.createdAt)}
+              {t("incident.meta.reportedAt", { time: formatRelativeTime(incident.createdAt, t), date: formatIncidentDate(incident.createdAt, t, language as any) })}
             </Text>
           </View>
 
           <Text style={styles.description}>
-            {cleanDescription(incident.description) || "No extra description was provided."}
+            {cleanDescription(incident.description) || t("incident.meta.noDescription")}
           </Text>
 
 
@@ -300,7 +311,7 @@ export default function IncidentDetailScreen() {
             >
               <Ionicons name="shield-checkmark" size={20} color={colors.textInverse} />
               <Text style={styles.primaryActionText}>
-                Verify & Update Condition
+                {t("incident.action.verify")}
               </Text>
               <View style={styles.gamificationBadge}>
                 <Text style={styles.gamificationText}>+5 Pts</Text>
@@ -312,14 +323,14 @@ export default function IncidentDetailScreen() {
             <View style={styles.quickActions}>
               <ActionChip
                 icon="checkmark-done-outline"
-                label="Mark as Resolved (Admin)"
+                label={t("incident.action.markResolved")}
                 onPress={() => setResolveVisible(true)}
               />
             </View>
           ) : null}
 
           <View style={styles.threadBlock}>
-            <Text style={styles.sectionTitle}>Community Updates</Text>
+            <Text style={styles.sectionTitle}>{t("incident.section.updates")}</Text>
 
             <IncidentTimeline
               incident={incident}
@@ -333,7 +344,7 @@ export default function IncidentDetailScreen() {
               currentUserVote={thread.accuracySummary.currentUserVote}
               disabledReason={
                 thread.isOwnIncident
-                  ? "Your report has been counted. Nearby users can confirm if the incident is still active."
+                  ? t("incident.accuracy.disabledReason")
                   : null
               }
               label={thread.accuracySummary.label}
@@ -365,7 +376,7 @@ export default function IncidentDetailScreen() {
 
           <Pressable onPress={openReportContentModal} style={styles.reportFalseButton}>
             <Ionicons name="flag" size={14} color={colors.danger} />
-            <Text style={styles.reportFalseText}>Report as false or inappropriate</Text>
+            <Text style={styles.reportFalseText}>{t("incident.action.reportFalse")}</Text>
           </Pressable>
         </View>
       </AppScreen>
@@ -404,14 +415,14 @@ export default function IncidentDetailScreen() {
   );
 }
 
-function BackButton() {
+function BackButton({ t }: { t: any }) {
   return (
     <Pressable
       onPress={() => router.back()}
       style={({ pressed }) => [styles.backButton, pressed && styles.actionPressed]}
     >
       <Ionicons name="chevron-back" size={22} color={colors.textInverse} />
-      <Text style={styles.backText}>Back</Text>
+      <Text style={styles.backText}>{t("common.back")}</Text>
     </Pressable>
   );
 }
@@ -509,24 +520,24 @@ function cleanDescription(description?: string) {
   return description.trim();
 }
 
-function formatRelativeTime(date?: Date): string {
-  if (!date) return "Unknown time";
+function formatRelativeTime(date: Date | undefined, t: any): string {
+  if (!date) return t("common.time.unknown");
 
   const diffMs = Date.now() - date.getTime();
   const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
 
   if (diffMinutes < 60) {
-    return `${diffMinutes} minutes ago`;
+    return t("common.time.minutesAgo", { min: diffMinutes });
   }
 
   const diffHours = Math.floor(diffMinutes / 60);
 
   if (diffHours < 24) {
-    return `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`;
+    return t("common.time.hoursAgo", { hour: diffHours });
   }
 
   const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays} ${diffDays === 1 ? "day" : "days"} ago`;
+  return t("common.time.daysAgo", { day: diffDays });
 }
 
 const styles = StyleSheet.create({

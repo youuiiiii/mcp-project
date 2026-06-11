@@ -56,13 +56,15 @@ export default function ProfileScreen() {
 
   const router = useRouter();
   const { isModerator, roleLoading } = useAuth();
-  const { language, languageOptions, setLanguage } = useI18n();
+  const { t, language, languageOptions, setLanguage } = useI18n();
   const [isEditingName, setIsEditingName] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [checkingAlerts, setCheckingAlerts] = useState(false);
   const [checkingBmkg, setCheckingBmkg] = useState(false);
 
-  const roleLabel = isModerator ? "Moderator" : "Community Member";
+  const roleLabel = isModerator
+    ? t("profile.role.moderator")
+    : t("profile.role.communityMember");
   const profileImageUri = draftPhotoUri;
 
   const submitName = async () => {
@@ -72,7 +74,10 @@ export default function ProfileScreen() {
     }
 
     if (draftName.trim().length < 2) {
-      Alert.alert("Name too short", "Name must be at least 2 characters.");
+      Alert.alert(
+        t("profile.alert.nameTooShort.title"),
+        t("profile.alert.nameTooShort.message")
+      );
       return;
     }
 
@@ -92,7 +97,9 @@ export default function ProfileScreen() {
 
     setCheckingAlerts(false);
     Alert.alert(
-      result.notified ? "Nearby alert sent" : "Nearby alerts checked",
+      result.notified
+        ? t("profile.alert.nearbySent.title")
+        : t("profile.alert.nearbyChecked.title"),
       result.message
     );
   };
@@ -105,10 +112,10 @@ export default function ProfileScreen() {
       router.push(EARTHQUAKE_ROUTE);
     } catch (error) {
       Alert.alert(
-        "Could not load BMKG",
+        t("profile.alert.bmkgError.title"),
         error instanceof Error
           ? error.message
-          : "Could not fetch BMKG earthquake data."
+          : t("profile.alert.bmkgError.message")
       );
     } finally {
       setCheckingBmkg(false);
@@ -122,8 +129,8 @@ export default function ProfileScreen() {
     }
 
     Alert.alert(
-      "Moderation is protected",
-      "Fake-report moderation is available for moderator accounts. You can still report suspicious content from an incident detail."
+      t("profile.alert.moderationProtected.title"),
+      t("profile.alert.moderationProtected.message")
     );
   };
 
@@ -205,28 +212,28 @@ export default function ProfileScreen() {
           ) : null}
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Achievement Badges</Text>
+            <Text style={styles.sectionTitle}>{t("profile.title.badges")}</Text>
             <View style={styles.badgeGrid}>
               <AchievementBadge
-                label="Active Reporter"
+                label={t("profile.badge.activeReporter")}
                 iconName="flame"
                 active={stats.totalReports > 0}
                 color={colors.danger}
               />
               <AchievementBadge
-                label="Quick Responder"
+                label={t("profile.badge.quickResponder")}
                 iconName="flash"
                 active={stats.highSeverityReports > 0}
                 color={colors.warning}
               />
               <AchievementBadge
-                label="Contributor"
+                label={t("profile.badge.contributor")}
                 iconName="ribbon"
                 active={stats.points > 0}
                 color={colors.success}
               />
               <AchievementBadge
-                label="Volunteer"
+                label={t("profile.badge.volunteer")}
                 iconName="shield"
                 active={stats.areas >= 3}
                 color={colors.info}
@@ -235,41 +242,41 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Settings</Text>
+            <Text style={styles.sectionTitle}>{t("profile.title.settings")}</Text>
             <AppCard style={styles.settingsCard} padding="none">
               <SettingsRow
                 iconName="notifications-outline"
-                title="Nearby Incident Alerts"
-                subtitle="Check and notify incidents near you"
+                title={t("profile.settings.nearbyAlerts")}
+                subtitle={t("profile.settings.nearbyAlertsDesc")}
                 busy={checkingAlerts}
                 onPress={handleNearbyAlerts}
               />
               <SettingsRow
                 iconName="pulse-outline"
-                title="BMKG Integration"
-                subtitle="Latest earthquake feed and alerts"
+                title={t("profile.settings.bmkg")}
+                subtitle={t("profile.settings.bmkgDesc")}
                 busy={checkingBmkg}
                 onPress={handleBmkgAlerts}
               />
               <SettingsRow
                 iconName="book-outline"
-                title="Safety Education"
-                subtitle="Preparedness guide"
+                title={t("profile.settings.education")}
+                subtitle={t("profile.settings.educationDesc")}
                 onPress={() => router.push(EDUCATION_ROUTE)}
               />
               <SettingsRow
                 iconName="document-text-outline"
-                title="Report History"
-                subtitle="Your previous reports"
+                title={t("profile.settings.history")}
+                subtitle={t("profile.settings.historyDesc")}
                 onPress={() => router.push(ACTIVITY_ROUTE)}
               />
               <SettingsRow
                 iconName="shield-checkmark-outline"
-                title="Fake Report Moderation"
+                title={t("profile.settings.moderation")}
                 subtitle={
                   isModerator
-                    ? "Review reported content"
-                    : "Report suspicious content from incident detail"
+                    ? t("profile.settings.moderationDesc.mod")
+                    : t("profile.settings.moderationDesc.user")
                 }
                 onPress={handleModerationPress}
               />
@@ -278,8 +285,8 @@ export default function ProfileScreen() {
                   <Ionicons name="language-outline" size={20} color={colors.primary} />
                 </View>
                 <View style={styles.settingsText}>
-                  <Text style={styles.settingsTitle}>Language</Text>
-                  <Text style={styles.settingsSubtitle}>English / Indonesian</Text>
+                  <Text style={styles.settingsTitle}>{t("profile.settings.language")}</Text>
+                  <Text style={styles.settingsSubtitle}>{t("profile.settings.languageDesc")}</Text>
                 </View>
                 <View style={styles.languageSwitch}>
                   {languageOptions.map((item) => {
@@ -318,7 +325,7 @@ export default function ProfileScreen() {
             ]}
           >
             <Ionicons name="log-out-outline" size={20} color={colors.danger} />
-            <Text style={styles.logoutButtonText}>Log Out</Text>
+            <Text style={styles.logoutButtonText}>{t("profile.action.logout")}</Text>
           </Pressable>
         </View>
       </AppScreen>
@@ -331,26 +338,26 @@ export default function ProfileScreen() {
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Edit Profile Name</Text>
+            <Text style={styles.modalTitle}>{t("profile.modal.editName.title")}</Text>
             <TextInput
               value={draftName}
               onChangeText={setDraftName}
               editable={!savingProfile}
               autoFocus
-              placeholder="Enter your name"
+              placeholder={t("profile.modal.editName.placeholder")}
               placeholderTextColor={colors.textSoft}
               style={styles.nameInput}
             />
             <View style={styles.modalBtnRow}>
               <AppButton
-                title="Cancel"
+                title={t("common.cancel")}
                 variant="secondary"
                 size="md"
                 onPress={cancelEditName}
                 style={styles.modalBtnCancel}
               />
               <AppButton
-                title="Save"
+                title={t("common.save")}
                 variant="primary"
                 size="md"
                 loading={savingProfile}
@@ -374,20 +381,20 @@ export default function ProfileScreen() {
             <View style={styles.modalIconWrap}>
               <Ionicons name="log-out-outline" size={32} color={colors.danger} />
             </View>
-            <Text style={styles.modalTitle}>Sign Out</Text>
+            <Text style={styles.modalTitle}>{t("profile.modal.logout.title")}</Text>
             <Text style={styles.modalMessage}>
-              Are you sure you want to sign out of this account?
+              {t("profile.modal.logout.message")}
             </Text>
             <View style={styles.modalBtnRow}>
               <AppButton
-                title="Cancel"
+                title={t("common.cancel")}
                 variant="secondary"
                 size="md"
                 onPress={() => setLogoutModalVisible(false)}
                 style={styles.modalBtnCancel}
               />
               <AppButton
-                title="Sign Out"
+                title={t("profile.action.logout")}
                 variant="danger"
                 size="md"
                 onPress={() => {
@@ -405,24 +412,25 @@ export default function ProfileScreen() {
 }
 
 function StatsPanel({ stats }: { stats: ProfileStats }) {
+  const { t } = useI18n();
   const items = [
     {
-      label: "Reports",
+      label: t("profile.stats.reports"),
       value: stats.totalReports,
       iconName: "document-text-outline" as const,
     },
     {
-      label: "Points",
+      label: t("profile.stats.points"),
       value: stats.points,
       iconName: "star-outline" as const,
     },
     {
-      label: "Areas",
+      label: t("profile.stats.areas"),
       value: stats.areas,
       iconName: "location-outline" as const,
     },
     {
-      label: "Badges",
+      label: t("profile.stats.badges"),
       value: stats.badges,
       iconName: "ribbon-outline" as const,
     },

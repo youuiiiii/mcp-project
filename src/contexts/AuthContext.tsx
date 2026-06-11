@@ -5,6 +5,8 @@ import {
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 import {
   ReactNode,
@@ -36,6 +38,7 @@ type AuthContextValue = {
     photoURL?: string | null;
   }) => Promise<void>;
   logout: () => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -142,6 +145,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setProfileRevision((current) => current + 1);
   };
 
+  const loginWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+  };
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -155,6 +163,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       register,
       updateUserProfile,
       logout,
+      loginWithGoogle,
     }),
     [user, loading, role, roleSource, roleLoading, isModerator, profileRevision]
   );

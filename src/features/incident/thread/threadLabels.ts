@@ -22,44 +22,44 @@ export type CommunityUpdateMeta = {
 
 export const COMMUNITY_UPDATE_META = {
   still_happening: {
-    label: "Masih Terjadi",
-    shortLabel: "Aktif",
-    description: "Kondisi masih berlangsung di lokasi.",
+    label: "thread.update.still_happening.label",
+    shortLabel: "thread.update.still_happening.short",
+    description: "thread.update.still_happening.desc",
     iconName: "radio",
     color: colors.danger,
   },
   getting_worse: {
-    label: "Semakin Parah",
-    shortLabel: "Memburuk",
-    description: "Kondisi tampak semakin memburuk atau semakin berbahaya.",
+    label: "thread.update.getting_worse.label",
+    shortLabel: "thread.update.getting_worse.short",
+    description: "thread.update.getting_worse.desc",
     iconName: "trending-up",
     color: colors.primaryDark,
   },
   improving: {
-    label: "Membaik",
-    shortLabel: "Membaik",
-    description: "Kondisi membaik tapi belum sepenuhnya selesai.",
+    label: "thread.update.improving.label",
+    shortLabel: "thread.update.improving.short",
+    description: "thread.update.improving.desc",
     iconName: "trending-down",
     color: colors.info,
   },
   safe_now: {
-    label: "Sudah Aman",
-    shortLabel: "Aman",
-    description: "Lokasi tampak aman atau kejadian sudah mereda.",
+    label: "thread.update.safe_now.label",
+    shortLabel: "thread.update.safe_now.short",
+    description: "thread.update.safe_now.desc",
     iconName: "checkmark-circle",
     color: colors.success,
   },
   not_found: {
-    label: "Tidak Ditemukan",
-    shortLabel: "Tidak Ada",
-    description: "Kejadian tidak terlihat di lokasi yang dilaporkan.",
+    label: "thread.update.not_found.label",
+    shortLabel: "thread.update.not_found.short",
+    description: "thread.update.not_found.desc",
     iconName: "help-circle",
     color: colors.warningDark,
   },
   additional_info: {
-    label: "Info Tambahan",
-    shortLabel: "Info",
-    description: "Konteks, foto, atau catatan tambahan dari komunitas.",
+    label: "thread.update.additional_info.label",
+    shortLabel: "thread.update.additional_info.short",
+    description: "thread.update.additional_info.desc",
     iconName: "chatbubble-ellipses",
     color: colors.textMuted,
   },
@@ -80,12 +80,12 @@ export function getCommunityUpdateMeta(
   return COMMUNITY_UPDATE_META[updateType ?? "additional_info"];
 }
 
-export function formatIncidentDate(date?: Date) {
+export function formatIncidentDate(date: Date | undefined, t: any, language: "en" | "id") {
   if (!date) {
-    return "Waktu tidak tersedia";
+    return t("common.time.unavailable");
   }
 
-  return date.toLocaleString("id-ID", {
+  return date.toLocaleString(language === "id" ? "id-ID" : "en-US", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -94,13 +94,13 @@ export function formatIncidentDate(date?: Date) {
   });
 }
 
-export function getStatusLabel(status: IncidentReport["status"]) {
+export function getStatusLabel(status: IncidentReport["status"], t: any) {
   if (status === "active") {
-    return "Aktif";
+    return t("thread.status.active");
   }
 
   if (status === "resolved") {
-    return "Selesai";
+    return t("thread.status.resolved");
   }
 
   return String(status);
@@ -121,17 +121,18 @@ export function getStatusVariant(
 }
 
 export function getVerificationLabel(
-  type: IncidentVerification["verificationType"]
+  type: IncidentVerification["verificationType"],
+  t: any
 ) {
   if (type === "valid") {
-    return "Dikonfirmasi";
+    return t("thread.verification.valid");
   }
 
   if (type === "invalid") {
-    return "Tidak Akurat";
+    return t("thread.verification.invalid");
   }
 
-  return "Pembaruan Kondisi";
+  return t("thread.verification.update");
 }
 
 export function getVerificationColor(
@@ -148,28 +149,28 @@ export function getVerificationColor(
   return colors.warning;
 }
 
-export function getConditionLabel(conditionStatus?: IncidentConditionStatus) {
+export function getConditionLabel(conditionStatus: IncidentConditionStatus | undefined, t: any) {
   if (conditionStatus === "still_happening") {
-    return "Masih terjadi";
+    return t("thread.condition.still_happening");
   }
 
   if (conditionStatus === "getting_worse") {
-    return "Semakin parah";
+    return t("thread.condition.getting_worse");
   }
 
   if (conditionStatus === "partially_resolved") {
-    return "Membaik";
+    return t("thread.condition.partially_resolved");
   }
 
   if (conditionStatus === "resolved_but_not_closed") {
-    return "Tampak selesai";
+    return t("thread.condition.resolved_but_not_closed");
   }
 
   if (conditionStatus === "not_found") {
-    return "Tidak ditemukan";
+    return t("thread.condition.not_found");
   }
 
-  return "Kondisi tidak ditentukan";
+  return t("thread.condition.unknown");
 }
 
 export function getTimelineIcon(kind: TimelineKind): AppIconName {

@@ -24,6 +24,7 @@ import {
   type AppIconName,
 } from "../../constants/incident";
 import { useAuth } from "../../contexts/AuthContext";
+import { useI18n } from "../../i18n";
 import { subscribeToIncidents } from "../../services/incidentService";
 import { checkAndNotifyNearbySos } from "../../services/notifications";
 import { subscribeToSOSLogs } from "../../services/sosService";
@@ -51,7 +52,7 @@ type QuickAction = {
 
 const QUICK_ACTIONS: QuickAction[] = [
   {
-    label: "Report",
+    label: "home.quick.report",
     iconName: "megaphone",
     href: REPORT_ROUTE,
     iconColor: colors.danger,
@@ -59,7 +60,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     backgroundColor: "#FFF5F5",
   },
   {
-    label: "Earthquake",
+    label: "home.quick.earthquake",
     iconName: "earth",
     href: EARTHQUAKE_ROUTE,
     iconColor: "#0EA5E9",
@@ -67,7 +68,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     backgroundColor: "#F0F9FF",
   },
   {
-    label: "Education",
+    label: "home.quick.education",
     iconName: "book",
     href: EDUCATION_ROUTE,
     iconColor: "#10B981",
@@ -75,7 +76,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     backgroundColor: "#ECFDF5",
   },
   {
-    label: "Maps",
+    label: "home.quick.maps",
     iconName: "map",
     href: MAPS_ROUTE,
     iconColor: colors.info,
@@ -83,7 +84,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     backgroundColor: "#EFF6FF",
   },
   {
-    label: "Incident",
+    label: "home.quick.incident",
     iconName: "warning",
     href: INCIDENTS_ROUTE,
     iconColor: colors.warning,
@@ -91,7 +92,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     backgroundColor: "#FFFBEB",
   },
   {
-    label: "Profile",
+    label: "home.quick.profile",
     iconName: "person",
     href: PROFILE_ROUTE,
     iconColor: "#5B21B6",
@@ -103,6 +104,7 @@ const QUICK_ACTIONS: QuickAction[] = [
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t, language } = useI18n();
   const [sosVisible, setSosVisible] = useState(false);
   const [incidents, setIncidents] = useState<IncidentReport[]>([]);
   const [loading, setLoading] = useState(true);
@@ -253,40 +255,25 @@ export default function HomeScreen() {
                 </View>
 
                 <View style={styles.welcomeCopy}>
-                  <Text style={styles.welcomeText}>Welcome back</Text>
+                  <Text style={styles.welcomeText}>{t("home.hero.welcome")}</Text>
                   <Text style={styles.userName} numberOfLines={1}>
                     {displayName}
                   </Text>
                 </View>
               </View>
 
-              <View style={styles.headerActions}>
-                <HeaderIconButton
-                  iconName="search"
-                  onPress={() => router.push(MAPS_ROUTE)}
-                />
-                <HeaderIconButton
-                  iconName="mail-outline"
-                  badgeCount={dashboard.highPriorityCount}
-                  onPress={() => router.push(INCIDENTS_ROUTE)}
-                />
-                <HeaderIconButton
-                  iconName="notifications-outline"
-                  badgeCount={dashboard.activeCount}
-                  onPress={() => router.push(INCIDENTS_ROUTE)}
-                />
-              </View>
+
             </View>
 
             <View style={styles.statsRow}>
               <DashboardStat
                 value={dashboard.todaysIncidents}
-                label="Today's Incidents"
+                label={t("home.stats.todays")}
               />
-              <DashboardStat value={dashboard.handled} label="Handled" />
+              <DashboardStat value={dashboard.handled} label={t("home.stats.handled")} />
               <DashboardStat
                 value={dashboard.activeVolunteers}
-                label="Active Volunteers"
+                label={t("home.stats.activeVolunteers")}
               />
             </View>
           </LinearGradient>
@@ -300,12 +287,13 @@ export default function HomeScreen() {
             ) : null}
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Quick Actions</Text>
+              <Text style={styles.sectionTitle}>{t("home.section.quickActions")}</Text>
               <View style={styles.quickActionGrid}>
                 {QUICK_ACTIONS.map((action) => (
                   <QuickActionButton
                     key={action.label}
                     action={action}
+                    label={t(action.label as any)}
                     onPress={() => router.push(action.href)}
                   />
                 ))}
@@ -314,7 +302,7 @@ export default function HomeScreen() {
 
             <View style={styles.section}>
               <View style={styles.sectionHeaderRow}>
-                <Text style={styles.sectionTitle}>Recent Incidents</Text>
+                <Text style={styles.sectionTitle}>{t("home.section.recentIncidents")}</Text>
                 <Pressable
                   onPress={() => router.push(INCIDENTS_ROUTE)}
                   style={({ pressed }) => [
@@ -322,7 +310,7 @@ export default function HomeScreen() {
                     pressed && styles.pressed,
                   ]}
                 >
-                  <Text style={styles.seeAllText}>See all</Text>
+                  <Text style={styles.seeAllText}>{t("home.action.seeAll")}</Text>
                   <Ionicons
                     name="chevron-forward"
                     size={16}
@@ -333,7 +321,7 @@ export default function HomeScreen() {
 
               {loading ? (
                 <View style={styles.loadingCard}>
-                  <LoadingState message="Loading dashboard..." />
+                  <LoadingState message={t("home.loading.dashboard")} />
                 </View>
               ) : dashboard.recentIncidents.length > 0 ? (
                 <View style={styles.recentList}>
@@ -353,10 +341,9 @@ export default function HomeScreen() {
                     color={colors.success}
                   />
                   <View style={styles.emptyCopy}>
-                    <Text style={styles.emptyTitle}>No recent incidents</Text>
+                    <Text style={styles.emptyTitle}>{t("home.empty.title")}</Text>
                     <Text style={styles.emptyText}>
-                      New community reports will appear here as soon as they are
-                      submitted.
+                      {t("home.empty.desc")}
                     </Text>
                   </View>
                 </View>
@@ -455,10 +442,11 @@ function DashboardStat({ value, label }: DashboardStatProps) {
 
 type QuickActionButtonProps = {
   action: QuickAction;
+  label: string;
   onPress: () => void;
 };
 
-function QuickActionButton({ action, onPress }: QuickActionButtonProps) {
+function QuickActionButton({ action, label, onPress }: QuickActionButtonProps) {
   return (
     <Pressable
       onPress={onPress}
@@ -472,7 +460,7 @@ function QuickActionButton({ action, onPress }: QuickActionButtonProps) {
       ]}
     >
       <Ionicons name={action.iconName} size={25} color={action.iconColor} />
-      <Text style={styles.quickActionLabel}>{action.label}</Text>
+      <Text style={styles.quickActionLabel}>{label}</Text>
     </Pressable>
   );
 }
@@ -483,15 +471,16 @@ type RecentIncidentCardProps = {
 };
 
 function RecentIncidentCard({ incident, onPress }: RecentIncidentCardProps) {
+  const { t } = useI18n();
   const meta = getIncidentDisplayMeta({
     category: incident.category,
     subcategory: incident.subcategory ?? incident.type,
   });
-  const title = incident.title?.trim() || meta.label;
+  const title = incident.title?.trim() || t(meta.label as any);
   const address =
     incident.address?.trim() ||
     `${incident.latitude.toFixed(4)}, ${incident.longitude.toFixed(4)}`;
-  const status = getIncidentStatusDisplay(incident);
+  const status = getIncidentStatusDisplay(incident, t);
   const reportCount = getIncidentSignalCount(incident);
 
   return (
@@ -531,11 +520,11 @@ function RecentIncidentCard({ incident, onPress }: RecentIncidentCardProps) {
           <View style={styles.timeRow}>
             <Ionicons name="time-outline" size={13} color={colors.textSoft} />
             <Text style={styles.incidentTimeText}>
-              {formatRelativeTime(incident.createdAt)}
+              {formatRelativeTime(incident.createdAt, t)}
             </Text>
           </View>
           <Text style={styles.reportCountText}>
-            {reportCount} {reportCount === 1 ? "report" : "reports"}
+            {t("home.reports.count", { count: reportCount })}
           </Text>
         </View>
       </View>
@@ -549,13 +538,13 @@ function RecentIncidentCard({ incident, onPress }: RecentIncidentCardProps) {
   );
 }
 
-function getIncidentStatusDisplay(incident: IncidentReport): {
+function getIncidentStatusDisplay(incident: IncidentReport, t: any): {
   label: string;
   variant: StatusBadgeVariant;
 } {
   if (incident.status === "resolved") {
     return {
-      label: "Resolved",
+      label: t("status.resolved"),
       variant: "resolved",
     };
   }
@@ -564,13 +553,13 @@ function getIncidentStatusDisplay(incident: IncidentReport): {
 
   if (urgencyLevel === "medium") {
     return {
-      label: "Monitoring",
+      label: t("status.monitoring"),
       variant: "warning",
     };
   }
 
   return {
-    label: "Active",
+    label: t("status.active"),
     variant: urgencyLevel === "high" ? "active" : "info",
   };
 }
@@ -616,30 +605,30 @@ function isSameLocalDay(date: Date | undefined, comparisonDate: Date) {
   );
 }
 
-function formatRelativeTime(date: Date | undefined) {
+function formatRelativeTime(date: Date | undefined, t: any) {
   if (!date) {
-    return "Unknown time";
+    return t("common.time.unknown");
   }
 
   const differenceMs = Date.now() - date.getTime();
   const differenceMinutes = Math.max(0, Math.floor(differenceMs / 60000));
 
   if (differenceMinutes < 1) {
-    return "Just now";
+    return t("common.time.justNow");
   }
 
   if (differenceMinutes < 60) {
-    return `${differenceMinutes} minute${differenceMinutes === 1 ? "" : "s"} ago`;
+    return t("common.time.minutesAgo", { min: differenceMinutes });
   }
 
   const differenceHours = Math.floor(differenceMinutes / 60);
 
   if (differenceHours < 24) {
-    return `${differenceHours} hour${differenceHours === 1 ? "" : "s"} ago`;
+    return t("common.time.hoursAgo", { hour: differenceHours });
   }
 
   const differenceDays = Math.floor(differenceHours / 24);
-  return `${differenceDays} day${differenceDays === 1 ? "" : "s"} ago`;
+  return t("common.time.daysAgo", { day: differenceDays });
 }
 
 const styles = StyleSheet.create({

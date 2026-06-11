@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Alert } from "react-native";
 
 import { useAuth } from "../../../contexts/AuthContext";
+import { useI18n } from "../../../i18n";
 import { uploadImageAsync } from "../../../services/cloudinaryService";
 import { subscribeToIncidents } from "../../../services/incidentService";
 import type { IncidentReport } from "../../../types/incident";
@@ -42,6 +43,7 @@ const getInitials = (value: string): string => {
 export const useProfileScreen = () => {
   const router = useRouter();
   const { user, logout, updateUserProfile } = useAuth();
+  const { t } = useI18n();
 
   const [reports, setReports] = useState<IncidentReport[]>([]);
   const [loading, setLoading] = useState(true);
@@ -152,25 +154,32 @@ export const useProfileScreen = () => {
   }, [userReports]);
 
   const handleLogout = () => {
-    Alert.alert("Keluar", "Keluar dari akun ini?", [
-      {
-        text: "Batal",
-        style: "cancel",
-      },
-      {
-        text: "Keluar",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await logout();
-            router.replace(LOGIN_ROUTE);
-          } catch (error) {
-            console.error("Logout error:", error);
-            Alert.alert("Gagal Keluar", "Terjadi kesalahan saat keluar.");
-          }
+    Alert.alert(
+      t("profile.hook.logout.title"),
+      t("profile.hook.logout.message"),
+      [
+        {
+          text: t("common.cancel"),
+          style: "cancel",
         },
-      },
-    ]);
+        {
+          text: t("profile.action.logout"),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await logout();
+              router.replace(LOGIN_ROUTE);
+            } catch (error) {
+              console.error("Logout error:", error);
+              Alert.alert(
+                t("profile.hook.logout.error.title"),
+                t("profile.hook.logout.error.message")
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
   const pickProfilePhoto = async () => {
@@ -183,8 +192,8 @@ export const useProfileScreen = () => {
 
       if (!permission.granted) {
         Alert.alert(
-          "Izin Galeri Dibutuhkan",
-          "Aktifkan izin galeri untuk memilih foto profil."
+          t("profile.hook.photo.permission.title"),
+          t("profile.hook.photo.permission.message")
         );
         return;
       }
@@ -203,7 +212,10 @@ export const useProfileScreen = () => {
       const assetUri = result.assets?.[0]?.uri;
 
       if (!assetUri) {
-        Alert.alert("Foto Tidak Valid", "Gagal membaca gambar dari galeri.");
+        Alert.alert(
+          t("profile.hook.photo.invalid.title"),
+          t("profile.hook.photo.invalid.message")
+        );
         return;
       }
 
@@ -218,14 +230,17 @@ export const useProfileScreen = () => {
       });
 
       setDraftPhotoUri(nextPhotoURL);
-      Alert.alert("Foto Profil Tersimpan", "Foto profil berhasil diperbarui.");
+      Alert.alert(
+        t("profile.hook.photo.success.title"),
+        t("profile.hook.photo.success.message")
+      );
     } catch (error) {
       setDraftPhotoUri(photoURL);
       Alert.alert(
-        "Gagal Mengubah Foto",
+        t("profile.hook.photo.error.title"),
         error instanceof Error
           ? error.message
-          : "Terjadi kesalahan saat mengubah foto profil."
+          : t("profile.hook.photo.error.message")
       );
     } finally {
       setSavingProfile(false);
@@ -236,12 +251,18 @@ export const useProfileScreen = () => {
     const cleanName = draftName.trim();
 
     if (!user) {
-      Alert.alert("Belum Login", "Silakan login terlebih dahulu.");
+      Alert.alert(
+        t("profile.hook.save.noLogin.title"),
+        t("profile.hook.save.noLogin.message")
+      );
       return;
     }
 
     if (cleanName.length < 2) {
-      Alert.alert("Nama Terlalu Pendek", "Nama minimal 2 karakter.");
+      Alert.alert(
+        t("profile.alert.nameTooShort.title"),
+        t("profile.alert.nameTooShort.message")
+      );
       return;
     }
 
@@ -264,16 +285,16 @@ export const useProfileScreen = () => {
 
       setDraftPhotoUri(nextPhotoURL);
       Alert.alert(
-        "Profil Tersimpan",
-        "Nama dan foto profil berhasil diperbarui."
+        t("profile.hook.save.success.title"),
+        t("profile.hook.save.success.message")
       );
     } catch (error) {
       console.error("Update profile error:", error);
       Alert.alert(
-        "Gagal Menyimpan Profil",
+        t("profile.hook.save.error.title"),
         error instanceof Error
           ? error.message
-          : "Terjadi kesalahan saat menyimpan profil."
+          : t("profile.hook.save.error.message")
       );
     } finally {
       setSavingProfile(false);

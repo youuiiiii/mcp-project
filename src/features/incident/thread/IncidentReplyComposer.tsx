@@ -12,6 +12,7 @@ import AppButton from "../../../components/ui/AppButton";
 import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
 import type { IncidentReply } from "../../../types/incident";
+import { useI18n } from "../../../i18n";
 
 type IncidentReplyComposerProps = {
   replyText: string;
@@ -40,15 +41,16 @@ export default function IncidentReplyComposer({
   onCancelReplyTo,
   onSubmitReply,
 }: IncidentReplyComposerProps) {
+  const { t } = useI18n();
   const targetName =
-    replyingTo?.userName || replyingTo?.userEmail || "komentar ini";
+    replyingTo?.userName || replyingTo?.userEmail || t("incident.replyComposer.defaultTarget");
 
   return (
     <View style={styles.wrapper}>
       {replyingTo ? (
         <View style={styles.replyingToBox}>
           <View style={styles.replyingTextGroup}>
-            <Text style={styles.replyingLabel}>Membalas</Text>
+            <Text style={styles.replyingLabel}>{t("incident.replyComposer.replyingLabel")}</Text>
             <Text style={styles.replyingName} numberOfLines={1}>
               {targetName}
             </Text>
@@ -115,8 +117,8 @@ export default function IncidentReplyComposer({
           editable={!replySubmitting}
           placeholder={
             replyingTo
-              ? "Tulis balasan..."
-              : "Tambahkan konteks atau komentar singkat..."
+              ? t("incident.replyComposer.placeholderReply")
+              : t("incident.replyComposer.placeholderComment")
           }
           placeholderTextColor={colors.textSoft}
           multiline

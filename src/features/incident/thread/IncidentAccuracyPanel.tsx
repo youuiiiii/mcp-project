@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { useI18n } from "../../../i18n";
 import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
 import type { IncidentAccuracyVoteType } from "../../../types/incident";
@@ -28,6 +29,7 @@ export default function IncidentAccuracyPanel({
   submitting,
   onVote,
 }: IncidentAccuracyPanelProps) {
+  const { t } = useI18n();
   const toneColor = getToneColor(tone);
   const disabled = Boolean(disabledReason) || submitting;
 
@@ -35,10 +37,9 @@ export default function IncidentAccuracyPanel({
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.titleGroup}>
-          <Text style={styles.title}>FIELD VERIFICATION</Text>
+          <Text style={styles.title}>{t("incident.accuracy.title")}</Text>
           <Text style={styles.subtitle}>
-            {disabledReason ??
-              "Is this incident still ongoing at this location? Only confirm if you are nearby."}
+            {disabledReason ?? t("incident.accuracy.subtitle")}
           </Text>
         </View>
 
@@ -56,7 +57,7 @@ export default function IncidentAccuracyPanel({
 
       <View style={styles.actions}>
         <AccuracyButton
-          label="STILL ACTIVE"
+          label={t("incident.accuracy.active")}
           count={accurateCount}
           iconName="warning"
           active={currentUserVote === "accurate"}
@@ -66,7 +67,7 @@ export default function IncidentAccuracyPanel({
         />
 
         <AccuracyButton
-          label="CLEAR / SAFE"
+          label={t("incident.accuracy.clear")}
           count={inaccurateCount}
           iconName="checkmark-circle"
           active={currentUserVote === "inaccurate"}

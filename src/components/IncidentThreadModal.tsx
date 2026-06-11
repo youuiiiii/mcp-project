@@ -17,6 +17,7 @@ import type {
   IncidentContentReportReason,
   IncidentReport,
 } from "../types/incident";
+import { useI18n } from "../i18n";
 
 type IncidentThreadModalProps = {
   visible: boolean;
@@ -36,6 +37,7 @@ export default function IncidentThreadModal({
   onOpenResolve,
 }: IncidentThreadModalProps) {
   const { user, isModerator } = useAuth();
+  const { t } = useI18n();
 
   const thread = useIncidentThread({
     visible,
@@ -149,8 +151,8 @@ export default function IncidentThreadModal({
     <>
       <IncidentModalShell
         visible={visible}
-        title="Incident Detail"
-        subtitle="Incident information and community updates."
+        title={t("incident.threadModal.title")}
+        subtitle={t("incident.threadModal.subtitle")}
         onClose={thread.closeThread}
         submitting={thread.replySubmitting}
         headerRight={
@@ -181,7 +183,7 @@ export default function IncidentThreadModal({
           currentUserVote={thread.accuracySummary.currentUserVote}
           disabledReason={
             thread.isOwnIncident
-              ? "Your report has been counted. Nearby users can confirm if the incident is still active."
+              ? t("incident.accuracy.disabledReason")
               : null
           }
           label={thread.accuracySummary.label}

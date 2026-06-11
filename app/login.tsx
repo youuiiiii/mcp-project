@@ -27,7 +27,7 @@ const REGISTER_ROUTE = "/register" as Href;
 export default function LoginScreen() {
   const router = useRouter();
   const { t } = useI18n();
-  const { user, loading, login } = useAuth();
+  const { user, loading, login, loginWithGoogle } = useAuth();
 
   // Navigation Steps inside Login Screen
   // 1: Form Login
@@ -80,6 +80,27 @@ export default function LoginScreen() {
           ? "Old Email or password incorrect to continue"
           : "An unexpected login error occurred. Please try again."
       );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle Google Login Flow
+  const handleGoogleLogin = async () => {
+    try {
+      setLoginError(null);
+      setSubmitting(true);
+      await loginWithGoogle();
+      router.replace(HOME_ROUTE);
+    } catch (error: any) {
+      console.error("Google Login failed:", error);
+      
+      // Ignore user-cancelled popup errors to prevent annoying banners
+      if (error?.code !== "auth/popup-closed-by-user") {
+        setLoginError(
+          error instanceof Error ? error.message : "Could not sign in with Google."
+        );
+      }
     } finally {
       setSubmitting(false);
     }
@@ -250,25 +271,16 @@ export default function LoginScreen() {
               {/* Social Buttons — Terra cream surface with outline */}
               <View style={styles.socialRow}>
                 <Pressable
-                  onPress={() => Alert.alert("Google Sign In", "Google Authentication is not configured for this demo.")}
+                  disabled={submitting}
+                  onPress={handleGoogleLogin}
                   style={({ pressed }) => [
                     styles.socialButton,
                     pressed && styles.buttonPressed,
+                    submitting && styles.buttonDisabled,
                   ]}
                 >
                   <Ionicons name="logo-google" size={18} color="#EA4335" />
                   <Text style={styles.socialButtonText}>Google</Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => Alert.alert("Apple Sign In", "Apple Authentication is not configured for this demo.")}
-                  style={({ pressed }) => [
-                    styles.socialButton,
-                    pressed && styles.buttonPressed,
-                  ]}
-                >
-                  <Ionicons name="logo-apple" size={18} color={colors.text} />
-                  <Text style={styles.socialButtonText}>Apple</Text>
                 </Pressable>
               </View>
 

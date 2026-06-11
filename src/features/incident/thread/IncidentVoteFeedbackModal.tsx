@@ -10,15 +10,9 @@ import {
 import AppButton from "../../../components/ui/AppButton";
 import { colors } from "../../../theme/colors";
 import { radius, shadow, spacing } from "../../../theme/layout";
-
-export type VoteFeedbackStatus =
-  | "idle"
-  | "checking"
-  | "location_denied"
-  | "location_off"
-  | "too_far"
-  | "error"
-  | "success";
+import { typography } from "../../../theme/typography";
+import { useI18n } from "../../../i18n";
+import type { VoteFeedbackStatus } from "./useIncidentThread";
 
 type IncidentVoteFeedbackModalProps = {
   visible: boolean;
@@ -35,11 +29,12 @@ export default function IncidentVoteFeedbackModal({
   onClose,
   onOpenSettings,
 }: IncidentVoteFeedbackModalProps) {
-  const meta = getStatusMeta(status, message);
+  const { t } = useI18n();
+  const meta = getStatusMeta(status, message, t);
 
-  const isLoading = status === "checking";
+  const isLoading = status === "verifying";
   const canOpenSettings =
-    status === "location_denied" || status === "location_off";
+    status === "error_no_permission" || status === "error_location_off";
 
   return (
     <Modal
@@ -55,14 +50,14 @@ export default function IncidentVoteFeedbackModal({
             style={[
               styles.iconBox,
               {
-                backgroundColor: meta.backgroundColor,
+                backgroundColor: meta.color + "20",
               },
             ]}
           >
             {isLoading ? (
               <ActivityIndicator color={meta.color} />
             ) : (
-              <Ionicons name={meta.iconName} size={28} color={meta.color} />
+              <Ionicons name={meta.icon} size={28} color={meta.color} />
             )}
           </View>
 
@@ -73,7 +68,7 @@ export default function IncidentVoteFeedbackModal({
             <View style={styles.actions}>
               {canOpenSettings ? (
                 <AppButton
-                  title="Buka Pengaturan"
+                  title={t("common.settings")}
                   variant="primary"
                   size="md"
                   fullWidth
@@ -82,7 +77,7 @@ export default function IncidentVoteFeedbackModal({
               ) : null}
 
               <AppButton
-                title={status === "success" ? "OK" : "Tutup"}
+                title={t("common.ok")}
                 variant={canOpenSettings ? "secondary" : "primary"}
                 size="md"
                 fullWidth
@@ -96,64 +91,52 @@ export default function IncidentVoteFeedbackModal({
   );
 }
 
-function getStatusMeta(status: VoteFeedbackStatus, message?: string) {
-  if (status === "checking") {
-    return {
-      title: "Memeriksa lokasi",
-      description: "Sebentar, kami sedang memeriksa bahwa kamu berada dekat laporan ini.",
-      iconName: "locate" as const,
-      color: colors.info,
-      backgroundColor: colors.infoSoft,
-    };
+function getStatusMeta(status: VoteFeedbackStatus, message: string | undefined, t: any) {
+  switch (status) {
+    case "verifying":
+      return {
+        icon: "location-outline" as const,
+        color: colors.info,
+        title: t("incident.feedback.verifying.title"),
+        description: t("incident.feedback.verifying.desc"),
+      };
+    case "success":
+      return {
+        icon: "checkmark-circle-outline" as const,
+        color: colors.success,
+        title: t("incident.feedback.success.title"),
+        description: t("incident.feedback.success.desc"),
+      };
+    case "error_no_permission":
+      return {
+        icon: "hand-left-outline" as const,
+        color: colors.warning,
+        title: t("incident.feedback.no_permission.title"),
+        description: t("incident.feedback.no_permission.desc"),
+      };
+    case "error_location_off":
+      return {
+        icon: "location-outline" as const,
+        color: colors.warning,
+        title: t("incident.feedback.location_off.title"),
+        description: t("incident.feedback.location_off.desc"),
+      };
+    case "error_too_far":
+      return {
+        icon: "walk-outline" as const,
+        color: colors.danger,
+        title: t("incident.feedback.too_far.title"),
+        description: t("incident.feedback.too_far.desc"),
+      };
+    case "error":
+    default:
+      return {
+        icon: "alert-circle-outline" as const,
+        color: colors.danger,
+        title: t("incident.feedback.error.title"),
+        description: message || t("common.error_default"),
+      };
   }
-
-  if (status === "success") {
-    return {
-      title: "Konfirmasi tersimpan",
-      description: "Terima kasih, pengecekan lokasi kamu sudah diperbarui.",
-      iconName: "checkmark-circle" as const,
-      color: colors.success,
-      backgroundColor: colors.successSoft,
-    };
-  }
-
-  if (status === "location_denied") {
-    return {
-      title: "Lokasi tidak diizinkan",
-      description: "Aktifkan izin lokasi untuk mengonfirmasi laporan ini.",
-      iconName: "location-outline" as const,
-      color: colors.warningDark,
-      backgroundColor: colors.warningSoft,
-    };
-  }
-
-  if (status === "location_off") {
-    return {
-      title: "Lokasi dimatikan",
-      description: "Aktifkan lokasi perangkat untuk mengonfirmasi laporan ini.",
-      iconName: "navigate-outline" as const,
-      color: colors.warningDark,
-      backgroundColor: colors.warningSoft,
-    };
-  }
-
-  if (status === "too_far") {
-    return {
-      title: "Terlalu jauh",
-      description: "Kamu terlalu jauh dari lokasi laporan untuk mengonfirmasinya.",
-      iconName: "alert-circle-outline" as const,
-      color: colors.danger,
-      backgroundColor: colors.dangerSoft,
-    };
-  }
-
-  return {
-    title: "Gagal mengonfirmasi",
-    description: message || "Terjadi kesalahan. Coba lagi nanti.",
-    iconName: "close-circle-outline" as const,
-    color: colors.danger,
-    backgroundColor: colors.dangerSoft,
-  };
 }
 
 const styles = StyleSheet.create({
