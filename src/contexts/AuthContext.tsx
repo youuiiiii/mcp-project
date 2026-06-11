@@ -6,7 +6,6 @@ import {
   signOut,
   updateProfile,
   GoogleAuthProvider,
-  signInWithPopup,
 } from "firebase/auth";
 import {
   ReactNode,
@@ -146,8 +145,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const loginWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    alert("Google Sign In is not available on this platform yet.");
   };
 
   const value = useMemo<AuthContextValue>(

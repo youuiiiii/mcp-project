@@ -28,8 +28,14 @@ import {
   pickReplyImageFromGallery,
   takeReplyImagePhoto,
 } from "./incidentThreadMedia";
-import type { VoteFeedbackStatus } from "./IncidentVoteFeedbackModal";
-
+export type VoteFeedbackStatus =
+  | "idle"
+  | "verifying"
+  | "error_no_permission"
+  | "error_location_off"
+  | "error_too_far"
+  | "error"
+  | "success";
 type UseIncidentThreadParams = {
   visible: boolean;
   incident: IncidentReport | null;
@@ -223,12 +229,12 @@ export function useIncidentThread({
 
       setAccuracySubmitting(true);
       setVoteFeedbackMessage(undefined);
-      setVoteFeedbackStatus("checking");
+      setVoteFeedbackStatus("verifying");
 
       const permission = await Location.requestForegroundPermissionsAsync();
 
       if (permission.status !== "granted") {
-        setVoteFeedbackStatus("location_denied");
+        setVoteFeedbackStatus("error_no_permission");
         return;
       }
 
@@ -239,18 +245,18 @@ export function useIncidentThread({
           try {
             await Location.enableNetworkProviderAsync();
           } catch {
-            setVoteFeedbackStatus("location_off");
+            setVoteFeedbackStatus("error_location_off");
             return;
           }
 
           const enabledAfterPrompt = await Location.hasServicesEnabledAsync();
 
           if (!enabledAfterPrompt) {
-            setVoteFeedbackStatus("location_off");
+            setVoteFeedbackStatus("error_location_off");
             return;
           }
         } else {
-          setVoteFeedbackStatus("location_off");
+          setVoteFeedbackStatus("error_location_off");
           return;
         }
       }
@@ -271,7 +277,7 @@ export function useIncidentThread({
       });
 
       if (proximity.proximityStatus !== "near_incident") {
-        setVoteFeedbackStatus("too_far");
+        setVoteFeedbackStatus("error_too_far");
         return;
       }
 
@@ -366,7 +372,7 @@ export function useIncidentThread({
   };
 
   const closeVoteFeedback = () => {
-    if (voteFeedbackStatus === "checking") {
+    if (voteFeedbackStatus === "verifying") {
       return;
     }
 

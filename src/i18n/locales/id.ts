@@ -582,4 +582,8 @@ export const id: TranslationResources = {
   "incident.feedback.too_far.title": "Terlalu Jauh",
   "incident.feedback.too_far.desc": "Kamu terlalu jauh dari lokasi laporan untuk mengonfirmasinya.",
   "incident.feedback.error.title": "Pengecekan Gagal",
+  "common.settings": "Pengaturan",
+  "common.ok": "OK",
+  "common.error_default": "Terjadi kesalahan.",
+  "common.submit": "Kirim",
 };

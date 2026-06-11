@@ -16,6 +16,8 @@ type IncidentOverviewCardProps = {
   onOpenResolve?: (incident: IncidentReport) => void;
 };
 
+import { useI18n } from "../../../i18n";
+
 export default function IncidentOverviewCard({
   incident,
   onReportContent,
@@ -23,6 +25,7 @@ export default function IncidentOverviewCard({
   onOpenVerify,
   onOpenResolve,
 }: IncidentOverviewCardProps) {
+  const { t, language } = useI18n();
   const meta = getIncidentDisplayMeta({
     category: incident.category,
     subcategory: incident.subcategory ?? incident.type,
@@ -56,7 +59,7 @@ export default function IncidentOverviewCard({
             <Ionicons name={meta.iconName} size={14} color={meta.color} />
             <Text style={[styles.categoryText, { color: meta.color }]}>{meta.label}</Text>
           </View>
-          <Text style={styles.timeText}>{formatIncidentDate(incident.createdAt)}</Text>
+          <Text style={styles.timeText}>{formatIncidentDate(incident.createdAt, t, language as any)}</Text>
         </View>
 
         <Text style={styles.title}>{incident.title || "Incident Report"}</Text>

@@ -307,7 +307,7 @@ export default function HomeScreen() {
                   onPress={() => router.push(INCIDENTS_ROUTE)}
                   style={({ pressed }) => [
                     styles.seeAllButton,
-                    pressed && styles.pressed,
+                    pressed && styles.quickActionCardPressed,
                   ]}
                 >
                   <Text style={styles.seeAllText}>{t("home.action.seeAll")}</Text>
@@ -456,7 +456,7 @@ function QuickActionButton({ action, label, onPress }: QuickActionButtonProps) {
           backgroundColor: action.backgroundColor,
           borderColor: action.borderColor,
         },
-        pressed && styles.quickActionPressed,
+        pressed && styles.quickActionCardPressed,
       ]}
     >
       <Ionicons name={action.iconName} size={25} color={action.iconColor} />

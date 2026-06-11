@@ -579,4 +579,8 @@ export const en = {
   "incident.feedback.too_far.title": "Too Far",
   "incident.feedback.too_far.desc": "You are too far from the report location to confirm it.",
   "incident.feedback.error.title": "Check Failed",
+  "common.settings": "Settings",
+  "common.ok": "OK",
+  "common.error_default": "An error occurred.",
+  "common.submit": "Submit",
 } as const;

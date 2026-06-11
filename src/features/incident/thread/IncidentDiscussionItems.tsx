@@ -14,6 +14,7 @@ import { colors } from "../../../theme/colors";
 import { radius } from "../../../theme/layout";
 import type { IncidentReply } from "../../../types/incident";
 import { formatIncidentDate, getCommunityUpdateMeta } from "./threadLabels";
+import { incidentDiscussionStyles as styles } from "./incidentDiscussionStyles";
 import { useI18n } from "../../../i18n";
 
 export function ReplyItem({

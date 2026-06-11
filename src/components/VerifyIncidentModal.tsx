@@ -13,7 +13,7 @@ import type { VerifyIncidentModalProps } from "./verifyIncident/types";
 import { useVerifyIncidentModal } from "./verifyIncident/useVerifyIncidentModal";
 import { verifyIncidentModalStyles as styles } from "./verifyIncident/verifyIncidentModalStyles";
 import { VERIFICATION_OPTIONS } from "./verifyIncident/verificationOptions";
-import { useI18n } from "../../i18n";
+import { useI18n } from "../i18n";
 
 export default function VerifyIncidentModal(props: VerifyIncidentModalProps) {
   const { visible, incident } = props;

@@ -277,7 +277,6 @@ export default function IncidentDetailScreen() {
         <IncidentImageGallery
           imageUri={incident.imageUri}
           imageUris={incident.imageUris}
-          variant="default"
           style={styles.fullBleedGallery}
         />
 
