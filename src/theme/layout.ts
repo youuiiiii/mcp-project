@@ -1,3 +1,9 @@
+/**
+ * Dispatch layout tokens.
+ *
+ * Compact radii keep operational screens tidy, while subtle shadows help the
+ * mobile dashboard cards read closer to the provided reference.
+ */
 export const spacing = {
   xs: 4,
   sm: 8,
@@ -9,34 +15,42 @@ export const spacing = {
 } as const;
 
 export const radius = {
-  sm: 10,
-  md: 14,
-  lg: 18,
-  xl: 22,
-  "2xl": 26,
-  "3xl": 32,
-  full: 999,
+  sm: 4,       // Very sharp, rigid elements
+  md: 6,       // Standard operational elements
+  lg: 8,       // Slightly larger cards
+  xl: 12,      // Containers
+  "2xl": 16,   // Prominent sections
+  "3xl": 20,   // Bottom sheets, modals
+  full: 999,   // Pill shapes only where absolutely necessary
 } as const;
 
 export const shadow = {
+  sm: {
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  md: {
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.09,
+    shadowRadius: 12,
+    elevation: 4,
+  },
   card: {
     shadowColor: "#0F172A",
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 1,
   },
   floating: {
     shadowColor: "#0F172A",
-    shadowOffset: {
-      width: 0,
-      height: 12,
-    },
-    shadowOpacity: 0.18,
-    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
     elevation: 6,
   },
 } as const;

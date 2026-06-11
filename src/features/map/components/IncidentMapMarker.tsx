@@ -1,8 +1,11 @@
+import { Ionicons } from "@expo/vector-icons";
 import { memo } from "react";
+import { StyleSheet, View } from "react-native";
 import { Marker } from "react-native-maps";
 
 import { getIncidentDisplayMeta } from "../../../constants/incident";
 import { colors } from "../../../theme/colors";
+import { radius } from "../../../theme/layout";
 import type { IncidentReport } from "../../../types/incident";
 
 type IncidentMapMarkerProps = {
@@ -16,8 +19,7 @@ function IncidentMapMarker({ incident, onPress }: IncidentMapMarkerProps) {
     subcategory: incident.subcategory ?? incident.type,
   });
 
-  const isResolved = incident.status === "resolved";
-  const markerColor = isResolved ? colors.textMuted : meta.color;
+  const markerColor = getMarkerColor(incident);
 
   return (
     <Marker
@@ -26,11 +28,19 @@ function IncidentMapMarker({ incident, onPress }: IncidentMapMarkerProps) {
         latitude: incident.latitude,
         longitude: incident.longitude,
       }}
-      pinColor={markerColor}
+      anchor={{ x: 0.5, y: 1 }}
+      centerOffset={{ x: 0, y: -18 }}
       title={incident.title}
       description={`${meta.label} - ${getUrgencyLabel(incident)}`}
       onPress={() => onPress(incident)}
-    />
+    >
+      <View style={styles.markerWrap}>
+        <View style={[styles.markerBubble, { backgroundColor: markerColor }]}>
+          <Ionicons name={meta.iconName} size={19} color={colors.textInverse} />
+        </View>
+        <View style={[styles.markerStem, { backgroundColor: markerColor }]} />
+      </View>
+    </Marker>
   );
 }
 
@@ -53,3 +63,49 @@ function getUrgencyLabel(incident: IncidentReport) {
 
   return "Low urgency";
 }
+
+function getMarkerColor(incident: IncidentReport) {
+  if (incident.status === "resolved") {
+    return colors.success;
+  }
+
+  const urgency = incident.urgencyLevel ?? incident.severity;
+
+  if (urgency === "high") {
+    return "#EF4444";
+  }
+
+  if (urgency === "medium") {
+    return "#F59E0B";
+  }
+
+  return "#10B981";
+}
+
+const styles = StyleSheet.create({
+  markerWrap: {
+    alignItems: "center",
+  },
+  markerBubble: {
+    width: 38,
+    height: 38,
+    borderRadius: radius.full,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 3,
+    borderColor: colors.surface,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.22,
+    shadowRadius: 7,
+    elevation: 5,
+  },
+  markerStem: {
+    width: 8,
+    height: 8,
+    borderRadius: radius.full,
+    marginTop: -2,
+    borderWidth: 1,
+    borderColor: colors.surface,
+  },
+});

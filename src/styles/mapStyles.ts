@@ -4,220 +4,198 @@ import { colors } from "../theme/colors";
 import { radius, shadow, spacing } from "../theme/layout";
 import { typography } from "../theme/typography";
 
-const MAP_TOP_OFFSET = 52;
-const MAP_HORIZONTAL_PADDING = spacing.lg;
-const MAP_BOTTOM_OFFSET = 24;
-
 export const mapStyles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#0C7186",
+  },
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
   },
-
-  map: {
+  header: {
+    minHeight: 122,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing["2xl"],
+    paddingBottom: spacing.lg,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: spacing.md,
+  },
+  headerTextGroup: {
     flex: 1,
+    minWidth: 0,
   },
-
-  topOverlay: {
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "900",
+    color: colors.textInverse,
+  },
+  headerSubtitle: {
+    marginTop: 8,
+    fontSize: 13,
+    fontWeight: "700",
+    color: "rgba(255,255,255,0.88)",
+  },
+  filterIconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.full,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.18)",
+  },
+  filterShell: {
+    minHeight: 58,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    justifyContent: "center",
+  },
+  mapPanel: {
+    flex: 1,
+    backgroundColor: colors.surfaceMuted,
+    overflow: "hidden",
+  },
+  map: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(248,250,252,0.76)",
+  },
+  errorBanner: {
     position: "absolute",
-    top: MAP_TOP_OFFSET,
-    left: MAP_HORIZONTAL_PADDING,
-    right: MAP_HORIZONTAL_PADDING,
+    top: spacing.md,
+    left: spacing.lg,
+    right: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: colors.dangerSoft,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: "rgba(239,68,68,0.14)",
+    ...shadow.card,
+  },
+  errorText: {
+    flex: 1,
+    ...typography.caption,
+    color: colors.dangerDark,
+  },
+  mapActions: {
+    position: "absolute",
+    right: spacing.lg,
+    bottom: spacing.lg,
+    alignItems: "center",
     gap: spacing.sm,
   },
-
-  compactHeader: {
-    minHeight: 62,
-    backgroundColor: "rgba(255,255,255,0.94)",
-    borderRadius: radius["2xl"],
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+  roundActionButton: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.full,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(226,232,240,0.9)",
+    borderColor: colors.border,
+    ...shadow.md,
+  },
+  reportActionButton: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.full,
+    backgroundColor: colors.danger,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 3,
+    borderColor: colors.surface,
+    ...shadow.floating,
+    shadowColor: colors.dangerDark,
+  },
+  sosActionButton: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.full,
+    backgroundColor: "#0C7186",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.88)",
+    ...shadow.card,
+  },
+  iconButtonPressed: {
+    opacity: 0.84,
+    transform: [{ scale: 0.96 }],
+  },
+  legendBar: {
+    minHeight: 52,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: spacing.md,
-    ...shadow.card,
   },
-
-  headerTitleGroup: {
-    flex: 1,
+  legendGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
   },
-
-  headerEyebrow: {
-    fontSize: 11,
-    fontWeight: "900",
-    color: colors.textMuted,
-    letterSpacing: 0.2,
-    textTransform: "uppercase",
-  },
-
-  headerTitle: {
-    marginTop: 2,
-    fontSize: 20,
-    fontWeight: "900",
-    color: colors.text,
-  },
-
-  liveBadge: {
+  legendItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: colors.successSoft,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 7,
+  },
+  legendDot: {
+    width: 12,
+    height: 12,
     borderRadius: radius.full,
   },
-
+  legendText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.textMuted,
+  },
+  visibleCount: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    flexShrink: 1,
+  },
+  visibleCountText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#4B658A",
+  },
+  statusStrip: {
+    minHeight: 30,
+    paddingHorizontal: spacing.xl,
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
   liveDot: {
     width: 7,
     height: 7,
     borderRadius: radius.full,
     backgroundColor: colors.success,
   },
-
-  liveText: {
-    fontSize: 11,
-    fontWeight: "900",
-    color: colors.successDark,
-  },
-
-  filterWrapper: {
-    marginHorizontal: -MAP_HORIZONTAL_PADDING,
-  },
-
-  errorBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    backgroundColor: colors.dangerSoft,
-    borderRadius: radius.xl,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderWidth: 1,
-    borderColor: "#FECACA",
-  },
-
-  errorText: {
-    flex: 1,
-    ...typography.caption,
-    color: colors.primaryDark,
-  },
-
-  mapActions: {
-    position: "absolute",
-    right: spacing.lg,
-    bottom: 122,
-    zIndex: 20,
-    alignItems: "flex-end",
-    gap: spacing.sm,
-  },
-
-  locateButton: {
-    width: 52,
-    height: 52,
-    borderRadius: radius.full,
-    backgroundColor: "rgba(255,255,255,0.96)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(226,232,240,0.92)",
-    ...shadow.card,
-  },
-
-  locateButtonPressed: {
-    opacity: 0.86,
-    transform: [{ scale: 0.96 }],
-  },
-
-  reportButton: {
-    ...shadow.floating,
-    shadowColor: colors.primaryDark,
-  },
-
-  bottomOverlay: {
-    position: "absolute",
-    left: MAP_HORIZONTAL_PADDING,
-    right: MAP_HORIZONTAL_PADDING,
-    bottom: MAP_BOTTOM_OFFSET,
-  },
-
-  infoCard: {
-    backgroundColor: "rgba(255,255,255,0.96)",
-    borderRadius: radius["2xl"],
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderWidth: 1,
-    borderColor: "rgba(226,232,240,0.92)",
-    ...shadow.card,
-  },
-
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.md,
-  },
-
-  infoTextGroup: {
-    flex: 1,
-  },
-
-  infoTitle: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: colors.text,
-  },
-
-  infoDescription: {
-    marginTop: 3,
+  statusStripText: {
     fontSize: 11,
     fontWeight: "800",
-    color: colors.textMuted,
+    color: colors.textSoft,
   },
-
-  nearestRow: {
-    marginTop: spacing.sm,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-
-  nearestText: {
-    flex: 1,
-    fontSize: 11,
-    fontWeight: "800",
-    color: colors.textMuted,
-  },
-
-  sosButton: {
-  minWidth: 74,
-  height: 52,
-  borderRadius: radius.full,
-  backgroundColor: colors.danger,
-  alignItems: "center",
-  justifyContent: "center",
-  flexDirection: "row",
-  gap: 6,
-  paddingHorizontal: spacing.md,
-  borderWidth: 3,
-  borderColor: colors.dangerSoft,
-  ...shadow.floating,
-  shadowColor: colors.dangerDark,
-},
-
-sosButtonPressed: {
-  opacity: 0.88,
-  transform: [{ scale: 0.96 }],
-},
-
-sosButtonText: {
-  fontSize: 12,
-  fontWeight: "900",
-  color: colors.textInverse,
-},
 });

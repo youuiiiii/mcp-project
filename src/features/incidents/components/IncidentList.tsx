@@ -33,6 +33,6 @@ export default function IncidentList({
 
 const styles = StyleSheet.create({
   list: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
 });

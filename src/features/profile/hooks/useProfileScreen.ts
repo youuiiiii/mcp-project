@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Alert } from "react-native";
 
 import { useAuth } from "../../../contexts/AuthContext";
+import { useI18n } from "../../../i18n";
 import { uploadImageAsync } from "../../../services/cloudinaryService";
 import { subscribeToIncidents } from "../../../services/incidentService";
 import type { IncidentReport } from "../../../types/incident";
@@ -15,6 +16,9 @@ export type ProfileStats = {
   activeReports: number;
   resolvedReports: number;
   highSeverityReports: number;
+  points: number;
+  areas: number;
+  badges: number;
 };
 
 const normalizeText = (value?: string | null): string | null => {
@@ -39,6 +43,7 @@ const getInitials = (value: string): string => {
 export const useProfileScreen = () => {
   const router = useRouter();
   const { user, logout, updateUserProfile } = useAuth();
+  const { t } = useI18n();
 
   const [reports, setReports] = useState<IncidentReport[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,39 +116,70 @@ export const useProfileScreen = () => {
   }, [reports, user?.uid, user?.email, user?.displayName]);
 
   const stats = useMemo<ProfileStats>(() => {
+    const totalReports = userReports.length;
+    const activeReports = userReports.filter((report) => report.status === "active")
+      .length;
+    const resolvedReports = userReports.filter(
+      (report) => report.status === "resolved"
+    ).length;
+    const highSeverityReports = userReports.filter((report) => {
+      return (report.urgencyLevel ?? report.severity) === "high";
+    }).length;
+    const areaKeys = new Set(
+      userReports.map((report) => {
+        if (report.address?.trim()) {
+          return report.address.trim().split(",").slice(-2).join(",").trim();
+        }
+
+        return `${report.latitude.toFixed(1)},${report.longitude.toFixed(1)}`;
+      })
+    );
+    const points =
+      totalReports * 35 + resolvedReports * 45 + highSeverityReports * 20;
+
     return {
-      totalReports: userReports.length,
-      activeReports: userReports.filter((report) => report.status === "active")
-        .length,
-      resolvedReports: userReports.filter(
-        (report) => report.status === "resolved"
-      ).length,
-      highSeverityReports: userReports.filter((report) => {
-        return (report.urgencyLevel ?? report.severity) === "high";
-      }).length,
+      totalReports,
+      activeReports,
+      resolvedReports,
+      highSeverityReports,
+      points,
+      areas: areaKeys.size,
+      badges: [
+        totalReports > 0,
+        resolvedReports > 0,
+        highSeverityReports > 0,
+        areaKeys.size >= 3,
+      ].filter(Boolean).length,
     };
   }, [userReports]);
 
   const handleLogout = () => {
-    Alert.alert("Logout", "Log out of this account?", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await logout();
-            router.replace(LOGIN_ROUTE);
-          } catch (error) {
-            console.error("Logout error:", error);
-            Alert.alert("Logout Failed", "Something went wrong while logging out.");
-          }
+    Alert.alert(
+      t("profile.hook.logout.title"),
+      t("profile.hook.logout.message"),
+      [
+        {
+          text: t("common.cancel"),
+          style: "cancel",
         },
-      },
-    ]);
+        {
+          text: t("profile.action.logout"),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await logout();
+              router.replace(LOGIN_ROUTE);
+            } catch (error) {
+              console.error("Logout error:", error);
+              Alert.alert(
+                t("profile.hook.logout.error.title"),
+                t("profile.hook.logout.error.message")
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
   const pickProfilePhoto = async () => {
@@ -156,8 +192,8 @@ export const useProfileScreen = () => {
 
       if (!permission.granted) {
         Alert.alert(
-          "Izin Galeri Dibutuhkan",
-          "Aktifkan izin galeri untuk memilih foto profil."
+          t("profile.hook.photo.permission.title"),
+          t("profile.hook.photo.permission.message")
         );
         return;
       }
@@ -176,7 +212,10 @@ export const useProfileScreen = () => {
       const assetUri = result.assets?.[0]?.uri;
 
       if (!assetUri) {
-        Alert.alert("Foto Tidak Valid", "Gagal membaca gambar dari galeri.");
+        Alert.alert(
+          t("profile.hook.photo.invalid.title"),
+          t("profile.hook.photo.invalid.message")
+        );
         return;
       }
 
@@ -191,14 +230,17 @@ export const useProfileScreen = () => {
       });
 
       setDraftPhotoUri(nextPhotoURL);
-      Alert.alert("Foto Profil Tersimpan", "Foto profil berhasil diperbarui.");
+      Alert.alert(
+        t("profile.hook.photo.success.title"),
+        t("profile.hook.photo.success.message")
+      );
     } catch (error) {
       setDraftPhotoUri(photoURL);
       Alert.alert(
-        "Gagal Mengubah Foto",
+        t("profile.hook.photo.error.title"),
         error instanceof Error
           ? error.message
-          : "Terjadi kesalahan saat mengubah foto profil."
+          : t("profile.hook.photo.error.message")
       );
     } finally {
       setSavingProfile(false);
@@ -209,12 +251,18 @@ export const useProfileScreen = () => {
     const cleanName = draftName.trim();
 
     if (!user) {
-      Alert.alert("Belum Login", "Silakan login terlebih dahulu.");
+      Alert.alert(
+        t("profile.hook.save.noLogin.title"),
+        t("profile.hook.save.noLogin.message")
+      );
       return;
     }
 
     if (cleanName.length < 2) {
-      Alert.alert("Nama Terlalu Pendek", "Nama minimal 2 karakter.");
+      Alert.alert(
+        t("profile.alert.nameTooShort.title"),
+        t("profile.alert.nameTooShort.message")
+      );
       return;
     }
 
@@ -237,16 +285,16 @@ export const useProfileScreen = () => {
 
       setDraftPhotoUri(nextPhotoURL);
       Alert.alert(
-        "Profil Tersimpan",
-        "Nama dan foto profil berhasil diperbarui."
+        t("profile.hook.save.success.title"),
+        t("profile.hook.save.success.message")
       );
     } catch (error) {
       console.error("Update profile error:", error);
       Alert.alert(
-        "Gagal Menyimpan Profil",
+        t("profile.hook.save.error.title"),
         error instanceof Error
           ? error.message
-          : "Terjadi kesalahan saat menyimpan profil."
+          : t("profile.hook.save.error.message")
       );
     } finally {
       setSavingProfile(false);
@@ -264,6 +312,8 @@ export const useProfileScreen = () => {
     draftName,
     setDraftName,
     draftPhotoUri,
+    reports,
+    userReports,
     stats,
     pickProfilePhoto,
     saveProfile,

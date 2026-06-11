@@ -59,7 +59,7 @@ export default function IncidentModalShell({
 
             <View style={styles.header}>
               <View style={styles.headerText}>
-                <Text style={styles.title}>{title}</Text>
+                <Text style={styles.title}>{title.toUpperCase()}</Text>
 
                 {subtitle ? (
                   <Text style={styles.subtitle}>{subtitle}</Text>
@@ -76,7 +76,7 @@ export default function IncidentModalShell({
                   pressed && styles.closeButtonPressed,
                 ]}
               >
-                <Ionicons name="close" size={22} color={colors.text} />
+                <Ionicons name="close" size={24} color={colors.textInverse} />
               </Pressable>
             </View>
 
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: "flex-end",
-    backgroundColor: "rgba(15, 23, 42, 0.35)",
+    backgroundColor: "rgba(0,0,0, 0.6)", // Darker, more serious backdrop
   },
   backdropPressArea: {
     flex: 1,
@@ -114,18 +114,18 @@ const styles = StyleSheet.create({
   sheet: {
     maxHeight: "90%",
     backgroundColor: colors.background,
-    borderTopLeftRadius: radius["3xl"],
-    borderTopRightRadius: radius["3xl"],
+    borderTopLeftRadius: radius.xl, // Sharper than 3xl
+    borderTopRightRadius: radius.xl,
     paddingTop: spacing.sm,
     ...shadow.floating,
   },
   handle: {
     alignSelf: "center",
     width: 44,
-    height: 5,
-    borderRadius: radius.full,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: colors.border,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   header: {
     paddingHorizontal: spacing.lg,
@@ -133,35 +133,34 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomWidth: 2,
+    borderBottomColor: colors.surfaceContainerHigh,
   },
   headerText: {
     flex: 1,
   },
   title: {
-    fontSize: 18,
-    fontWeight: "800",
+    fontSize: 16,
+    fontWeight: "900",
     color: colors.text,
+    letterSpacing: 1,
   },
   subtitle: {
     marginTop: 2,
-    ...typography.caption,
+    fontSize: 12,
+    fontWeight: "600",
     color: colors.textMuted,
   },
   closeButton: {
-    width: 38,
-    height: 38,
-    borderRadius: radius.full,
-    backgroundColor: colors.surface,
+    width: 36,
+    height: 36,
+    borderRadius: radius.sm,
+    backgroundColor: colors.text, // Solid contrast block
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.border,
   },
   closeButtonPressed: {
-    opacity: 0.75,
-    transform: [{ scale: 0.96 }],
+    opacity: 0.8,
   },
   content: {
     padding: spacing.lg,
@@ -176,6 +175,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
   },
 });

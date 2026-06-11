@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, Text, TextInput, View } from "react-native";
 
-import AppCard from "../../../components/ui/AppCard";
 import { colors } from "../../../theme/colors";
 import type { ProfileStats } from "../hooks/useProfileScreen";
 import { profileStyles as styles } from "../profileStyles";
@@ -27,7 +26,7 @@ export function StatsStrip({ stats }: { stats: ProfileStats }) {
       color: colors.success,
     },
     {
-      label: "High",
+      label: "Urgent",
       value: stats.highSeverityReports,
       iconName: "warning-outline" as const,
       color: colors.warningDark,
@@ -35,16 +34,16 @@ export function StatsStrip({ stats }: { stats: ProfileStats }) {
   ];
 
   return (
-    <AppCard style={styles.statsCard}>
+    <View style={styles.statsBox}>
       {items.map((item, index) => (
         <View key={item.label} style={styles.statItem}>
-          <Ionicons name={item.iconName} size={18} color={item.color} />
+          <Ionicons name={item.iconName} size={20} color={item.color} />
           <Text style={styles.statValue}>{item.value}</Text>
           <Text style={styles.statLabel}>{item.label}</Text>
           {index < items.length - 1 ? <View style={styles.statDivider} /> : null}
         </View>
       ))}
-    </AppCard>
+    </View>
   );
 }
 
@@ -70,11 +69,11 @@ export function EditableNameRow({
   return (
     <View style={styles.accountRow}>
       <View style={styles.accountIcon}>
-        <Ionicons name="person-outline" size={19} color={colors.textMuted} />
+        <Ionicons name="person" size={18} color={colors.primary} />
       </View>
 
       <View style={styles.accountText}>
-        <Text style={styles.accountLabel}>Nama</Text>
+        <Text style={styles.accountLabel}>Full Name</Text>
 
         {isEditing ? (
           <TextInput
@@ -82,7 +81,7 @@ export function EditableNameRow({
             onChangeText={onChange}
             editable={!saving}
             autoFocus
-            placeholder="Masukkan nama"
+            placeholder="Enter your name"
             placeholderTextColor={colors.textSoft}
             style={styles.accountNameInput}
           />
@@ -100,10 +99,11 @@ export function EditableNameRow({
             disabled={saving || draftValue.trim().length < 2}
             style={({ pressed }) => [
               styles.inlineActionButton,
+              styles.btnSuccess,
               pressed && styles.inlineActionPressed,
             ]}
           >
-            <Ionicons name="checkmark" size={18} color={colors.success} />
+            <Ionicons name="checkmark" size={18} color={colors.textInverse} />
           </Pressable>
 
           <Pressable
@@ -111,10 +111,11 @@ export function EditableNameRow({
             disabled={saving}
             style={({ pressed }) => [
               styles.inlineActionButton,
+              styles.btnDanger,
               pressed && styles.inlineActionPressed,
             ]}
           >
-            <Ionicons name="close" size={18} color={colors.danger} />
+            <Ionicons name="close" size={18} color={colors.textInverse} />
           </Pressable>
         </View>
       ) : (
@@ -125,7 +126,7 @@ export function EditableNameRow({
             pressed && styles.inlineActionPressed,
           ]}
         >
-          <Ionicons name="pencil" size={16} color={colors.textMuted} />
+          <Ionicons name="pencil" size={16} color={colors.textSoft} />
         </Pressable>
       )}
     </View>
@@ -144,7 +145,7 @@ export function AccountRow({
   return (
     <View style={styles.accountRow}>
       <View style={styles.accountIcon}>
-        <Ionicons name={iconName} size={19} color={colors.textMuted} />
+        <Ionicons name={iconName} size={18} color={colors.primary} />
       </View>
       <View style={styles.accountText}>
         <Text style={styles.accountLabel}>{label}</Text>

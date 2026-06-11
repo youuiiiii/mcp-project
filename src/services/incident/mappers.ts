@@ -1,5 +1,6 @@
 import {
   DocumentData,
+  DocumentSnapshot,
   QueryDocumentSnapshot,
 } from "firebase/firestore";
 
@@ -41,8 +42,12 @@ import {
 } from "./normalizers";
 
 export const mapIncidentDocument = (
-  snapshot: QueryDocumentSnapshot<DocumentData>
+  snapshot: DocumentSnapshot<DocumentData> | QueryDocumentSnapshot<DocumentData>
 ): IncidentReport | null => {
+  if (!snapshot.exists()) {
+    return null;
+  }
+
   const data = snapshot.data();
 
   const rawSubcategory = normalizeSubcategory(data.subcategory);
@@ -262,4 +267,3 @@ export const mapAccuracyVoteDocument = (
     updatedAt: toDate(data.updatedAt),
   };
 };
-

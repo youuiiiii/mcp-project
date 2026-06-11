@@ -1,42 +1,60 @@
+/**
+ * SIGAP Design System
+ * Based on reference: https://mower-filled-64016353.figma.site/
+ */
 export const colors = {
-  background: "#F8FAFC",
-  surface: "#FFFFFF",
-  surfaceMuted: "#F1F5F9",
+  // Core surfaces
+  background: "#F1F5F9",          // Slate 100 for app background
+  surface: "#FFFFFF",             // White for cards
+  surfaceMuted: "#F8FAFC",        // Slate 50
+  surfaceContainer: "#E2E8F0",    // Slate 200
+  surfaceContainerHigh: "#CBD5E1",// Slate 300
 
-  text: "#0F172A",
-  textMuted: "#64748B",
-  textSoft: "#94A3B8",
+  // Text
+  text: "#1E293B",                // Slate 800
+  textPrimary: "#1E293B",
+  textMuted: "#475569",           // Slate 600
+  textSecondary: "#475569",
+  textSoft: "#64748B",            // Slate 500
   textInverse: "#FFFFFF",
   textOnDarkMuted: "#CBD5E1",
 
-  border: "#E2E8F0",
+  // Lines & borders
+  border: "#E2E8F0",              // Slate 200
+  borderStrong: "#CBD5E1",        // Slate 300
 
-  primary: "#DC2626",
-  primaryDark: "#B91C1C",
-  primarySoft: "#FEE2E2",
+  // Primary — SIGAP Teal/Cyan
+  primary: "#0EA5E9",             // Cyan 500
+  primaryDark: "#08627A",         // Deep Teal
+  primarySoft: "#E0F2FE",         // Cyan 100
+  primaryContainer: "#0284C7",    // Cyan 600
 
-  success: "#16A34A",
-  successDark: "#166534",
-  successSoft: "#DCFCE7",
+  // Success / Low Severity
+  success: "#22C55E",             // Green 500
+  successDark: "#15803D",         // Green 700
+  successSoft: "#DCFCE7",         // Green 100
 
-  warning: "#F59E0B",
-  warningDark: "#D97706",
-  warningSoft: "#FEF3C7",
+  // Warning / Moderate Severity
+  warning: "#F97316",             // Orange 500
+  warningDark: "#C2410C",         // Orange 700
+  warningSoft: "#FFEDD5",         // Orange 100
 
-  info: "#2563EB",
+  // Info
+  info: "#3B82F6",                // Blue 500
   infoDark: "#1D4ED8",
   infoSoft: "#DBEAFE",
 
-  dark: "#0F172A",
-  darkSoft: "#1E293B",
-  
+  // Dark
+  dark: "#0F172A",                // Slate 900
+  darkSoft: "#1E293B",            // Slate 800
 
-  danger: "#DC2626",
-  dangerSoft: "#FEE2E2",
-  dangerDark: "#7F1D1D",
+  // Danger/Emergency / High Severity - Red FAB
+  danger: "#EF4444",              // Red 500
+  dangerSoft: "#FEE2E2",          // Red 100
+  dangerDark: "#B91C1C",          // Red 700
 
+  // Shadow base
   shadow: "#0F172A",
-  
 } as const;
 
 export type AppColor = keyof typeof colors;

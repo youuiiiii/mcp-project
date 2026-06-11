@@ -3,10 +3,9 @@ import { StyleSheet, Text, View } from "react-native";
 
 import AppButton from "../../../components/ui/AppButton";
 import AppCard from "../../../components/ui/AppCard";
-import IconBadge from "../../../components/ui/IconBadge";
 import { useI18n } from "../../../i18n";
 import { colors } from "../../../theme/colors";
-import { radius, spacing } from "../../../theme/layout";
+import { radius, shadow, spacing } from "../../../theme/layout";
 import { typography } from "../../../theme/typography";
 import type { ReportLocationDraft } from "../../../types/incident";
 
@@ -27,27 +26,59 @@ export default function ReportLocationNotice({
 }: ReportLocationNoticeProps) {
   const { t } = useI18n();
   const hasManualPin = incidentLocation?.source === "manual_pin";
+  const hasLocation = !!incidentLocation;
+  
   const statusText = incidentLocation
     ? hasManualPin
       ? t("report.location.manualPin")
       : t("report.location.currentPin")
     : t("report.location.notSet");
 
+  // Determine GPS accuracy level & color
+  let accuracyColor: string = colors.textSoft;
+  let accuracyLabel = "";
+  if (incidentLocation && incidentLocation.accuracyMeters !== null && incidentLocation.accuracyMeters !== undefined) {
+    const acc = incidentLocation.accuracyMeters;
+    if (acc <= 10) {
+      accuracyColor = colors.success;
+      accuracyLabel = "Akurasi Tinggi";
+    } else if (acc <= 35) {
+      accuracyColor = colors.warning;
+      accuracyLabel = "Akurasi Sedang";
+    } else {
+      accuracyColor = colors.danger;
+      accuracyLabel = "Akurasi Rendah";
+    }
+  }
+
   return (
     <AppCard variant="muted" style={styles.card}>
       <View style={styles.headerRow}>
-        <IconBadge variant="info" size="md" rounded={false}>
-          <Ionicons name="location" size={22} color={colors.info} />
-        </IconBadge>
+        <View style={[styles.iconContainer, { backgroundColor: hasLocation ? colors.primarySoft : colors.surfaceContainerHigh }]}>
+          <Ionicons 
+            name={hasLocation ? "location" : "location-outline"} 
+            size={22} 
+            color={hasLocation ? colors.primaryDark : colors.textSoft} 
+          />
+        </View>
 
         <View style={styles.content}>
           <Text style={styles.title}>{t("report.location.title")}</Text>
-
-          <Text style={styles.description}>
+          <Text style={styles.description} numberOfLines={1}>
             {t("report.location.description")}
           </Text>
         </View>
       </View>
+
+      {incidentLocation && (
+        <View style={styles.coordinatePreview}>
+          <Ionicons name="navigate" size={17} color={colors.primary} />
+          <Text style={styles.coordinateText} numberOfLines={1}>
+            {incidentLocation.latitude.toFixed(5)},{" "}
+            {incidentLocation.longitude.toFixed(5)}
+          </Text>
+        </View>
+      )}
 
       <View style={styles.statusBox}>
         <View style={styles.statusTextGroup}>
@@ -55,11 +86,14 @@ export default function ReportLocationNotice({
 
           {incidentLocation?.accuracyMeters !== null &&
           incidentLocation?.accuracyMeters !== undefined ? (
-            <Text style={styles.accuracyText}>
-              {t("report.location.accuracy", {
-                accuracy: incidentLocation.accuracyMeters,
-              })}
-            </Text>
+            <View style={styles.accuracyRow}>
+              <View style={[styles.accuracyDot, { backgroundColor: accuracyColor }]} />
+              <Text style={styles.accuracyText}>
+                {t("report.location.accuracy", {
+                  accuracy: Math.round(incidentLocation.accuracyMeters),
+                })} ({accuracyLabel})
+              </Text>
+            </View>
           ) : null}
         </View>
       </View>
@@ -68,25 +102,25 @@ export default function ReportLocationNotice({
         <AppButton
           title={t("report.location.useCurrent")}
           variant="secondary"
-          size="sm"
+          size="md"
           loading={loadingLocation}
           disabled={disabled || loadingLocation}
           onPress={onUseCurrentLocation}
           style={styles.actionButton}
           leftIcon={
-            <Ionicons name="locate" size={15} color={colors.text} />
+            <Ionicons name="locate" size={16} color={colors.primary} />
           }
         />
 
         <AppButton
           title={t("report.location.adjustPin")}
           variant="primary"
-          size="sm"
+          size="md"
           disabled={disabled || !incidentLocation}
           onPress={onAdjustPin}
           style={styles.actionButton}
           leftIcon={
-            <Ionicons name="map" size={15} color={colors.textInverse} />
+            <Ionicons name="map" size={16} color={colors.textInverse} />
           }
         />
       </View>
@@ -96,54 +130,93 @@ export default function ReportLocationNotice({
 
 const styles = StyleSheet.create({
   card: {
-    gap: spacing.md,
-    backgroundColor: colors.infoSoft,
-    borderColor: "#BFDBFE",
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    ...shadow.card,
   },
   headerRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     gap: spacing.md,
+  },
+  iconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    alignItems: "center",
+    justifyContent: "center",
   },
   content: {
     flex: 1,
   },
   title: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: colors.infoDark,
+    fontSize: 15,
+    lineHeight: 20,
+    color: colors.text,
+    fontWeight: "700",
   },
   description: {
-    marginTop: 4,
+    marginTop: 2,
     ...typography.caption,
-    color: "#1E3A8A",
+    color: colors.textMuted,
+  },
+  coordinatePreview: {
+    minHeight: 38,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.primarySoft,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+  },
+  coordinateText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: colors.primaryDark,
   },
   statusBox: {
-    borderRadius: radius.lg,
-    backgroundColor: "rgba(255,255,255,0.62)",
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
-    borderColor: "rgba(37,99,235,0.18)",
+    borderColor: colors.border,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   statusTextGroup: {
-    gap: 2,
+    gap: 4,
   },
   statusLabel: {
     fontSize: 12,
-    fontWeight: "800",
-    color: colors.infoDark,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  accuracyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  accuracyDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   accuracyText: {
-    ...typography.caption,
+    fontSize: 11,
+    fontWeight: "600",
     color: colors.textMuted,
   },
   actions: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: spacing.sm,
   },
   actionButton: {
-    flexGrow: 1,
+    flex: 1,
   },
 });

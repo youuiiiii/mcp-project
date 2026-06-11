@@ -30,6 +30,11 @@ type AppButtonProps = {
   textStyle?: StyleProp<TextStyle>;
 };
 
+/**
+ * Dispatch Terminal Design System — Button
+ *
+ * Sharp, high-contrast, operational.
+ */
 export default function AppButton({
   title,
   onPress,
@@ -62,7 +67,7 @@ export default function AppButton({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === "primary" || variant === "danger" ? colors.textInverse : colors.text}
+          color={variant === "primary" || variant === "danger" ? colors.textInverse : colors.primary}
         />
       ) : (
         <View style={styles.content}>
@@ -76,7 +81,7 @@ export default function AppButton({
             ]}
             numberOfLines={1}
           >
-            {title}
+            {title.toUpperCase()}
           </Text>
           {rightIcon}
         </View>
@@ -94,8 +99,8 @@ const variantStyles: Record<
 > = {
   primary: {
     container: {
-      backgroundColor: colors.dark,
-      borderColor: colors.dark,
+      backgroundColor: colors.primary,      
+      borderColor: colors.primary,
     },
     text: {
       color: colors.textInverse,
@@ -104,16 +109,16 @@ const variantStyles: Record<
   secondary: {
     container: {
       backgroundColor: colors.surface,
-      borderColor: colors.border,
+      borderColor: colors.borderStrong,
     },
     text: {
-      color: colors.text,
+      color: colors.text,                  
     },
   },
   danger: {
     container: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
+      backgroundColor: colors.danger,         
+      borderColor: colors.danger,
     },
     text: {
       color: colors.textInverse,
@@ -125,7 +130,7 @@ const variantStyles: Record<
       borderColor: "transparent",
     },
     text: {
-      color: colors.text,
+      color: colors.primary,
     },
   },
 };
@@ -148,20 +153,20 @@ const sizeStyles: Record<
   },
   md: {
     container: {
-      minHeight: 44,
+      minHeight: 48,                          
       paddingHorizontal: spacing.lg,
     },
     text: {
-      fontSize: 14,
+      fontSize: 13,
     },
   },
   lg: {
     container: {
-      minHeight: 52,
+      minHeight: 56,
       paddingHorizontal: spacing.xl,
     },
     text: {
-      fontSize: 15,
+      fontSize: 14,
     },
   },
 };
@@ -169,7 +174,7 @@ const sizeStyles: Record<
 const styles = StyleSheet.create({
   base: {
     borderWidth: 1,
-    borderRadius: radius.full,
+    borderRadius: radius.sm,                  // Sharp, rigid corners
     alignItems: "center",
     justifyContent: "center",
   },
@@ -183,13 +188,13 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   text: {
-    fontWeight: "900",
+    fontWeight: "900",                        // Extremely bold
+    letterSpacing: 1,
   },
   pressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.99 }],
+    opacity: 0.8,
   },
   disabled: {
-    opacity: 0.55,
+    opacity: 0.5,
   },
 });

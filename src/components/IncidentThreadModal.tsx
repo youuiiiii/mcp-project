@@ -17,6 +17,7 @@ import type {
   IncidentContentReportReason,
   IncidentReport,
 } from "../types/incident";
+import { useI18n } from "../i18n";
 
 type IncidentThreadModalProps = {
   visible: boolean;
@@ -36,6 +37,7 @@ export default function IncidentThreadModal({
   onOpenResolve,
 }: IncidentThreadModalProps) {
   const { user, isModerator } = useAuth();
+  const { t } = useI18n();
 
   const thread = useIncidentThread({
     visible,
@@ -104,14 +106,14 @@ export default function IncidentThreadModal({
       }
 
       if (!selectedReason) {
-        Alert.alert("Reason Required", "Choose a content report reason.");
+        Alert.alert("Reason Required", "Select a reason to report this content.");
         return;
       }
 
       const actorKey = user.uid || user.email;
 
       if (!actorKey) {
-        Alert.alert("Invalid Identity", "Your account is invalid.");
+        Alert.alert("Invalid Identity", "Your account is not valid.");
         return;
       }
 
@@ -132,13 +134,13 @@ export default function IncidentThreadModal({
       setSelectedReason(null);
       setReportNote("");
 
-      Alert.alert("Content Reported", "Thank you. This report will be reviewed.");
+      Alert.alert("Report Submitted", "Thank you. This report will be reviewed by our team.");
     } catch (error) {
       Alert.alert(
-        "Could Not Report Content",
+        "Failed to Report Content",
         error instanceof Error
           ? error.message
-          : "Something went wrong while sending the content report."
+          : "An error occurred while submitting the content report."
       );
     } finally {
       setReportSubmitting(false);
@@ -149,8 +151,8 @@ export default function IncidentThreadModal({
     <>
       <IncidentModalShell
         visible={visible}
-        title="Report Details"
-        subtitle="Incident information and community updates."
+        title={t("incident.threadModal.title")}
+        subtitle={t("incident.threadModal.subtitle")}
         onClose={thread.closeThread}
         submitting={thread.replySubmitting}
         headerRight={
@@ -181,7 +183,7 @@ export default function IncidentThreadModal({
           currentUserVote={thread.accuracySummary.currentUserVote}
           disabledReason={
             thread.isOwnIncident
-              ? "Your original report is already counted. Nearby users can confirm whether it is still there."
+              ? t("incident.accuracy.disabledReason")
               : null
           }
           label={thread.accuracySummary.label}

@@ -1,33 +1,54 @@
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { type Href, useRouter } from "expo-router";
 import { useRef, useState } from "react";
-import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
 import { Pressable, Text, View } from "react-native";
-import SosInfoModal from "../sos/SosInfoModal";
+import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import FilterBar, { type MapFilterValue } from "../../components/FilterBar";
 import IncidentThreadModal from "../../components/IncidentThreadModal";
 import ResolveIncidentModal from "../../components/ResolveIncidentModal";
 import VerifyIncidentModal from "../../components/VerifyIncidentModal";
-import AppButton from "../../components/ui/AppButton";
 import LoadingState from "../../components/ui/LoadingState";
-import { getFilterLabel } from "../../constants/incident";
 import { mapStyles as styles } from "../../styles/mapStyles";
 import { colors } from "../../theme/colors";
-import { formatDistance } from "../../utils/geo";
 import IncidentMapMarker from "./components/IncidentMapMarker";
 import { useMapIncidents } from "./hooks/useMapIncidents";
 import { useMapModalState } from "./hooks/useMapModalState";
 import { useStableUserLocation } from "./hooks/useStableUserLocation";
-import { getReportDisplayMeta } from "./utils/reportDisplayMeta";
 
 const REPORT_ROUTE = "/(tabs)/report" as Href;
+
+const CLEAN_MAP_STYLE = [
+  {
+    featureType: "poi",
+    stylers: [{ visibility: "off" }],
+  },
+  {
+    featureType: "transit",
+    stylers: [{ visibility: "off" }],
+  },
+  {
+    featureType: "road",
+    elementType: "geometry",
+    stylers: [{ color: "#DCE7EC" }],
+  },
+  {
+    featureType: "water",
+    elementType: "geometry",
+    stylers: [{ color: "#B8D9E5" }],
+  },
+  {
+    featureType: "landscape",
+    elementType: "geometry",
+    stylers: [{ color: "#EEF4F2" }],
+  },
+];
 
 export default function MapScreen() {
   const router = useRouter();
   const mapRef = useRef<MapView | null>(null);
-  const [sosVisible, setSosVisible] = useState(false);
-
   const [selectedFilter, setSelectedFilter] = useState<MapFilterValue>("all");
 
   const {
@@ -54,143 +75,129 @@ export default function MapScreen() {
   });
 
   const errorMessage = locationErrorMessage ?? reportsErrorMessage;
-
-  const nearestIncidentMeta = nearestIncident.incident
-    ? getReportDisplayMeta(nearestIncident.incident)
-    : null;
-
   const activeCount = reports.filter((report) => report.status === "active").length;
+  const showLoadingOverlay = loadingLocation || loadingReports;
 
   const handleOpenReport = () => {
     router.push(REPORT_ROUTE);
   };
 
-  if (loadingLocation && loadingReports) {
-    return (
-      <View style={styles.container}>
-        <LoadingState message="Preparing crisis map..." />
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.container}>
-      <MapView
-        ref={mapRef}
-        provider={PROVIDER_GOOGLE}
-        style={styles.map}
-        initialRegion={region}
-        showsUserLocation
-        showsMyLocationButton={false}
-        showsCompass
-        showsScale
-      >
-        {filteredReports.map((incident) => (
-          <IncidentMapMarker
-            key={incident.id}
-            incident={incident}
-            onPress={modalState.openThreadModal}
-          />
-        ))}
-      </MapView>
-
-      <View style={styles.topOverlay}>
-        <View style={styles.compactHeader}>
-          <View style={styles.headerTitleGroup}>
-            <Text style={styles.headerEyebrow}>Live monitoring</Text>
-            <Text style={styles.headerTitle}>Crisis Map</Text>
-          </View>
-
-          <View style={styles.liveBadge}>
-            <View style={styles.liveDot} />
-            <Text style={styles.liveText}>{activeCount} active</Text>
-          </View>
-        </View>
-
-        {errorMessage ? (
-          <View style={styles.errorBanner}>
-            <Ionicons name="warning" size={16} color={colors.primaryDark} />
-            <Text style={styles.errorText}>{errorMessage}</Text>
-          </View>
-        ) : null}
-
-        <View style={styles.filterWrapper}>
-          <FilterBar
-            selectedFilter={selectedFilter}
-            onChange={setSelectedFilter}
-          />
-        </View>
-      </View>
-
-      <View style={styles.mapActions}>
-
-        <Pressable
-          onPress={() => setSosVisible(true)}
-          style={({ pressed }) => [
-            styles.sosButton,
-            pressed && styles.sosButtonPressed,
-          ]}
-        >
-          <Ionicons name="alert" size={22} color={colors.textInverse} />
-          <Text style={styles.sosButtonText}>SOS Info</Text>
-        </Pressable>
-        <Pressable
-          onPress={focusUserLocation}
-          style={({ pressed }) => [
-            styles.locateButton,
-            pressed && styles.locateButtonPressed,
-          ]}
-        >
-          <Ionicons name="locate" size={23} color={colors.text} />
-        </Pressable>
-
-        <AppButton
-          title="Report"
-          variant="danger"
-          size="md"
-          onPress={handleOpenReport}
-          leftIcon={
-            <Ionicons name="add-circle" size={19} color={colors.textInverse} />
-          }
-          style={styles.reportButton}
-        />
-      </View>
-
-      <View style={styles.bottomOverlay}>
-        <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <View style={styles.infoTextGroup}>
-              <Text style={styles.infoTitle}>
-                {filteredReports.length} reports shown
-              </Text>
-
-              <Text style={styles.infoDescription}>
-                Filter: {getFilterLabel(selectedFilter)}
+    <>
+      <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+        <View style={styles.container}>
+          <LinearGradient
+            colors={["#0C7186", "#11B7D2"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.header}
+          >
+            <View style={styles.headerTextGroup}>
+              <Text style={styles.headerTitle}>Incident Map</Text>
+              <Text style={styles.headerSubtitle}>
+                Monitor incidents across all areas
               </Text>
             </View>
 
-            <Ionicons name="map" size={20} color={colors.textMuted} />
+            <Pressable
+              onPress={() => setSelectedFilter("all")}
+              style={({ pressed }) => [
+                styles.filterIconButton,
+                pressed && styles.iconButtonPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Clear map filters"
+            >
+              <Ionicons name="filter-outline" size={22} color={colors.textInverse} />
+            </Pressable>
+          </LinearGradient>
+
+          <View style={styles.filterShell}>
+            <FilterBar
+              selectedFilter={selectedFilter}
+              onChange={setSelectedFilter}
+            />
           </View>
 
-          {nearestIncident.incident &&
-          nearestIncidentMeta &&
-          nearestIncident.distance !== null ? (
-            <View style={styles.nearestRow}>
+          <View style={styles.mapPanel}>
+            <MapView
+              ref={mapRef}
+              provider={PROVIDER_GOOGLE}
+              style={styles.map}
+              initialRegion={region}
+              customMapStyle={CLEAN_MAP_STYLE}
+              showsUserLocation
+              showsMyLocationButton={false}
+              showsCompass={false}
+              showsScale={false}
+              toolbarEnabled={false}
+            >
+              {filteredReports.map((incident) => (
+                <IncidentMapMarker
+                  key={incident.id}
+                  incident={incident}
+                  onPress={modalState.openThreadModal}
+                />
+              ))}
+            </MapView>
+
+            {showLoadingOverlay ? (
+              <View style={styles.loadingOverlay}>
+                <LoadingState message="Preparing map..." />
+              </View>
+            ) : null}
+
+            {errorMessage ? (
+              <View style={styles.errorBanner}>
+                <Ionicons name="warning" size={16} color={colors.dangerDark} />
+                <Text style={styles.errorText} numberOfLines={2}>
+                  {errorMessage}
+                </Text>
+              </View>
+            ) : null}
+
+            <View style={styles.mapActions}>
+              <Pressable
+                onPress={focusUserLocation}
+                style={({ pressed }) => [
+                  styles.roundActionButton,
+                  pressed && styles.iconButtonPressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Focus on my location"
+              >
+                <Ionicons name="navigate" size={24} color={colors.primaryContainer} />
+              </Pressable>
+            </View>
+          </View>
+
+          <View style={styles.legendBar}>
+            <View style={styles.legendGroup}>
+              <LegendDot color="#EF4444" label="High" />
+              <LegendDot color="#F59E0B" label="Moderate" />
+              <LegendDot color="#10B981" label="Low" />
+            </View>
+
+            <View style={styles.visibleCount}>
               <Ionicons
-                name={nearestIncidentMeta.iconName}
-                size={17}
-                color={nearestIncidentMeta.color}
+                name="location-outline"
+                size={14}
+                color={colors.textSoft}
               />
-
-              <Text style={styles.nearestText} numberOfLines={1}>
-                Nearest: {nearestIncidentMeta.label} -{" "}
-                {formatDistance(nearestIncident.distance)}
+              <Text style={styles.visibleCountText}>
+                {filteredReports.length} incidents visible
               </Text>
             </View>
-          ) : null}
+          </View>
+
+          <View style={styles.statusStrip}>
+            <View style={styles.liveDot} />
+            <Text style={styles.statusStripText}>
+              {activeCount} active incidents
+            </Text>
+          </View>
         </View>
-      </View>
-      
+      </SafeAreaView>
 
       <IncidentThreadModal
         visible={modalState.isThreadModalVisible}
@@ -212,16 +219,20 @@ export default function MapScreen() {
         incident={modalState.selectedResolveIncident}
         onClose={modalState.closeResolveModal}
       />
-
-      <SosInfoModal
-        visible={sosVisible}
-        userLocation={userLocation}
-        nearestIncidentId={nearestIncident.incident?.id ?? null}
-        nearestIncidentDistance={nearestIncident.distance}
-        onClose={() => setSosVisible(false)}
-      />
-    </View>
-    
+    </>
   );
-  
+}
+
+type LegendDotProps = {
+  color: string;
+  label: string;
+};
+
+function LegendDot({ color, label }: LegendDotProps) {
+  return (
+    <View style={styles.legendItem}>
+      <View style={[styles.legendDot, { backgroundColor: color }]} />
+      <Text style={styles.legendText}>{label}</Text>
+    </View>
+  );
 }

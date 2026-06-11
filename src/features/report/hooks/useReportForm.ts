@@ -6,7 +6,7 @@ import {
   calculateIncidentUrgency,
   DEFAULT_IMPACT_ANSWERS,
   getReportKindOption,
-} from "../../../constants/reportTaxonomy";
+ isIncidentKind } from "../../../constants/reportTaxonomy";
 import { useAuth } from "../../../contexts/AuthContext";
 import {
   DUPLICATE_CHECK_RADIUS_METERS,
@@ -36,14 +36,20 @@ import type {
   ReportLocationDraft,
 } from "../../../types/incident";
 
-const MAP_ROUTE = "/(tabs)/map" as Href;
 
-export const useReportForm = () => {
+
+const MAP_ROUTE = "/(tabs)" as any;
+
+export const useReportForm = (options?: { onSuccess?: () => void; initialKind?: string }) => {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useI18n();
 
-  const [kind, setKind] = useState<IncidentKind | null>(null);
+  const [kind, setKind] = useState<IncidentKind | null>(
+    options?.initialKind && isIncidentKind(options.initialKind)
+      ? (options.initialKind as IncidentKind)
+      : null
+  );
   const [impactAnswers, setImpactAnswers] = useState<IncidentImpactAnswers>({
     ...DEFAULT_IMPACT_ANSWERS,
   });
@@ -296,16 +302,20 @@ export const useReportForm = () => {
         reporterEmail: user.email ?? null,
       });
 
-      Alert.alert(t("report.success.title"), t("report.success.message"), [
-        {
-          text: t("report.success.viewMap"),
-          onPress: () => {
-            resetForm();
-            router.push(MAP_ROUTE);
+      if (options?.onSuccess) {
+        options.onSuccess();
+      } else {
+        Alert.alert(t("report.success.title"), t("report.success.message"), [
+          {
+            text: t("report.success.viewMap"),
+            onPress: () => {
+              resetForm();
+              router.push(MAP_ROUTE);
+            },
           },
-        },
-        { text: t("report.success.createAnother"), onPress: resetForm },
-      ]);
+          { text: t("report.success.createAnother"), onPress: resetForm },
+        ]);
+      }
     } catch (error) {
       console.error("Create report error:", error);
       Alert.alert(
@@ -341,5 +351,6 @@ export const useReportForm = () => {
     pickFromGallery,
     removePhoto,
     handleSubmit,
+    resetForm,
   };
 };

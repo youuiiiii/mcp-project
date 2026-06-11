@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
 import type { MapFilterValue } from "../../../components/FilterBar";
-import { isIncidentCategory } from "../../../constants/incident";
 import { subscribeToIncidents } from "../../../services/incidentService";
 import type { IncidentReport } from "../../../types/incident";
 import { getNearestIncident, isValidCoordinate } from "../../../utils/geo";
@@ -54,21 +53,7 @@ export const useMapIncidents = ({
       return validReports;
     }
 
-    if (selectedFilter === "active") {
-      return validReports.filter((report) => report.status === "active");
-    }
-
-    if (selectedFilter === "resolved") {
-      return validReports.filter((report) => report.status === "resolved");
-    }
-
-    if (isIncidentCategory(selectedFilter)) {
-      return validReports.filter((report) => {
-        return report.category === selectedFilter;
-      });
-    }
-
-    return validReports;
+    return validReports.filter((report) => report.category === selectedFilter);
   }, [validReports, selectedFilter]);
 
   const activeReports = useMemo(() => {

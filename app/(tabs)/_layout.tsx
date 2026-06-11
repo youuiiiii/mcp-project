@@ -1,26 +1,19 @@
 import { Ionicons } from "@expo/vector-icons";
 import { type Href, Redirect, Tabs } from "expo-router";
-import {
-  ActivityIndicator,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { useI18n } from "@/i18n";
 import { colors } from "@/theme/colors";
 
 const LOGIN_ROUTE = "/login" as Href;
 
 export default function TabsLayout() {
   const { user, loading } = useAuth();
-  const { t } = useI18n();
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.danger} />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -33,100 +26,99 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.danger,
+        tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSoft,
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
-      {/* HOME */}
       <Tabs.Screen
         name="index"
         options={{
-          title: t("tabs.home"),
+          title: "Home",
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
               name={focused ? "home" : "home-outline"}
-              size={24}
+              size={22}
               color={color}
             />
           ),
         }}
       />
 
-      {/* INCIDENTS */}
       <Tabs.Screen
-        name="incidents"
+        name="maps"
         options={{
-          title: "Incidents",
+          title: "Maps",
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
-              name={focused ? "list" : "list-outline"}
-              size={24}
+              name={focused ? "map" : "map-outline"}
+              size={22}
               color={color}
             />
           ),
         }}
       />
 
-      {/* MAP CENTER BUTTON */}
-      <Tabs.Screen
-        name="map"
-        options={{
-          title: "",
-
-          tabBarIcon: ({ focused }) => (
-            <View style={styles.mapButton}>
-              <Ionicons
-                name={focused ? "map" : "map-outline"}
-                size={30}
-                color="white"
-              />
-            </View>
-          ),
-
-          tabBarButton: (props: any) => (
-            <TouchableOpacity
-              {...props}
-              style={styles.mapButtonContainer}
-            />
-          ),
-        }}
-      />
-
-      {/* REPORT */}
       <Tabs.Screen
         name="report"
         options={{
-          title: t("tabs.report"),
+          title: "Report",
+          tabBarIcon: ({ focused }) => (
+            <View style={styles.fabContainer}>
+              <View style={[styles.fab, focused && styles.fabFocused]}>
+                <Ionicons
+                  name={focused ? "megaphone" : "megaphone-outline"}
+                  size={28}
+                  color={colors.surface}
+                />
+              </View>
+            </View>
+          ),
+          tabBarLabel: ({ focused }) => (
+            <Text
+              style={[styles.reportLabel, focused && styles.reportLabelActive]}
+            >
+              Report
+            </Text>
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="activity"
+        options={{
+          title: "Incident",
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
-              name={focused ? "document-text" : "document-text-outline"}
-              size={24}
+              name={focused ? "warning" : "warning-outline"}
+              size={22}
               color={color}
             />
           ),
         }}
       />
 
-      {/* PROFILE */}
+      <Tabs.Screen
+        name="incident/[id]"
+        options={{
+          href: null,
+        }}
+      />
+
       <Tabs.Screen
         name="profile"
         options={{
-          title: t("tabs.profile"),
+          title: "Profile",
           tabBarIcon: ({ focused, color }) => (
             <Ionicons
               name={focused ? "person" : "person-outline"}
-              size={24}
+              size={22}
               color={color}
             />
           ),
         }}
       />
-
-      <Tabs.Screen name="analytics" options={{ href: null }} />
-      <Tabs.Screen name="education" options={{ href: null }} />
-      <Tabs.Screen name="detail" options={{ href: null }} />
     </Tabs>
   );
 }
@@ -140,42 +132,57 @@ const styles = StyleSheet.create({
   },
 
   tabBar: {
-    height: 75,
-    paddingBottom: 10,
-    paddingTop: 10,
+    height: 88,
+    paddingBottom: 14,
+    paddingTop: 12,
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+    elevation: 8,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
   },
 
   tabBarLabel: {
-    fontSize: 11,
-    fontWeight: "700",
+    fontSize: 10,
+    fontWeight: "800",
+    marginTop: 3,
+    textTransform: "none",
   },
 
-  mapButtonContainer: {
-    top: -18,
-    justifyContent: "center",
+  fabContainer: {
+    position: "absolute",
+    top: -24,
     alignItems: "center",
+    justifyContent: "center",
   },
-
-  mapButton: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    backgroundColor: colors.danger,
-
-    justifyContent: "center",
+  fab: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#F04E4E",
     alignItems: "center",
-
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-
+    justifyContent: "center",
+    borderWidth: 4,
+    borderColor: colors.surface,
+    shadowColor: "#F04E4E",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.28,
+    shadowRadius: 12,
     elevation: 8,
+  },
+  fabFocused: {
+    backgroundColor: colors.dangerDark,
+  },
+  reportLabel: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: colors.textSoft,
+    marginTop: 12, // Tweaked to align properly without pushing it off the screen
+  },
+  reportLabelActive: {
+    color: colors.danger,
   },
 });

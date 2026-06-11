@@ -1,26 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, Text, View } from "react-native";
-
+import { Pressable, Text, View, StyleSheet } from "react-native";
 import AppButton from "../../../components/ui/AppButton";
-import StatusBadge from "../../../components/ui/StatusBadge";
 import { getIncidentDisplayMeta } from "../../../constants/incident";
 import { colors } from "../../../theme/colors";
+import { radius, spacing } from "../../../theme/layout";
 import type { IncidentReport } from "../../../types/incident";
-import { getIncidentConfidenceMeta } from "../../../utils/incidentConfidence";
-import { getIncidentFreshnessMeta } from "../../../utils/incidentFreshness";
-import IncidentImpactSummary from "../components/IncidentImpactSummary";
 import IncidentImageGallery from "../components/IncidentImageGallery";
-import {
-  getUrgencyLevelLabel,
-  getUrgencyVariant,
-} from "./incidentOverviewMeta";
-import { incidentOverviewStyles as styles } from "./incidentOverviewStyles";
-import {
-  formatIncidentDate,
-  getCommunityUpdateMeta,
-  getStatusLabel,
-  getStatusVariant,
-} from "./threadLabels";
+import { formatIncidentDate } from "./threadLabels";
 
 type IncidentOverviewCardProps = {
   incident: IncidentReport;
@@ -30,6 +16,8 @@ type IncidentOverviewCardProps = {
   onOpenResolve?: (incident: IncidentReport) => void;
 };
 
+import { useI18n } from "../../../i18n";
+
 export default function IncidentOverviewCard({
   incident,
   onReportContent,
@@ -37,207 +25,260 @@ export default function IncidentOverviewCard({
   onOpenVerify,
   onOpenResolve,
 }: IncidentOverviewCardProps) {
+  const { t, language } = useI18n();
   const meta = getIncidentDisplayMeta({
     category: incident.category,
     subcategory: incident.subcategory ?? incident.type,
   });
 
-  const author = incident.reportedBy || incident.reporterEmail || "Anonymous";
-  const confidence = getIncidentConfidenceMeta(incident);
-  const freshness = getIncidentFreshnessMeta(incident);
-  const urgencyLevel = incident.urgencyLevel ?? incident.severity;
-  const urgencyLabel =
-    typeof incident.urgencyScore === "number"
-      ? `Urgency ${incident.urgencyScore}`
-      : `${getUrgencyLevelLabel(urgencyLevel)} urgency`;
-  const latestUpdate = incident.latestCommunityUpdateType
-    ? getCommunityUpdateMeta(incident.latestCommunityUpdateType)
-    : null;
+  const urgencyScore = incident.urgencyScore ?? 20;
+  
+  let urgencyColor: string = colors.info;
+  let severityLabel = "Low Severity";
+  if (urgencyScore >= 70) {
+    urgencyColor = colors.danger;
+    severityLabel = "High Severity";
+  } else if (urgencyScore >= 38) {
+    urgencyColor = colors.warning;
+    severityLabel = "Medium Severity";
+  }
+
+  const verifications = incident.verificationCount ?? 0;
+  const disputes = incident.disputeCount ?? 0;
+  const accurate = incident.accurateCount ?? 0;
+  const totalConfirmations = verifications + accurate;
+
+  const address = incident.address || `${incident.latitude.toFixed(4)}, ${incident.longitude.toFixed(4)}`;
 
   return (
-    <View style={styles.post}>
-      <View style={styles.avatar}>
-        <Ionicons name="person" size={18} color={colors.textInverse} />
-      </View>
-
-      <View style={styles.body}>
-        <View style={styles.authorRow}>
-          <Text style={styles.authorName} numberOfLines={1}>
-            {author}
-          </Text>
-
-          <Text style={styles.dot}>-</Text>
-
-          <Text style={styles.timeText} numberOfLines={1}>
-            {formatIncidentDate(incident.createdAt)}
-          </Text>
-        </View>
-
-        <View style={styles.metaRow}>
-          <View
-            style={[
-              styles.categoryPill,
-              {
-                backgroundColor: meta.lightColor,
-              },
-            ]}
-          >
+    <View style={styles.container}>
+      {/* 1. What & Where */}
+      <View style={styles.contentPadding}>
+        <View style={styles.topMeta}>
+          <View style={[styles.categoryBadge, { backgroundColor: meta.lightColor }]}>
             <Ionicons name={meta.iconName} size={14} color={meta.color} />
-            <Text
-              style={[
-                styles.categoryText,
-                {
-                  color: meta.color,
-                },
-              ]}
-              numberOfLines={1}
-            >
-              {meta.label}
-            </Text>
+            <Text style={[styles.categoryText, { color: meta.color }]}>{meta.label}</Text>
           </View>
-
-          <StatusBadge
-            label={getStatusLabel(incident.status)}
-            variant={getStatusVariant(incident.status)}
-            size="sm"
-          />
-
-          <StatusBadge
-            label={urgencyLabel}
-            variant={getUrgencyVariant(urgencyLevel)}
-            size="sm"
-          />
+          <Text style={styles.timeText}>{formatIncidentDate(incident.createdAt, t, language as any)}</Text>
         </View>
 
-        <Text style={styles.title}>{incident.title}</Text>
+        <Text style={styles.title}>{incident.title || "Incident Report"}</Text>
 
-        <Text style={styles.description}>
-          {incident.description || "No description provided."}
-        </Text>
+        <View style={styles.locationBox}>
+          <Ionicons name="location" size={18} color={colors.textMuted} />
+          <Text style={styles.locationBoxText}>{address}</Text>
+        </View>
 
-        <IncidentImpactSummary impactAnswers={incident.impactAnswers} />
-
-        <IncidentImageGallery
-          imageUri={incident.imageUri}
-          imageUris={incident.imageUris}
-          variant="detail"
-        />
-
-        <View
-          style={[
-            styles.signalNotice,
-            {
-              backgroundColor: confidence.backgroundColor,
-              borderColor: confidence.borderColor,
-            },
-          ]}
-        >
-          <View style={styles.scoreDial}>
-            <Text style={[styles.scoreText, { color: confidence.color }]}>
-              {confidence.score}
-            </Text>
+        {/* 2. Urgency & Trust */}
+        <View style={styles.metricsRow}>
+          <View style={[styles.metricCard, { backgroundColor: urgencyColor }]}>
+            <Ionicons name="warning" size={20} color={colors.textInverse} />
+            <Text style={styles.metricCardTitleInverse}>{severityLabel}</Text>
+            <Text style={styles.metricCardValueInverse}>{urgencyScore}/100</Text>
           </View>
 
-          <View style={styles.signalTextGroup}>
-            <Text
-              style={[
-                styles.signalTitle,
-                {
-                  color: confidence.color,
-                },
-              ]}
-            >
-              {confidence.label}
-            </Text>
+          <View style={styles.metricCard}>
+            <Ionicons name="shield-checkmark" size={20} color={colors.success} />
+            <Text style={styles.metricCardTitle}>Confirmations</Text>
+            <Text style={styles.metricCardValue}>{totalConfirmations}</Text>
+          </View>
 
-            <Text style={styles.signalDescription}>
-              {confidence.description}
-            </Text>
-
-            <Text style={styles.freshnessText}>{freshness.message}</Text>
-
-            {latestUpdate ? (
-              <View style={styles.latestUpdateRow}>
-                <Ionicons
-                  name={latestUpdate.iconName}
-                  size={14}
-                  color={latestUpdate.color}
-                />
-                <Text style={styles.latestUpdateText} numberOfLines={2}>
-                  Latest community update: {latestUpdate.label}
-                </Text>
-              </View>
-            ) : null}
-
-            <View style={styles.signalGrid}>
-              {confidence.signals.map((signal) => (
-                <View key={signal.label} style={styles.signalItem}>
-                  <Text style={styles.signalValue}>{signal.value}</Text>
-                  <Text style={styles.signalLabel}>{signal.label}</Text>
-                </View>
-              ))}
-            </View>
+          <View style={styles.metricCard}>
+            <Ionicons name="warning-outline" size={20} color={colors.danger} />
+            <Text style={styles.metricCardTitle}>Disputes</Text>
+            <Text style={styles.metricCardValue}>{disputes}</Text>
           </View>
         </View>
 
-        <Text style={styles.disclaimer}>
-          This report comes from the community and may not be official
-          information. Treat it as an early signal and stay careful on site.
-        </Text>
+        {/* 3. Evidence (Photos & Description) */}
+        <View style={styles.evidenceSection}>
+          <Text style={styles.sectionTitle}>Evidence & Details</Text>
+          {incident.description && !incident.description.includes("reported near the selected map pin") && (
+            <Text style={styles.description}>{incident.description}</Text>
+          )}
 
-        {showActions && incident.status === "active" ? (
-          <View style={styles.actionRow}>
-            {onOpenVerify ? (
+          <IncidentImageGallery
+            imageUri={incident.imageUri}
+            imageUris={incident.imageUris}
+            variant="detail"
+            style={styles.gallery}
+          />
+        </View>
+
+        {/* 4. Actions */}
+        {showActions && incident.status === "active" && (
+          <View style={styles.actionBlock}>
+            {onOpenVerify && (
               <AppButton
-                title="Verify / Update"
+                title="Verify / Dispute"
                 variant="primary"
-                size="md"
+                size="lg"
+                fullWidth
                 onPress={() => onOpenVerify(incident)}
-                leftIcon={
-                  <Ionicons
-                    name="shield-checkmark"
-                    size={17}
-                    color={colors.textInverse}
-                  />
-                }
-                style={styles.actionButton}
+                leftIcon={<Ionicons name="shield-checkmark" size={20} color={colors.textInverse} />}
+                style={styles.primaryAction}
               />
-            ) : null}
-
-            {onOpenResolve ? (
+            )}
+            
+            {onOpenResolve && (
               <AppButton
-                title="Resolve"
+                title="Resolve Incident (Mod)"
                 variant="secondary"
                 size="md"
+                fullWidth
                 onPress={() => onOpenResolve(incident)}
-                leftIcon={
-                  <Ionicons
-                    name="checkmark-done"
-                    size={17}
-                    color={colors.text}
-                  />
-                }
-                style={styles.actionButton}
+                leftIcon={<Ionicons name="checkmark-done" size={20} color={colors.text} />}
+                style={styles.secondaryAction}
               />
-            ) : null}
+            )}
           </View>
-        ) : null}
+        )}
 
-        <Pressable
-          onPress={onReportContent}
-          style={({ pressed }) => [
-            styles.reportContentButton,
-            pressed && styles.reportContentPressed,
-          ]}
-        >
-          <Ionicons
-            name="flag-outline"
-            size={16}
-            color={colors.primaryDark}
-          />
-          <Text style={styles.reportContentText}>Report Content</Text>
+        <Pressable onPress={onReportContent} style={styles.reportContentRow}>
+          <Ionicons name="flag-outline" size={16} color={colors.danger} />
+          <Text style={styles.reportContentText}>Report false information</Text>
         </Pressable>
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  contentPadding: {
+    padding: spacing.lg,
+  },
+  topMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.sm,
+  },
+  categoryBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+  },
+  categoryText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  timeText: {
+    fontSize: 12,
+    color: colors.textMuted,
+    fontWeight: "600",
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: colors.text,
+    lineHeight: 28,
+    marginBottom: spacing.md,
+  },
+  locationBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: colors.surfaceMuted,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.surfaceContainerHigh,
+  },
+  locationBoxText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: "600",
+    lineHeight: 20,
+  },
+  metricsRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  metricCard: {
+    flex: 1,
+    backgroundColor: colors.surfaceContainer,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+  },
+  metricCardTitleInverse: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.textInverse,
+    textTransform: "uppercase",
+    textAlign: "center",
+  },
+  metricCardValueInverse: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.textInverse,
+  },
+  metricCardTitle: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.textMuted,
+    textTransform: "uppercase",
+  },
+  metricCardValue: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.text,
+  },
+  evidenceSection: {
+    marginBottom: spacing.xl,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    marginBottom: spacing.sm,
+  },
+  description: {
+    fontSize: 15,
+    color: colors.text,
+    lineHeight: 24,
+    marginBottom: spacing.md,
+  },
+  gallery: {
+    marginBottom: spacing.sm,
+  },
+  actionBlock: {
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  primaryAction: {
+    backgroundColor: "#00A3C4", // Teal reference color
+    height: 52, // massive operational button
+  },
+  secondaryAction: {
+    height: 48,
+  },
+  reportContentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.dangerSoft,
+    borderRadius: radius.md,
+  },
+  reportContentText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.danger,
+  },
+});

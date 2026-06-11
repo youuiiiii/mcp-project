@@ -5,7 +5,7 @@ import SectionHeader from "../../../components/ui/SectionHeader";
 import { REPORT_KIND_OPTIONS } from "../../../constants/reportTaxonomy";
 import { useI18n } from "../../../i18n";
 import { colors } from "../../../theme/colors";
-import { radius, spacing } from "../../../theme/layout";
+import { radius, shadow, spacing } from "../../../theme/layout";
 import type { IncidentKind } from "../../../types/incident";
 
 type IncidentKindSelectorProps = {
@@ -25,10 +25,9 @@ export default function IncidentKindSelector({
     <View style={styles.section}>
       <SectionHeader
         title={t("report.kind.title")}
-        subtitle={t("report.kind.subtitle")}
       />
 
-      <View style={styles.list}>
+      <View style={styles.grid}>
         {REPORT_KIND_OPTIONS.map((item) => {
           const active = selectedKind === item.value;
 
@@ -38,10 +37,11 @@ export default function IncidentKindSelector({
               disabled={disabled}
               onPress={() => onSelectKind(item.value)}
               style={({ pressed }) => [
-                styles.row,
+                styles.card,
                 active && {
                   borderColor: item.color,
                   backgroundColor: item.lightColor,
+                  ...shadow.card,
                 },
                 disabled && styles.disabled,
                 pressed && styles.pressed,
@@ -57,29 +57,20 @@ export default function IncidentKindSelector({
               >
                 <Ionicons
                   name={item.iconName}
-                  size={21}
+                  size={19}
                   color={active ? colors.textInverse : item.color}
                 />
               </View>
 
-              <View style={styles.textGroup}>
-                <Text
-                  style={[styles.label, active && { color: item.color }]}
-                  numberOfLines={1}
-                >
-                  {t(item.labelKey)}
-                </Text>
-
-                <Text style={styles.helper} numberOfLines={2}>
-                  {t(item.helperKey)}
-                </Text>
-              </View>
-
-              <Ionicons
-                name={active ? "checkmark-circle" : "ellipse-outline"}
-                size={21}
-                color={active ? item.color : colors.textSoft}
-              />
+              <Text
+                style={[
+                  styles.label,
+                  active && { color: item.color },
+                ]}
+                numberOfLines={2}
+              >
+                {t(item.labelKey)}
+              </Text>
             </Pressable>
           );
         })}
@@ -90,50 +81,46 @@ export default function IncidentKindSelector({
 
 const styles = StyleSheet.create({
   section: {
-    gap: spacing.md,
-  },
-  list: {
     gap: spacing.sm,
   },
-  row: {
-    minHeight: 74,
-    borderRadius: radius.xl,
-    borderWidth: 1,
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    rowGap: spacing.sm,
+  },
+  card: {
+    width: "48.5%",
+    minHeight: 56,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
-    flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
+    justifyContent: "center",
+    gap: 6,
   },
   disabled: {
     opacity: 0.55,
   },
   pressed: {
     opacity: 0.86,
-    transform: [{ scale: 0.99 }],
+    transform: [{ scale: 0.98 }],
   },
   iconBox: {
-    width: 42,
-    height: 42,
-    borderRadius: radius.lg,
+    width: 32,
+    height: 32,
+    borderRadius: radius.sm,
     alignItems: "center",
     justifyContent: "center",
   },
-  textGroup: {
-    flex: 1,
-  },
   label: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: colors.text,
-  },
-  helper: {
-    marginTop: 2,
     fontSize: 11,
-    lineHeight: 15,
-    fontWeight: "600",
-    color: colors.textMuted,
+    fontWeight: "700",
+    color: colors.text,
+    textAlign: "center",
+    lineHeight: 14,
   },
 });

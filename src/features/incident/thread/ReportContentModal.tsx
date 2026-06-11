@@ -15,6 +15,7 @@ import { colors } from "../../../theme/colors";
 import { radius, shadow, spacing } from "../../../theme/layout";
 import { typography } from "../../../theme/typography";
 import type { IncidentContentReportReason } from "../../../types/incident";
+import { useI18n } from "../../../i18n";
 
 type ReportReasonOption = {
   value: IncidentContentReportReason;
@@ -26,38 +27,38 @@ type ReportReasonOption = {
 const REASON_OPTIONS: ReportReasonOption[] = [
   {
     value: "false_information",
-    label: "False information",
-    description: "The report looks fake, misplaced, or misleading.",
+    label: "incident.report.reason.falseInfo",
+    description: "incident.report.reason.falseInfoDesc",
     iconName: "alert-circle-outline",
   },
   {
     value: "harmful_content",
-    label: "Harmful content",
-    description: "The content could trigger panic, violence, or other harm.",
+    label: "incident.report.reason.harmful",
+    description: "incident.report.reason.harmfulDesc",
     iconName: "warning-outline",
   },
   {
     value: "spam",
-    label: "Spam",
-    description: "Repeated, irrelevant, or promotional content.",
+    label: "incident.report.reason.spam",
+    description: "incident.report.reason.spamDesc",
     iconName: "ban-outline",
   },
   {
     value: "privacy_issue",
-    label: "Privacy issue",
-    description: "Contains private data, sensitive addresses, or someone's identity.",
+    label: "incident.report.reason.privacy",
+    description: "incident.report.reason.privacyDesc",
     iconName: "lock-closed-outline",
   },
   {
     value: "inappropriate_image",
-    label: "Inappropriate photo",
-    description: "The photo contains sensitive or unsuitable content.",
+    label: "incident.report.reason.image",
+    description: "incident.report.reason.imageDesc",
     iconName: "image-outline",
   },
   {
     value: "other",
-    label: "Other",
-    description: "Another reason that needs review.",
+    label: "incident.report.reason.other",
+    description: "incident.report.reason.otherDesc",
     iconName: "ellipsis-horizontal-circle-outline",
   },
 ];
@@ -83,6 +84,8 @@ export default function ReportContentModal({
   onSubmit,
   onClose,
 }: ReportContentModalProps) {
+  const { t } = useI18n();
+
   return (
     <Modal
       visible={visible}
@@ -105,9 +108,9 @@ export default function ReportContentModal({
           <View style={styles.sheet}>
             <View style={styles.header}>
               <View style={styles.headerText}>
-                <Text style={styles.title}>Report Content</Text>
+                <Text style={styles.title}>{t("incident.report.title")}</Text>
                 <Text style={styles.subtitle}>
-                  Help keep community reports safe and relevant.
+                  {t("incident.report.subtitle")}
                 </Text>
               </View>
 
@@ -152,9 +155,9 @@ export default function ReportContentModal({
                     </View>
 
                     <View style={styles.reasonText}>
-                      <Text style={styles.reasonLabel}>{item.label}</Text>
+                      <Text style={styles.reasonLabel}>{t(item.label as any)}</Text>
                       <Text style={styles.reasonDescription}>
-                        {item.description}
+                        {t(item.description as any)}
                       </Text>
                     </View>
 
@@ -172,7 +175,7 @@ export default function ReportContentModal({
               value={note}
               onChangeText={onChangeNote}
               editable={!submitting}
-              placeholder="Add a short note, optional..."
+              placeholder={t("incident.report.notePlaceholder")}
               placeholderTextColor={colors.textSoft}
               multiline
               maxLength={280}
@@ -181,7 +184,7 @@ export default function ReportContentModal({
 
             <View style={styles.footer}>
               <AppButton
-                title="Cancel"
+                title={t("common.cancel")}
                 variant="secondary"
                 size="md"
                 disabled={submitting}
@@ -190,7 +193,7 @@ export default function ReportContentModal({
               />
 
               <AppButton
-                title="Submit"
+                title={t("common.submit")}
                 variant="danger"
                 size="md"
                 loading={submitting}

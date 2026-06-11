@@ -12,6 +12,11 @@ type AppCardProps = {
   style?: StyleProp<ViewStyle>;
 };
 
+/**
+ * Dispatch Terminal Design System — Card Component
+ *
+ * Hard borders, flat styling.
+ */
 export default function AppCard({
   children,
   onPress,
@@ -44,15 +49,15 @@ export default function AppCard({
 const variantStyles: Record<NonNullable<AppCardProps["variant"]>, ViewStyle> = {
   default: {
     backgroundColor: colors.surface,
-    borderColor: colors.border,
+    borderColor: colors.border,         // Hard border
   },
   muted: {
     backgroundColor: colors.surfaceMuted,
-    borderColor: colors.border,
+    borderColor: colors.border,         // Hard border
   },
   outlined: {
     backgroundColor: colors.surface,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,   // Strong outline
   },
 };
 
@@ -64,20 +69,19 @@ const paddingStyles: Record<NonNullable<AppCardProps["padding"]>, ViewStyle> = {
     padding: spacing.sm,
   },
   md: {
-    padding: spacing.lg,
+    padding: spacing.md,
   },
   lg: {
-    padding: spacing.xl,
+    padding: spacing.lg,
   },
 };
 
 const styles = StyleSheet.create({
   base: {
     borderWidth: 1,
-    borderRadius: radius["2xl"],
+    borderRadius: radius.md,             
   },
   pressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.99 }],
+    opacity: 0.8,
   },
 });

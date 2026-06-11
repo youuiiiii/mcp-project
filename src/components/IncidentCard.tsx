@@ -1,243 +1,223 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { getIncidentDisplayMeta } from "../constants/incident";
-import IncidentImageGallery from "../features/incident/components/IncidentImageGallery";
 import { colors } from "../theme/colors";
-import { radius, spacing } from "../theme/layout";
-import { typography } from "../theme/typography";
+import { radius, shadow, spacing } from "../theme/layout";
 import type { IncidentReport } from "../types/incident";
-import { getIncidentConfidenceMeta } from "../utils/incidentConfidence";
-import { shareIncident } from "../utils/shareIncident";
-import AppCard from "./ui/AppCard";
-import IconBadge from "./ui/IconBadge";
-import StatusBadge, { type StatusBadgeVariant } from "./ui/StatusBadge";
+
 type IncidentCardProps = {
   incident: IncidentReport;
   onPress?: (incident: IncidentReport) => void;
   showImage?: boolean;
+  compact?: boolean;
+  variant?: "default" | "home";
 };
-
-const STATUS_LABEL = {
-  active: "Active",
-  resolved: "Resolved",
-} as const satisfies Record<IncidentReport["status"], string>;
-
-const URGENCY_LABEL = {
-  low: "Low",
-  medium: "Medium",
-  high: "High",
-} as const satisfies Record<NonNullable<IncidentReport["urgencyLevel"]>, string>;
 
 export default function IncidentCard({
   incident,
   onPress,
-  showImage = true,
+  compact = false,
 }: IncidentCardProps) {
   const meta = getIncidentDisplayMeta({
     category: incident.category,
     subcategory: incident.subcategory ?? incident.type,
   });
-  const confidence = getIncidentConfidenceMeta(incident);
-  const urgencyLevel = incident.urgencyLevel ?? incident.severity;
-  const urgencyLabel =
-    typeof incident.urgencyScore === "number"
-      ? `Urgency ${incident.urgencyScore}`
-      : `${URGENCY_LABEL[urgencyLevel]} urgency`;
 
-  const handleShare = () => {
-    shareIncident({
-      type: incident.title || meta.label,
-      description: incident.description,
-      location: {
-        lat: incident.latitude,
-        lng: incident.longitude,
-      },
-      createdAt: incident.createdAt,
-    });
-  };
+  const title = incident.title?.trim() || meta.shortLabel || "Incident";
+  const address =
+    incident.address ||
+    `${incident.latitude.toFixed(4)}, ${incident.longitude.toFixed(4)}`;
+  const status = getIncidentStatusMeta(incident);
+  const reportCount =
+    (incident.verificationCount ?? 0) +
+    (incident.replyCount ?? 0) +
+    (incident.evidenceCount ?? 0);
 
   return (
-    <AppCard
-      onPress={onPress ? () => onPress(incident) : undefined}
-      style={styles.card}
+    <Pressable
+      onPress={() => onPress?.(incident)}
+      style={({ pressed }) => [
+        styles.card,
+        compact && styles.cardCompact,
+        pressed && styles.cardPressed,
+      ]}
     >
-      <View style={styles.header}>
-        <IconBadge
-          variant="neutral"
-          size="lg"
-          rounded={false}
-          style={{
-            backgroundColor: meta.lightColor,
-          }}
-        >
-          <Ionicons name={meta.iconName} size={24} color={meta.color} />
-        </IconBadge>
+      <View style={[styles.iconBox, { backgroundColor: meta.lightColor }]}>
+        <Ionicons name={meta.iconName} size={22} color={meta.color} />
+      </View>
 
-        <View style={styles.headerContent}>
+      <View style={styles.content}>
+        <View style={styles.titleRow}>
           <Text style={styles.title} numberOfLines={1}>
-            {incident.title || "Untitled report"}
+            {title}
           </Text>
-
-          <Text style={styles.category} numberOfLines={1}>
-            {meta.label}
-          </Text>
+          <View style={[styles.statusPill, { backgroundColor: status.bg }]}>
+            <Text style={[styles.statusText, { color: status.fg }]}>
+              {status.label}
+            </Text>
+          </View>
         </View>
-        <StatusBadge
-          label={`Confidence ${confidence.score}`}
-          variant={getConfidenceVariant(confidence.level)}
-          size="sm"
-        />
-      </View>
 
-      <Text style={styles.description} numberOfLines={2}>
-        {incident.description || "No description provided."}
-      </Text>
-
-      {showImage ? (
-        <IncidentImageGallery
-          imageUri={incident.imageUri}
-          imageUris={incident.imageUris}
-          variant="compact"
-        />
-      ) : null}
-
-      <View style={styles.footer}>
-        <StatusBadge
-          label={urgencyLabel}
-          variant={getUrgencyVariant(urgencyLevel)}
-          size="sm"
-        />
-
-        <StatusBadge
-          label={STATUS_LABEL[incident.status]}
-          variant={getStatusVariant(incident.status)}
-          size="sm"
-        />
-
-        <View style={styles.dateWrap}>
-          <Ionicons name="time-outline" size={14} color={colors.textSoft} />
-          <Text style={styles.date} numberOfLines={1}>
-            {formatDate(incident.createdAt)}
+        <View style={styles.infoRow}>
+          <Ionicons name="location-outline" size={13} color={colors.textSoft} />
+          <Text style={styles.locationText} numberOfLines={1}>
+            {address}
           </Text>
         </View>
 
-        <TouchableOpacity onPress={handleShare} style={styles.shareBtn}>
-          <Ionicons name="share-social-outline" size={18} color={colors.textMuted} />
-        </TouchableOpacity>
+        <View style={styles.footerRow}>
+          <View style={styles.infoRow}>
+            <Ionicons name="time-outline" size={13} color={colors.textSoft} />
+            <Text style={styles.timeText} numberOfLines={1}>
+              {formatRelativeTime(incident.createdAt)}
+            </Text>
+          </View>
+
+          {!compact ? (
+            <Text style={styles.reportText}>
+              {reportCount || 1} {reportCount === 1 ? "report" : "reports"}
+            </Text>
+          ) : null}
+        </View>
       </View>
-    </AppCard>
+
+      <Ionicons name="chevron-forward" size={18} color={colors.borderStrong} />
+    </Pressable>
   );
 }
 
-function formatDate(date?: Date): string {
-  if (!date) {
-    return "Time unavailable";
+function getIncidentStatusMeta(incident: IncidentReport) {
+  if (incident.status === "resolved") {
+    return {
+      label: "Resolved",
+      bg: colors.successSoft,
+      fg: colors.successDark,
+    };
   }
 
-  return date.toLocaleString("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  if (
+    incident.verificationStatus === "pending" ||
+    incident.trustStatus === "questioned" ||
+    (incident.conditionUpdateCount ?? 0) > 0
+  ) {
+    return {
+      label: "Monitoring",
+      bg: colors.warningSoft,
+      fg: colors.warningDark,
+    };
+  }
+
+  return {
+    label: "Active",
+    bg: colors.dangerSoft,
+    fg: colors.dangerDark,
+  };
 }
 
-function getStatusVariant(
-  status: IncidentReport["status"]
-): StatusBadgeVariant {
-  if (status === "active") {
-    return "active";
+function formatRelativeTime(date?: Date): string {
+  if (!date) return "Unknown time";
+
+  const diffMs = Date.now() - date.getTime();
+  const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
+
+  if (diffMinutes < 60) {
+    return `${diffMinutes} minutes ago`;
   }
 
-  if (status === "resolved") {
-    return "resolved";
+  const diffHours = Math.floor(diffMinutes / 60);
+
+  if (diffHours < 24) {
+    return `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`;
   }
 
-  return "neutral";
-}
-
-function getUrgencyVariant(
-  urgency: NonNullable<IncidentReport["urgencyLevel"]>
-): StatusBadgeVariant {
-  if (urgency === "high") {
-    return "danger";
-  }
-
-  if (urgency === "medium") {
-    return "warning";
-  }
-
-  return "success";
-}
-
-function getConfidenceVariant(
-  level: ReturnType<typeof getIncidentConfidenceMeta>["level"]
-): StatusBadgeVariant {
-  if (level === "confirmed" || level === "resolved") {
-    return "success";
-  }
-
-  if (level === "questioned") {
-    return "danger";
-  }
-
-  if (level === "credible") {
-    return "info";
-  }
-
-  return "warning";
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays} ${diffDays === 1 ? "day" : "days"} ago`;
 }
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: radius["2xl"],
-  },
-  header: {
+    minHeight: 94,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius["2xl"],
+    borderWidth: 1,
+    borderColor: "rgba(226,232,240,0.76)",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    ...shadow.sm,
   },
-  headerContent: {
+  cardCompact: {
+    minHeight: 82,
+    borderRadius: radius.xl,
+  },
+  cardPressed: {
+    opacity: 0.84,
+    transform: [{ scale: 0.99 }],
+  },
+  iconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.xl,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  content: {
     flex: 1,
+    minWidth: 0,
+    gap: 5,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   title: {
-    fontSize: 15,
+    flex: 1,
+    minWidth: 0,
+    fontSize: 14,
     fontWeight: "900",
     color: colors.text,
   },
-  category: {
-    marginTop: 3,
-    ...typography.caption,
-    color: colors.textMuted,
+  statusPill: {
+    borderRadius: radius.full,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
-  description: {
-    marginTop: spacing.md,
-    ...typography.caption,
-    color: colors.textMuted,
+  statusText: {
+    fontSize: 10,
+    fontWeight: "800",
   },
-  footer: {
-    marginTop: spacing.md,
+  infoRow: {
+    minWidth: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  locationText: {
+    flex: 1,
+    minWidth: 0,
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#31517A",
+  },
+  footerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: spacing.md,
+    gap: spacing.sm,
   },
-  dateWrap: {
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
-    gap: 5,
+  timeText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#8290B6",
   },
-  date: {
-    flexShrink: 1,
+  reportText: {
+    flexShrink: 0,
     fontSize: 11,
     fontWeight: "700",
-    color: colors.textSoft,
-  },
-  shareBtn: {
-    padding: 4,
+    color: "#8290B6",
   },
 });

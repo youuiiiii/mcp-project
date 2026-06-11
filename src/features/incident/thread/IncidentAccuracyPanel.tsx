@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { useI18n } from "../../../i18n";
 import { colors } from "../../../theme/colors";
 import { radius, spacing } from "../../../theme/layout";
 import type { IncidentAccuracyVoteType } from "../../../types/incident";
@@ -28,6 +29,7 @@ export default function IncidentAccuracyPanel({
   submitting,
   onVote,
 }: IncidentAccuracyPanelProps) {
+  const { t } = useI18n();
   const toneColor = getToneColor(tone);
   const disabled = Boolean(disabledReason) || submitting;
 
@@ -35,10 +37,9 @@ export default function IncidentAccuracyPanel({
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.titleGroup}>
-          <Text style={styles.title}>On-site Check</Text>
+          <Text style={styles.title}>{t("incident.accuracy.title")}</Text>
           <Text style={styles.subtitle}>
-            {disabledReason ??
-              "For nearby users only: confirm whether this report is still there."}
+            {disabledReason ?? t("incident.accuracy.subtitle")}
           </Text>
         </View>
 
@@ -46,41 +47,32 @@ export default function IncidentAccuracyPanel({
           style={[
             styles.statusPill,
             {
-              backgroundColor: `${toneColor}18`,
+              backgroundColor: toneColor,
             },
           ]}
         >
-          <Text
-            style={[
-              styles.statusText,
-              {
-                color: toneColor,
-              },
-            ]}
-          >
-            {label}
-          </Text>
+          <Text style={styles.statusText}>{label}</Text>
         </View>
       </View>
 
       <View style={styles.actions}>
         <AccuracyButton
-          label="Still there"
+          label={t("incident.accuracy.active")}
           count={accurateCount}
-          iconName="arrow-up-circle"
+          iconName="warning"
           active={currentUserVote === "accurate"}
           disabled={disabled}
-          color={colors.success}
+          color={colors.danger}
           onPress={() => onVote("accurate")}
         />
 
         <AccuracyButton
-          label="Not there"
+          label={t("incident.accuracy.clear")}
           count={inaccurateCount}
-          iconName="arrow-down-circle"
+          iconName="checkmark-circle"
           active={currentUserVote === "inaccurate"}
           disabled={disabled}
-          color={colors.danger}
+          color={colors.success}
           onPress={() => onVote("inaccurate")}
         />
       </View>
@@ -113,7 +105,7 @@ function AccuracyButton({
         styles.voteButton,
         active && {
           borderColor: color,
-          backgroundColor: `${color}14`,
+          backgroundColor: color,
         },
         pressed && styles.pressed,
         disabled && !active && styles.disabled,
@@ -121,16 +113,14 @@ function AccuracyButton({
     >
       <Ionicons
         name={iconName}
-        size={20}
-        color={active ? color : colors.textMuted}
+        size={18}
+        color={active ? colors.textInverse : colors.textSoft}
       />
 
       <Text
         style={[
           styles.voteLabel,
-          active && {
-            color,
-          },
+          active && { color: colors.textInverse },
         ]}
       >
         {label}
@@ -139,9 +129,7 @@ function AccuracyButton({
       <Text
         style={[
           styles.voteCount,
-          active && {
-            color,
-          },
+          active && { color: colors.textInverse },
         ]}
       >
         {count}
@@ -168,12 +156,7 @@ function getToneColor(tone: AccuracyTone) {
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: spacing["2xl"],
-    borderRadius: radius["2xl"],
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    padding: spacing.md,
+    marginTop: spacing.xl,
     gap: spacing.md,
   },
   header: {
@@ -185,25 +168,28 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 15,
-    fontWeight: "800",
+    fontSize: 13,
+    fontWeight: "900",
     color: colors.text,
+    letterSpacing: 0.5,
   },
   subtitle: {
     marginTop: 2,
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 16,
-    fontWeight: "500",
+    fontWeight: "600",
     color: colors.textMuted,
   },
   statusPill: {
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
+    borderRadius: radius.sm,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   statusText: {
-    fontSize: 11,
-    fontWeight: "800",
+    fontSize: 10,
+    fontWeight: "900",
+    color: colors.textInverse,
+    textTransform: "uppercase",
   },
   actions: {
     flexDirection: "row",
@@ -211,8 +197,8 @@ const styles = StyleSheet.create({
   },
   voteButton: {
     flex: 1,
-    minHeight: 52,
-    borderRadius: radius.xl,
+    height: 48,
+    borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surfaceMuted,
@@ -224,19 +210,18 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.84,
-    transform: [{ scale: 0.98 }],
   },
   disabled: {
     opacity: 0.6,
   },
   voteLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "800",
-    color: colors.text,
+    color: colors.textMuted,
   },
   voteCount: {
     fontSize: 12,
     fontWeight: "900",
-    color: colors.textMuted,
+    color: colors.textSoft,
   },
 });

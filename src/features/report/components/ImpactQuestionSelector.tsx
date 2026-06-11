@@ -28,7 +28,6 @@ export default function ImpactQuestionSelector({
     <View style={styles.section}>
       <SectionHeader
         title={t("report.impact.title")}
-        subtitle={t("report.impact.subtitle")}
       />
 
       <View style={styles.list}>
@@ -50,19 +49,23 @@ export default function ImpactQuestionSelector({
               <View style={[styles.iconBox, active && styles.iconBoxActive]}>
                 <Ionicons
                   name={item.iconName}
-                  size={19}
+                  size={17}
                   color={active ? colors.textInverse : colors.textMuted}
                 />
               </View>
 
               <View style={styles.textGroup}>
-                <Text style={styles.label}>{t(item.labelKey)}</Text>
-                <Text style={styles.helper}>{t(item.helperKey)}</Text>
+                <Text style={styles.label} numberOfLines={1}>
+                  {t(item.labelKey)}
+                </Text>
+                <Text style={styles.helper} numberOfLines={1}>
+                  {t(item.helperKey)}
+                </Text>
               </View>
 
               <Ionicons
                 name={active ? "toggle" : "toggle-outline"}
-                size={28}
+                size={24}
                 color={active ? colors.danger : colors.textSoft}
               />
             </Pressable>
@@ -75,22 +78,22 @@ export default function ImpactQuestionSelector({
 
 const styles = StyleSheet.create({
   section: {
-    gap: spacing.md,
-  },
-  list: {
     gap: spacing.sm,
   },
+  list: {
+    gap: 6,
+  },
   row: {
-    minHeight: 68,
-    borderRadius: radius.xl,
+    minHeight: 52,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   rowActive: {
     borderColor: colors.danger,
@@ -104,9 +107,9 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.99 }],
   },
   iconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: radius.lg,
+    width: 32,
+    height: 32,
+    borderRadius: radius.md,
     backgroundColor: colors.surfaceMuted,
     alignItems: "center",
     justifyContent: "center",
@@ -118,14 +121,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   label: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "900",
     color: colors.text,
   },
   helper: {
-    marginTop: 2,
-    fontSize: 11,
-    lineHeight: 15,
+    marginTop: 1,
+    fontSize: 10,
+    lineHeight: 13,
     fontWeight: "600",
     color: colors.textMuted,
   },

@@ -7,10 +7,10 @@ import type { IncidentReport } from "../../../types/incident";
 export type IncidentFilter =
   | "all"
   | "active"
-  | "resolved"
-  | "high"
-  | "medium"
-  | "low";
+  | "monitoring"
+  | "resolved";
+
+export type IncidentSortMode = "latest" | "severity";
 
 export const INCIDENT_FILTER_OPTIONS: readonly {
   value: IncidentFilter;
@@ -25,20 +25,12 @@ export const INCIDENT_FILTER_OPTIONS: readonly {
     label: "Active",
   },
   {
+    value: "monitoring",
+    label: "Monitoring",
+  },
+  {
     value: "resolved",
     label: "Resolved",
-  },
-  {
-    value: "high",
-    label: "High Urgency",
-  },
-  {
-    value: "medium",
-    label: "Medium Urgency",
-  },
-  {
-    value: "low",
-    label: "Low Urgency",
   },
 ];
 
@@ -56,20 +48,7 @@ export const useIncidentsScreen = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<IncidentFilter>("all");
-
-  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(
-    null
-  );
-
-  const [selectedVerifyIncident, setSelectedVerifyIncident] =
-    useState<IncidentReport | null>(null);
-
-  const [selectedResolveIncident, setSelectedResolveIncident] =
-    useState<IncidentReport | null>(null);
-
-  const [isThreadModalVisible, setIsThreadModalVisible] = useState(false);
-  const [isVerifyModalVisible, setIsVerifyModalVisible] = useState(false);
-  const [isResolveModalVisible, setIsResolveModalVisible] = useState(false);
+  const [sortMode, setSortMode] = useState<IncidentSortMode>("latest");
 
   useEffect(() => {
     setLoading(true);
@@ -90,37 +69,18 @@ export const useIncidentsScreen = () => {
     return unsubscribe;
   }, []);
 
-  const selectedIncident = useMemo(() => {
-    if (!selectedIncidentId) {
-      return null;
-    }
-
-    return incidents.find((item) => item.id === selectedIncidentId) ?? null;
-  }, [incidents, selectedIncidentId]);
-
   const filteredIncidents = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
-
-    return incidents.filter((incident) => {
+    const filtered = incidents.filter((incident) => {
       if (selectedFilter === "active" && incident.status !== "active") {
         return false;
       }
 
+      if (selectedFilter === "monitoring" && !isMonitoringIncident(incident)) {
+        return false;
+      }
+
       if (selectedFilter === "resolved" && incident.status !== "resolved") {
-        return false;
-      }
-
-      const urgencyLevel = incident.urgencyLevel ?? incident.severity;
-
-      if (selectedFilter === "high" && urgencyLevel !== "high") {
-        return false;
-      }
-
-      if (selectedFilter === "medium" && urgencyLevel !== "medium") {
-        return false;
-      }
-
-      if (selectedFilter === "low" && urgencyLevel !== "low") {
         return false;
       }
 
@@ -136,6 +96,7 @@ export const useIncidentsScreen = () => {
       const searchableText = [
         incident.title,
         incident.description,
+        incident.address,
         incident.category,
         incident.domain,
         incident.kind,
@@ -155,7 +116,15 @@ export const useIncidentsScreen = () => {
 
       return searchableText.includes(normalizedQuery);
     });
-  }, [incidents, searchQuery, selectedFilter]);
+
+    return [...filtered].sort((a, b) => {
+      if (sortMode === "severity") {
+        return getIncidentUrgencyScore(b) - getIncidentUrgencyScore(a);
+      }
+
+      return getIncidentTime(b) - getIncidentTime(a);
+    });
+  }, [incidents, searchQuery, selectedFilter, sortMode]);
 
   const summary = useMemo<IncidentsSummary>(() => {
     return {
@@ -168,34 +137,8 @@ export const useIncidentsScreen = () => {
     };
   }, [incidents]);
 
-  const handleOpenIncident = (incident: IncidentReport) => {
-    setSelectedIncidentId(incident.id);
-    setIsThreadModalVisible(true);
-  };
-
-  const handleCloseThreadModal = () => {
-    setIsThreadModalVisible(false);
-    setSelectedIncidentId(null);
-  };
-
-  const handleOpenVerifyModal = (incident: IncidentReport) => {
-    setSelectedVerifyIncident(incident);
-    setIsVerifyModalVisible(true);
-  };
-
-  const handleCloseVerifyModal = () => {
-    setIsVerifyModalVisible(false);
-    setSelectedVerifyIncident(null);
-  };
-
-  const handleOpenResolveModal = (incident: IncidentReport) => {
-    setSelectedResolveIncident(incident);
-    setIsResolveModalVisible(true);
-  };
-
-  const handleCloseResolveModal = () => {
-    setIsResolveModalVisible(false);
-    setSelectedResolveIncident(null);
+  const toggleSortMode = () => {
+    setSortMode((current) => (current === "latest" ? "severity" : "latest"));
   };
 
   return {
@@ -210,20 +153,32 @@ export const useIncidentsScreen = () => {
     setSearchQuery,
     selectedFilter,
     setSelectedFilter,
-
-    selectedIncident,
-    selectedVerifyIncident,
-    selectedResolveIncident,
-
-    isThreadModalVisible,
-    isVerifyModalVisible,
-    isResolveModalVisible,
-
-    handleOpenIncident,
-    handleCloseThreadModal,
-    handleOpenVerifyModal,
-    handleCloseVerifyModal,
-    handleOpenResolveModal,
-    handleCloseResolveModal,
+    sortMode,
+    toggleSortMode,
   };
 };
+
+function isMonitoringIncident(incident: IncidentReport) {
+  return (
+    incident.status === "active" &&
+    (incident.verificationStatus === "pending" ||
+      incident.trustStatus === "questioned" ||
+      (incident.conditionUpdateCount ?? 0) > 0)
+  );
+}
+
+function getIncidentUrgencyScore(incident: IncidentReport) {
+  if (typeof incident.urgencyScore === "number") {
+    return incident.urgencyScore;
+  }
+
+  const level = incident.urgencyLevel ?? incident.severity;
+
+  if (level === "high") return 90;
+  if (level === "medium") return 55;
+  return 20;
+}
+
+function getIncidentTime(incident: IncidentReport) {
+  return incident.createdAt?.getTime() ?? 0;
+}

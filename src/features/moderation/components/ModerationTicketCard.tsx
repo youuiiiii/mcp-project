@@ -128,9 +128,27 @@ export function ModerationTicketCard({
                 <Text style={styles.confidenceText}>
                   {confidence.reviewDescription}
                 </Text>
-                <Text style={styles.confidenceText}>
-                  Location {confidence.components.location.score}/100 · Community {confidence.components.community.score}/100 · Evidence {confidence.components.evidence.score}/100
-                </Text>
+                <View style={styles.progressBarRow}>
+                  <Text style={styles.progressLabel}>📍 Lokasi</Text>
+                  <View style={styles.progressTrack}>
+                    <View style={[styles.progressFill, { width: `${confidence.components.location.score}%`, backgroundColor: colors.success }]} />
+                  </View>
+                  <Text style={styles.progressValue}>{confidence.components.location.score}%</Text>
+                </View>
+                <View style={styles.progressBarRow}>
+                  <Text style={styles.progressLabel}>👥 Komunitas</Text>
+                  <View style={styles.progressTrack}>
+                    <View style={[styles.progressFill, { width: `${confidence.components.community.score}%`, backgroundColor: colors.info }]} />
+                  </View>
+                  <Text style={styles.progressValue}>{confidence.components.community.score}%</Text>
+                </View>
+                <View style={styles.progressBarRow}>
+                  <Text style={styles.progressLabel}>📸 Bukti</Text>
+                  <View style={styles.progressTrack}>
+                    <View style={[styles.progressFill, { width: `${confidence.components.evidence.score}%`, backgroundColor: colors.warning }]} />
+                  </View>
+                  <Text style={styles.progressValue}>{confidence.components.evidence.score}%</Text>
+                </View>
               </View>
             ) : null}
           </>

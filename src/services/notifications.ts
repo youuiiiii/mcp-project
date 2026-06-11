@@ -2,6 +2,9 @@ import Constants from "expo-constants";
 import * as Location from "expo-location";
 import { Alert, Platform } from "react-native";
 
+import type { IncidentReport, SOSLog } from "../types/incident";
+import { formatDistance, getNearestIncident } from "../utils/geo";
+
 type BmkgEarthquake = {
   Tanggal?: string;
   Jam?: string;
@@ -17,6 +20,7 @@ type BmkgEarthquake = {
 };
 
 const NOTIFICATION_DISTANCE_KM = 500;
+const NEARBY_INCIDENT_DISTANCE_METERS = 5000;
 
 function isRunningInExpoGo() {
   return Constants.appOwnership === "expo";
@@ -185,5 +189,183 @@ export async function checkAndNotifyNearbyDisaster(
     }
   } catch (error) {
     console.log("Nearby disaster check error:", error);
+  }
+}
+
+export async function checkAndNotifyNearbyIncidents(
+  incidents: IncidentReport[]
+) {
+  try {
+    const activeIncidents = incidents.filter((incident) => {
+      return incident.status === "active";
+    });
+
+    if (activeIncidents.length === 0) {
+      return {
+        notified: false,
+        message: "No active incidents are available right now.",
+      };
+    }
+
+    const notificationAllowed = await requestNotificationPermission();
+
+    if (!notificationAllowed) {
+      return {
+        notified: false,
+        message: "Notification permission was not granted.",
+      };
+    }
+
+    const locationPermission =
+      await Location.requestForegroundPermissionsAsync();
+
+    if (locationPermission.status !== "granted") {
+      return {
+        notified: false,
+        message: "Location permission was not granted.",
+      };
+    }
+
+    const location = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+    });
+
+    const nearest = getNearestIncident(
+      {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      },
+      activeIncidents
+    );
+
+    if (!nearest.incident || nearest.distance === null) {
+      return {
+        notified: false,
+        message: "No nearby active incidents were found.",
+      };
+    }
+
+    if (nearest.distance > NEARBY_INCIDENT_DISTANCE_METERS) {
+      return {
+        notified: false,
+        message: `Nearest active incident is ${formatDistance(
+          nearest.distance
+        )} away.`,
+      };
+    }
+
+    const title = "Nearby incident alert";
+    const body = `${nearest.incident.title} is ${formatDistance(
+      nearest.distance
+    )} from your location.`;
+
+    const Notifications = await getNotificationsModule();
+
+    if (!Notifications) {
+      Alert.alert(title, body);
+      return {
+        notified: true,
+        message: body,
+      };
+    }
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        sound: true,
+        data: {
+          type: "nearby_incident",
+          incidentId: nearest.incident.id,
+          distanceMeters: Math.round(nearest.distance),
+        },
+      },
+      trigger: null,
+    });
+
+    return {
+      notified: true,
+      message: body,
+    };
+  } catch (error) {
+    console.log("Nearby incident notification error:", error);
+    return {
+      notified: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Could not check nearby incidents.",
+    };
+  }
+}
+
+export async function checkAndNotifyNearbySos(
+  sosLogs: SOSLog[]
+) {
+  try {
+    // Only care about SOS logs from the last 15 minutes to avoid stale notifications
+    const recentLogs = sosLogs.filter((log) => {
+      if (!log.createdAt) return false;
+      const ageMs = Date.now() - log.createdAt.getTime();
+      return ageMs < 15 * 60 * 1000;
+    });
+
+    if (recentLogs.length === 0) return;
+
+    const notificationAllowed = await requestNotificationPermission();
+    if (!notificationAllowed) return;
+
+    const locationPermission = await Location.requestForegroundPermissionsAsync();
+    if (locationPermission.status !== "granted") return;
+
+    const location = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+    });
+
+    const userLat = location.coords.latitude;
+    const userLon = location.coords.longitude;
+
+    for (const log of recentLogs) {
+      const distance = getDistanceKm(
+        userLat,
+        userLon,
+        log.latitude,
+        log.longitude
+      );
+
+      // Notify if within 5km
+      if (distance <= 5) {
+        const title = "⚠️ EMERGENCY SOS ALERT ⚠️";
+        const body = `Someone activated an SOS ${formatDistance(
+          distance * 1000
+        )} away from your location.`;
+
+        const Notifications = await getNotificationsModule();
+
+        if (!Notifications) {
+          Alert.alert(title, body);
+          return;
+        }
+
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title,
+            body,
+            sound: true,
+            data: {
+              type: "nearby_sos",
+              sosLogId: log.id,
+              distanceMeters: Math.round(distance * 1000),
+            },
+          },
+          trigger: null,
+        });
+
+        // Break after finding the first one to avoid spamming multiple notifications
+        return;
+      }
+    }
+  } catch (error) {
+    console.log("Nearby SOS notification error:", error);
   }
 }

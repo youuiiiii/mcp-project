@@ -5,6 +5,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
+  GoogleAuthProvider,
 } from "firebase/auth";
 import {
   ReactNode,
@@ -36,6 +37,7 @@ type AuthContextValue = {
     photoURL?: string | null;
   }) => Promise<void>;
   logout: () => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -142,6 +144,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setProfileRevision((current) => current + 1);
   };
 
+  const loginWithGoogle = async () => {
+    alert("Google Sign In is not available on this platform yet.");
+  };
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -155,6 +161,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       register,
       updateUserProfile,
       logout,
+      loginWithGoogle,
     }),
     [user, loading, role, roleSource, roleLoading, isModerator, profileRevision]
   );

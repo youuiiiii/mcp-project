@@ -20,6 +20,7 @@ import {
   getVerificationLabel,
 } from "./threadLabels";
 import type { TimelineItem } from "./types";
+import { useI18n } from "../../../i18n";
 
 type IncidentTimelineProps = {
   incident: IncidentReport;
@@ -34,25 +35,27 @@ export default function IncidentTimeline({
   verifications,
   replies,
 }: IncidentTimelineProps) {
+  const { t, language } = useI18n();
+
   const items = useMemo(() => {
-    return buildTimelineItems({ incident, verifications, replies }).slice(
+    return buildTimelineItems({ incident, verifications, replies }, t, language as any).slice(
       0,
       MAX_VISIBLE_ITEMS
     );
-  }, [incident, verifications, replies]);
+  }, [incident, verifications, replies, t, language]);
 
   return (
     <View style={styles.section}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>Recent Activity</Text>
+          <Text style={styles.title}>{t("incident.timeline.title")}</Text>
           <Text style={styles.subtitle}>
-            Recent status and evidence changes for this report.
+            {t("incident.timeline.subtitle")}
           </Text>
         </View>
 
         <StatusBadge
-          label={`${items.length} update${items.length === 1 ? "" : "s"}`}
+          label={t("incident.timeline.updatesCount", { count: items.length })}
           variant="info"
           size="sm"
         />
@@ -64,6 +67,8 @@ export default function IncidentTimeline({
             key={item.id}
             item={item}
             isLast={index === items.length - 1}
+            t={t}
+            language={language as any}
           />
         ))}
       </View>
@@ -71,32 +76,32 @@ export default function IncidentTimeline({
   );
 }
 
-function buildTimelineItems({
-  incident,
-  verifications,
-  replies,
-}: IncidentTimelineProps): TimelineItem[] {
+function buildTimelineItems(
+  { incident, verifications, replies }: IncidentTimelineProps,
+  t: any,
+  language: "en" | "id"
+): TimelineItem[] {
   const reportItem: TimelineItem = {
     id: `report-${incident.id}`,
     kind: "report",
     date: incident.createdAt,
-    title: "Report created",
-    message: incident.title || "A new report was added to SIGAP.",
+    title: t("incident.timeline.reportCreated"),
+    message: incident.title || t("incident.timeline.reportMessage"),
     author: incident.reportedBy ?? incident.reporterEmail,
     color: colors.info,
-    badgeLabel: "Report",
+    badgeLabel: t("incident.timeline.reportBadge"),
   };
 
   const verificationItems: TimelineItem[] = verifications.map((item) => ({
     id: `verification-${item.id}`,
     kind: "verification",
     date: item.createdAt,
-    title: getVerificationLabel(item.verificationType),
-    message: item.note || getConditionLabel(item.conditionStatus),
+    title: getVerificationLabel(item.verificationType, t),
+    message: item.note || getConditionLabel(item.conditionStatus, t),
     author: item.userName ?? item.userEmail,
     imageUri: item.imageUri,
     color: getVerificationColor(item.verificationType),
-    badgeLabel: getConditionLabel(item.conditionStatus),
+    badgeLabel: getConditionLabel(item.conditionStatus, t),
   }));
 
   const replyItems: TimelineItem[] = replies
@@ -108,14 +113,14 @@ function buildTimelineItems({
         id: `reply-${item.id}`,
         kind: "reply",
         date: item.createdAt,
-        title: updateMeta.label,
+        title: t(updateMeta.label as any),
         message: item.message,
         author: item.userName ?? item.userEmail,
         imageUri: item.imageUri,
         color: updateMeta.color,
         badgeLabel: item.imageUri
-          ? `${updateMeta.shortLabel} + photo`
-          : updateMeta.shortLabel,
+          ? `${t(updateMeta.shortLabel as any)} + photo`
+          : t(updateMeta.shortLabel as any),
       };
     });
 
@@ -126,14 +131,14 @@ function buildTimelineItems({
             id: `resolved-${incident.id}`,
             kind: "resolved",
             date: incident.resolvedAt,
-            title: "Marked resolved",
+            title: t("incident.timeline.resolvedTitle"),
             message:
               incident.resolutionNote ||
-              "This report has been marked resolved by the community.",
+              t("incident.timeline.resolvedMessage"),
             author: incident.resolvedBy,
             imageUri: incident.resolvedImageUri,
             color: colors.success,
-            badgeLabel: "Resolved",
+            badgeLabel: t("incident.timeline.resolvedBadge"),
           },
         ]
       : [];
@@ -146,9 +151,13 @@ function buildTimelineItems({
 function TimelineRow({
   item,
   isLast,
+  t,
+  language,
 }: {
   item: TimelineItem;
   isLast: boolean;
+  t: any;
+  language: "en" | "id";
 }) {
   return (
     <View style={styles.row}>
@@ -178,8 +187,8 @@ function TimelineRow({
         </Text>
 
         <Text style={styles.meta} numberOfLines={1}>
-          {item.author || "Anonymous"} - {formatIncidentDate(item.date)}
-          {item.imageUri ? " - has photo" : ""}
+          {t("incident.timeline.meta", { author: item.author || t("incident.timeline.defaultAuthor"), date: formatIncidentDate(item.date, t, language) })}
+          {item.imageUri ? t("incident.timeline.hasPhoto") : ""}
         </Text>
       </View>
     </View>
@@ -192,12 +201,7 @@ function getTime(date?: Date) {
 
 const styles = StyleSheet.create({
   section: {
-    marginTop: spacing["2xl"],
-    borderRadius: radius["2xl"],
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    padding: spacing.md,
+    marginTop: spacing.md,
   },
   header: {
     flexDirection: "row",
